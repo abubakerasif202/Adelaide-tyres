@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 type Props = {
   src: string | null;
@@ -15,7 +18,10 @@ type Props = {
  * null this is deliberately generic and swap-ready.
  */
 export function TyreImage({ src, alt, size = 120, priority = false, className }: Props) {
-  if (src) {
+  const [failed, setFailed] = useState(false);
+  const cls = ["shrink-0", className].filter(Boolean).join(" ");
+
+  if (src && !failed) {
     return (
       <Image
         src={src}
@@ -23,8 +29,10 @@ export function TyreImage({ src, alt, size = 120, priority = false, className }:
         width={size}
         height={size}
         priority={priority}
-        className={className}
+        className={cls}
         style={{ objectFit: "contain" }}
+        sizes={`${size}px`}
+        onError={() => setFailed(true)}
       />
     );
   }
@@ -36,7 +44,7 @@ export function TyreImage({ src, alt, size = 120, priority = false, className }:
       width={size}
       height={size}
       viewBox="0 0 120 120"
-      className={className}
+      className={cls}
     >
       <defs>
         <radialGradient id="tyreShade" cx="42%" cy="38%" r="70%">

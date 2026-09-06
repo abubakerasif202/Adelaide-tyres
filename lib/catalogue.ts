@@ -39,8 +39,10 @@ export type Tyre = {
 
 /**
  * Supplied priority inventory. Prices are placeholders pending real wholesale rates.
- * No verified product photography is available, so `image` is null and the
- * neutral placeholder renders — replace with real photos when supplied.
+ * `image` points at a locally hosted product photo where the exact model could be
+ * verified against manufacturer imagery (see docs/product-image-sources.md), and is
+ * null otherwise so the neutral placeholder renders. Only add an image here once the
+ * exact model/pattern is confirmed — never a generic or substitute tyre.
  */
 export const catalogue: Tyre[] = [
   {
@@ -85,7 +87,7 @@ export const catalogue: Tyre[] = [
     position: "all-position",
     stock: 51,
     price: 379,
-    image: null,
+    image: "/images/tyres/ralson-rmr61-295-80r22-5.webp",
     description:
       "295/80R22.5 all-position radial for rigid trucks and prime movers. Even wear pattern for high-kilometre metro and regional operators.",
     featured: true,

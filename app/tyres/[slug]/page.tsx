@@ -72,8 +72,14 @@ export default async function TyreDetailPage({ params }: Params) {
 
           <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_400px]">
             <div>
-              <div className="surface-card grid place-items-center p-10">
-                <TyreImage src={tyre.image} alt={tyreFullName(tyre)} size={320} priority />
+              <div className="surface-card grid aspect-square place-items-center p-6 sm:p-10">
+                <TyreImage
+                  src={tyre.image}
+                  alt={`${tyreFullName(tyre)} commercial tyre`}
+                  size={460}
+                  priority
+                  className="h-auto w-full max-w-[460px]"
+                />
               </div>
               <div className="mt-3 flex gap-3">
                 {[0, 1, 2].map((n) => (
