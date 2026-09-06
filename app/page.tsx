@@ -26,7 +26,7 @@ export default function HomePage() {
             <SectionHeading
               eyebrow="Shop available stock"
               title="Order from current stock"
-              intro="Wholesale pricing per tyre. Mix any products — the only rule is four tyres total."
+              intro="Wholesale pricing per tyre. No minimum order — mix any products, any quantity."
             />
             <span className="pill pill--muted">
               {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units listed

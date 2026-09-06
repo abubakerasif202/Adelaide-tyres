@@ -9,6 +9,8 @@ import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { catalogue, getTyreBySlug, getRelatedTyres, APPLICATION_LABELS } from "@/lib/catalogue";
 import { tyreFullName, tyreSeoName } from "@/lib/tyre";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
+import { order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -22,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!tyre) return { title: "Tyre not found" };
   return {
     title: `${tyreSeoName(tyre)} | Adelaide`,
-    description: `${tyreFullName(tyre)} available wholesale in Adelaide. ${tyre.description} Minimum order four tyres, free Adelaide-wide delivery from Regency Park.`,
+    description: `${tyreFullName(tyre)} available wholesale in Adelaide. ${tyre.description} No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+, from Regency Park.`,
     alternates: { canonical: `/tyres/${tyre.slug}` },
     openGraph: {
       title: tyreSeoName(tyre),

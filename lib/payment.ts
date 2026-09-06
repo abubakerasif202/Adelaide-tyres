@@ -24,6 +24,7 @@ export type OrderIntentInput = {
   totalTyres: number;
   subtotal: number;
   freeDelivery: boolean;
+  deliveryFee: number;
 };
 
 export type OrderIntentResult = {

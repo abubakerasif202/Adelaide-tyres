@@ -1,4 +1,5 @@
-import { business, siteUrl } from "./config";
+import { business, order, siteUrl } from "./config";
+import { formatCurrency } from "./format";
 import type { Tyre } from "./catalogue";
 import { tyreFullName } from "./tyre";
 
@@ -41,8 +42,7 @@ export function localBusinessJsonLd() {
     url: siteUrl,
     address: postalAddress,
     areaServed: { "@type": "City", name: "Adelaide" },
-    description:
-      "Wholesale tyre supplier in Regency Park serving Adelaide workshops, fleets and transport operators. Minimum order four tyres, free Adelaide-wide delivery.",
+    description: `Wholesale tyre supplier in Regency Park serving Adelaide workshops, fleets and transport operators. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
   };
   if (business.phone) node.telephone = business.phone;
   if (business.email) node.email = business.email;
@@ -91,11 +91,6 @@ export function productJsonLd(tyre: Tyre) {
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
       seller: { "@id": `${siteUrl}/#organization` },
-      eligibleQuantity: {
-        "@type": "QuantitativeValue",
-        minValue: 4,
-        unitText: "tyres per order",
-      },
       url: `${siteUrl}/tyres/${tyre.slug}`,
     },
   };

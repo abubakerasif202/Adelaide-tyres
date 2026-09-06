@@ -6,11 +6,10 @@ import {
   clampQuantity,
   clearCart,
   getCartSubtotal,
+  getDeliveryFee,
   getTotalTyreQuantity,
-  meetsMinimumOrder,
   qualifiesForFreeDelivery,
   removeLine,
-  tyresUntilMinimum,
   updateLineQuantity,
 } from "../../lib/cart.ts";
 
@@ -37,33 +36,34 @@ test("getCartSubtotal multiplies price by quantity per line", () => {
   assert.equal(getCartSubtotal(cart), 1400);
 });
 
-test("minimum order needs 4 tyres total", () => {
-  assert.equal(meetsMinimumOrder({ lines: [line({ quantity: 3 })] }), false);
-  assert.equal(meetsMinimumOrder({ lines: [line({ quantity: 4 })] }), true);
+test("canCheckout is true for any non-empty cart — no minimum order", () => {
+  assert.equal(canCheckout({ lines: [line({ quantity: 1 })] }), true);
+  assert.equal(canCheckout({ lines: [line({ quantity: 100 })] }), true);
 });
 
-test("mixed products can satisfy the 4 tyre minimum", () => {
-  const cart = { lines: [line({ id: "a", quantity: 2 }), line({ id: "b", quantity: 2 })] };
-  assert.equal(getTotalTyreQuantity(cart), 4);
-  assert.equal(meetsMinimumOrder(cart), true);
-  assert.equal(canCheckout(cart), true);
-});
-
-test("tyresUntilMinimum counts down and floors at zero", () => {
-  assert.equal(tyresUntilMinimum({ lines: [line({ quantity: 1 })] }), 3);
-  assert.equal(tyresUntilMinimum({ lines: [line({ quantity: 9 })] }), 0);
-});
-
-test("free delivery requires the minimum for delivery, always granted for pickup", () => {
-  const under = { lines: [line({ quantity: 2 })] };
-  const over = { lines: [line({ quantity: 4 })] };
-  assert.equal(qualifiesForFreeDelivery(under, { method: "delivery" }), false);
-  assert.equal(qualifiesForFreeDelivery(over, { method: "delivery" }), true);
-  assert.equal(qualifiesForFreeDelivery(under, { method: "pickup" }), true);
-});
-
-test("canCheckout is false for an empty cart even conceptually", () => {
+test("canCheckout is false for an empty cart", () => {
   assert.equal(canCheckout({ lines: [] }), false);
+});
+
+test("delivery is $50 for 1-7 tyres, free from 8 tyres up", () => {
+  const under = { lines: [line({ quantity: 7 })] };
+  const over = { lines: [line({ quantity: 8 })] };
+  assert.equal(qualifiesForFreeDelivery(under, { method: "delivery" }), false);
+  assert.equal(getDeliveryFee(under, { method: "delivery" }), 50);
+  assert.equal(qualifiesForFreeDelivery(over, { method: "delivery" }), true);
+  assert.equal(getDeliveryFee(over, { method: "delivery" }), 0);
+});
+
+test("pickup is always free regardless of quantity", () => {
+  const single = { lines: [line({ quantity: 1 })] };
+  assert.equal(qualifiesForFreeDelivery(single, { method: "pickup" }), true);
+  assert.equal(getDeliveryFee(single, { method: "pickup" }), 0);
+});
+
+test("delivery defaults to the delivery method when no destination is given", () => {
+  const under = { lines: [line({ quantity: 3 })] };
+  assert.equal(qualifiesForFreeDelivery(under), false);
+  assert.equal(getDeliveryFee(under), 50);
 });
 
 test("clampQuantity respects min of 1 and stock ceiling", () => {

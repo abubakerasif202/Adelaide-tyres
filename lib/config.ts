@@ -31,22 +31,22 @@ export const business = {
 } as const;
 
 export const order = {
-  /** Business minimum: total tyre quantity across the whole cart. */
-  minimumTyres: 4,
   currency: "AUD",
-  /** Default quantity pre-filled on product cards and detail pages. */
-  defaultQuantity: 4,
-  freeDelivery: {
-    /** Free Adelaide-wide delivery once the cart meets the minimum. */
-    qualifyingTyres: 4,
+  /** Default quantity pre-filled on product cards and detail pages. No minimum order. */
+  defaultQuantity: 1,
+  delivery: {
     area: "Adelaide-wide",
+    /** Flat delivery fee (AUD) for orders below the free-delivery threshold. */
+    feeAud: 50,
+    /** Free Adelaide-wide delivery once total tyre quantity reaches this. */
+    freeQualifyingTyres: 8,
   },
   pickup: {
     label: "Warehouse pickup",
     address: "6 Birralee Rd, Regency Park SA 5010",
   },
-  /** TEST / PLACEHOLDER pricing. Replace with real wholesale pricing before launch. */
-  pricingIsPlaceholder: true,
+  /** Real, business-supplied wholesale pricing. */
+  pricingIsPlaceholder: false,
 } as const;
 
 export const siteUrl = (
@@ -62,6 +62,6 @@ export const nav = [
 ] as const;
 
 export const announcement = {
-  message: "FREE DELIVERY ADELAIDE WIDE · MINIMUM ORDER 4 TYRES",
+  message: "NO MINIMUM ORDER · $50 DELIVERY (1–7 TYRES) · FREE DELIVERY 8+ TYRES",
   address: business.address.oneLine,
 } as const;

@@ -60,10 +60,12 @@ export function TyreImage({ src, alt, size = 120, priority = false, className }:
       <circle cx="60" cy="60" r="12" fill="#d6dad7" />
       {Array.from({ length: 24 }).map((_, i) => {
         const angle = (i / 24) * Math.PI * 2;
-        const x1 = 60 + Math.cos(angle) * 40;
-        const y1 = 60 + Math.sin(angle) * 40;
-        const x2 = 60 + Math.cos(angle) * 52;
-        const y2 = 60 + Math.sin(angle) * 52;
+        // Rounded to 2dp: raw Math.sin/cos output can differ in the last bit
+        // between Node's SSR and the browser's V8, which trips React hydration.
+        const x1 = Math.round((60 + Math.cos(angle) * 40) * 100) / 100;
+        const y1 = Math.round((60 + Math.sin(angle) * 40) * 100) / 100;
+        const x2 = Math.round((60 + Math.cos(angle) * 52) * 100) / 100;
+        const y2 = Math.round((60 + Math.sin(angle) * 52) * 100) / 100;
         return (
           <line
             key={i}

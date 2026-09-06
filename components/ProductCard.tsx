@@ -83,7 +83,7 @@ export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?:
       </button>
 
       <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
-        Minimum delivery order: {order.minimumTyres} tyres total.
+        No minimum order · {order.delivery.freeQualifyingTyres}+ tyres ships free Adelaide-wide.
       </p>
     </article>
   );

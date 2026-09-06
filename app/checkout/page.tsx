@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { getLineSubtotal } from "@/lib/cart";
+import { getDeliveryFee, getLineSubtotal, qualifiesForFreeDelivery } from "@/lib/cart";
 import { business, order } from "@/lib/config";
 import { formatCurrency, formatTotal } from "@/lib/format";
 import { tyreFullName } from "@/lib/tyre";
@@ -18,11 +18,10 @@ import { CheckoutProgress, type CheckoutStepIndex } from "@/components/CheckoutP
 import { FormField } from "@/components/FormField";
 import { QuantitySelector } from "@/components/QuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
-import { OrderMinimumStatus } from "@/components/OrderMinimumStatus";
+import { DeliveryStatus } from "@/components/DeliveryStatus";
 
 export default function CheckoutPage() {
-  const { cart, hydrated, totalTyres, subtotal, minimumMet, tyresRemaining, setQuantity, clear } =
-    useCart();
+  const { cart, hydrated, totalTyres, subtotal, setQuantity, clear } = useCart();
   const [step, setStep] = useState<CheckoutStepIndex>(0);
   const [details, setDetails] = useState<CheckoutDetails>(EMPTY_CHECKOUT_DETAILS);
   const [errors, setErrors] = useState<CheckoutErrors>({});
@@ -31,18 +30,19 @@ export default function CheckoutPage() {
   const [confirmation, setConfirmation] = useState<{ reference: string; mode: string; notified: boolean } | null>(null);
   const [startedAt] = useState(() => Date.now());
 
-  const freeDelivery = details.deliveryMethod === "pickup" || minimumMet;
+  const destination = { method: details.deliveryMethod };
+  const freeDelivery = qualifiesForFreeDelivery(cart, destination);
+  const deliveryFee = getDeliveryFee(cart, destination);
 
   const set = (patch: Partial<CheckoutDetails>) => setDetails((d) => ({ ...d, ...patch }));
 
   const summaryRows = useMemo(
     () => [
       { label: "Tyres", value: String(totalTyres) },
-      { label: "Delivery", value: freeDelivery ? "Free" : "TBC" },
-      { label: "Minimum order", value: minimumMet ? "Met" : `${tyresRemaining} to go` },
+      { label: "Delivery", value: freeDelivery ? "Free" : formatCurrency(deliveryFee) },
       { label: "Wholesale pricing", value: order.pricingIsPlaceholder ? "Test pricing" : "Current" },
     ],
-    [totalTyres, freeDelivery, minimumMet, tyresRemaining],
+    [totalTyres, freeDelivery, deliveryFee],
   );
 
   if (hydrated && cart.lines.length === 0 && !confirmation) {
@@ -51,7 +51,7 @@ export default function CheckoutPage() {
         <div className="surface-card p-10 text-center">
           <h1 className="display text-[26px]">Nothing to check out</h1>
           <p className="mx-auto mt-2 max-w-md text-[var(--color-text-muted)]">
-            Add {order.minimumTyres} or more tyres to start a wholesale order.
+            No minimum order — add any tyres to start a wholesale order.
           </p>
           <Link href="/tyres" className="btn btn--green mt-6">
             Shop available stock
@@ -62,7 +62,6 @@ export default function CheckoutPage() {
   }
 
   function goToDelivery() {
-    if (!minimumMet) return;
     setStep(1);
   }
 
@@ -122,10 +121,10 @@ export default function CheckoutPage() {
                 Your bulk order
               </h1>
               <div className="mt-4">
-                <OrderMinimumStatus
+                <DeliveryStatus
                   totalTyres={totalTyres}
-                  minimumMet={minimumMet}
-                  tyresRemaining={tyresRemaining}
+                  qualifiesForFreeDelivery={freeDelivery}
+                  deliveryFee={deliveryFee}
                 />
               </div>
               <ul className="mt-5 flex flex-col gap-4">
@@ -161,8 +160,8 @@ export default function CheckoutPage() {
                 ))}
               </ul>
               <div className="mt-6 flex gap-3">
-                <button type="button" className="btn btn--red" onClick={goToDelivery} disabled={!minimumMet}>
-                  {minimumMet ? "Continue to delivery" : `Add ${tyresRemaining} more tyres`}
+                <button type="button" className="btn btn--red" onClick={goToDelivery}>
+                  Continue to delivery
                 </button>
                 <Link href="/tyres" className="btn btn--outline">
                   Back to stock
@@ -177,8 +176,9 @@ export default function CheckoutPage() {
                 Delivery details
               </h1>
               <p className="mt-2 text-[var(--color-text-muted)]">
-                Free {business.serviceArea.label} delivery for orders of {order.minimumTyres} or
-                more tyres.
+                No minimum order. {formatCurrency(order.delivery.feeAud)} {business.serviceArea.label}{" "}
+                delivery under {order.delivery.freeQualifyingTyres} tyres, free from{" "}
+                {order.delivery.freeQualifyingTyres} tyres up.
               </p>
 
               <fieldset className="mt-5">
@@ -187,8 +187,8 @@ export default function CheckoutPage() {
                   <FulfilmentOption
                     checked={details.deliveryMethod === "delivery"}
                     onChange={() => set({ deliveryMethod: "delivery" })}
-                    title="Free Adelaide delivery"
-                    copy={`${business.serviceArea.description}, orders of ${order.minimumTyres}+ tyres`}
+                    title="Adelaide delivery"
+                    copy={`${business.serviceArea.description} — ${formatCurrency(order.delivery.feeAud)}, free at ${order.delivery.freeQualifyingTyres}+ tyres`}
                   />
                   <FulfilmentOption
                     checked={details.deliveryMethod === "pickup"}
@@ -247,7 +247,14 @@ export default function CheckoutPage() {
                   invoice) before dispatch.
                 </p>
                 <ul className="mt-4 flex flex-col gap-2 text-[14px] text-[var(--color-text-muted)]">
-                  <li>✓ {details.deliveryMethod === "pickup" ? "Pickup from Regency Park" : "Free Adelaide-wide delivery"}</li>
+                  <li>
+                    ✓{" "}
+                    {details.deliveryMethod === "pickup"
+                      ? "Free pickup from Regency Park"
+                      : freeDelivery
+                        ? "Free Adelaide-wide delivery"
+                        : `${formatCurrency(deliveryFee)} Adelaide-wide delivery`}
+                  </li>
                   <li>✓ Order reference issued immediately</li>
                   <li>✓ No card data stored by this website</li>
                 </ul>
@@ -282,7 +289,7 @@ export default function CheckoutPage() {
                 </p>
                 {confirmation.mode === "test" && (
                   <p className="mx-auto mt-3 max-w-md text-[13px] text-[var(--color-text-muted)]">
-                    Test checkout: no payment was taken and prices are placeholder values.
+                    Test checkout: no payment was taken. Pricing shown is current wholesale pricing.
                   </p>
                 )}
                 {!confirmation.notified && (
@@ -321,16 +328,25 @@ export default function CheckoutPage() {
                   <dd className="display text-[18px]">{formatTotal(subtotal)}</dd>
                 </div>
               </dl>
-              {freeDelivery && (
+              {freeDelivery ? (
                 <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-green)] px-4 py-3 text-white">
                   <p className="text-[13px] font-bold uppercase tracking-wide">
                     Free {details.deliveryMethod === "pickup" ? "warehouse pickup" : "Adelaide delivery"}
                   </p>
                   <p className="text-[12px] text-white/80">No delivery charge on this order.</p>
                 </div>
+              ) : (
+                <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] px-4 py-3">
+                  <p className="text-[13px] font-bold uppercase tracking-wide">
+                    {formatCurrency(deliveryFee)} Adelaide delivery
+                  </p>
+                  <p className="text-[12px] text-[var(--color-text-muted)]">
+                    Free from {order.delivery.freeQualifyingTyres} tyres, or choose warehouse pickup.
+                  </p>
+                </div>
               )}
               <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
-                Pricing values are placeholder test data from the live store catalogue.
+                Pricing shown is current wholesale pricing from live stock.
               </p>
             </div>
           </aside>

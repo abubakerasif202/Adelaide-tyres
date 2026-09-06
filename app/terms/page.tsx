@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
 import { business, order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
@@ -19,10 +20,9 @@ export default function TermsPage() {
         <div className="container-x max-w-3xl py-14 text-[15px] leading-relaxed text-[var(--color-text-muted)]">
           <h2 className="display text-[20px] text-[var(--color-text)]">Orders</h2>
           <p>
-            The minimum order is {order.minimumTyres} tyres in total. Placing an order on
-            this website is a request to purchase. {business.name} confirms stock
-            availability and final wholesale pricing before an order is accepted and
-            dispatched.
+            There is no minimum order. Placing an order on this website is a request to
+            purchase. {business.name} confirms stock availability and final wholesale
+            pricing before an order is accepted and dispatched.
           </p>
           <h2 className="display mt-8 text-[20px] text-[var(--color-text)]">Pricing</h2>
           <p>
@@ -31,9 +31,11 @@ export default function TermsPage() {
           </p>
           <h2 className="display mt-8 text-[20px] text-[var(--color-text)]">Delivery and pickup</h2>
           <p>
-            Free delivery applies to qualifying orders within metropolitan Adelaide.
-            Delivery timeframes are confirmed directly and are not guaranteed. Warehouse
-            pickup is available from {order.pickup.address}.
+            Orders of 1–{order.delivery.freeQualifyingTyres - 1} tyres delivered within
+            metropolitan Adelaide incur a flat {formatCurrency(order.delivery.feeAud)} delivery
+            fee; orders of {order.delivery.freeQualifyingTyres} or more tyres qualify for free
+            delivery. Delivery timeframes are confirmed directly and are not guaranteed.
+            Warehouse pickup is always free and available from {order.pickup.address}.
           </p>
           <h2 className="display mt-8 text-[20px] text-[var(--color-text)]">Payment</h2>
           <p>

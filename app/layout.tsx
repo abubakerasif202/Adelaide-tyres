@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Adelaide Wholesale Tyres",
   },
   description:
-    "Buy wholesale tyres in Adelaide with a minimum order of four tyres and free Adelaide-wide delivery. Truck, commercial, passenger and light-commercial tyres available from Regency Park.",
+    "Buy wholesale tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up. Truck, commercial, passenger and light-commercial tyres available from Regency Park.",
   applicationName: business.name,
   alternates: { canonical: "/" },
   openGraph: {
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: "Wholesale Tyres Adelaide | Bulk Tyres & Free Delivery",
     description:
-      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. Minimum order four tyres, free Adelaide-wide delivery.",
+      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, $50 Adelaide-wide delivery under 8 tyres, free for 8+.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Wholesale Tyres Adelaide | Adelaide Wholesale Tyres",
     description:
-      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. Minimum order four tyres, free Adelaide-wide delivery.",
+      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, $50 Adelaide-wide delivery under 8 tyres, free for 8+.",
   },
   robots: { index: true, follow: true },
 };

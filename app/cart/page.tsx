@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { QuantitySelector } from "@/components/QuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
-import { OrderMinimumStatus } from "@/components/OrderMinimumStatus";
+import { DeliveryStatus } from "@/components/DeliveryStatus";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getLineSubtotal } from "@/lib/cart";
 import { formatCurrency, formatTotal } from "@/lib/format";
@@ -12,8 +12,17 @@ import { tyreFullName } from "@/lib/tyre";
 import { order } from "@/lib/config";
 
 export default function CartPage() {
-  const { cart, hydrated, totalTyres, subtotal, minimumMet, tyresRemaining, setQuantity, remove, clear } =
-    useCart();
+  const {
+    cart,
+    hydrated,
+    totalTyres,
+    subtotal,
+    qualifiesForFreeDelivery,
+    deliveryFee,
+    setQuantity,
+    remove,
+    clear,
+  } = useCart();
 
   const empty = hydrated && cart.lines.length === 0;
 
@@ -29,7 +38,7 @@ export default function CartPage() {
           <div className="surface-card mt-8 p-10 text-center">
             <h2 className="display text-[24px]">Your cart is empty</h2>
             <p className="mx-auto mt-2 max-w-md text-[var(--color-text-muted)]">
-              Add {order.minimumTyres} or more tyres from current stock to start a
+              No minimum order — add any tyres from current stock to start a
               wholesale order.
             </p>
             <Link href="/tyres" className="btn btn--green mt-6">
@@ -39,10 +48,10 @@ export default function CartPage() {
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
             <div>
-              <OrderMinimumStatus
+              <DeliveryStatus
                 totalTyres={totalTyres}
-                minimumMet={minimumMet}
-                tyresRemaining={tyresRemaining}
+                qualifiesForFreeDelivery={qualifiesForFreeDelivery}
+                deliveryFee={deliveryFee}
               />
 
               <ul className="mt-5 flex flex-col gap-4">
@@ -103,29 +112,23 @@ export default function CartPage() {
                 <h2 className="display text-[24px]">Order summary</h2>
                 <dl className="mt-4 flex flex-col gap-3 text-[14px]">
                   <Row label="Total tyres" value={String(totalTyres)} />
-                  <Row label="Delivery" value={minimumMet ? "Free" : "—"} />
                   <Row
-                    label="Minimum order"
-                    value={minimumMet ? "Met" : `${tyresRemaining} to go`}
+                    label="Delivery"
+                    value={qualifiesForFreeDelivery ? "Free" : formatCurrency(deliveryFee)}
                   />
                   <div className="my-1 h-px bg-[var(--color-border)]" />
                   <Row label="Wholesale pricing" value={order.pricingIsPlaceholder ? "Test pricing" : "Current"} />
                   <Row label="Order total" value={formatTotal(subtotal)} strong />
                 </dl>
 
-                <Link
-                  href="/checkout"
-                  aria-disabled={!minimumMet}
-                  className={`btn btn--red mt-5 w-full ${!minimumMet ? "pointer-events-none opacity-55" : ""}`}
-                  tabIndex={minimumMet ? undefined : -1}
-                >
-                  {minimumMet ? "Continue to checkout" : `Add ${tyresRemaining} more to checkout`}
+                <Link href="/checkout" className="btn btn--red mt-5 w-full">
+                  Continue to checkout
                 </Link>
                 <Link href="/tyres" className="btn btn--outline mt-2.5 w-full">
                   Back to stock
                 </Link>
                 <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
-                  Pricing shown is placeholder test data pending final wholesale rates.
+                  Pricing shown is current wholesale pricing from live stock.
                 </p>
               </div>
             </aside>

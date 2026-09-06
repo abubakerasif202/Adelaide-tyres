@@ -1,5 +1,5 @@
 const benefits = [
-  { title: "4 tyre minimum", copy: "Built for bulk purchasing" },
+  { title: "No minimum order", copy: "Order any quantity, from one tyre up" },
   { title: "Free delivery", copy: "Adelaide-wide delivery included", highlight: true },
   { title: "Live stock", copy: "Order from current available quantities" },
   { title: "Trade support", copy: "Commercial, truck and passenger sizes" },

@@ -11,11 +11,12 @@ import {
   catalogueStats,
 } from "@/lib/catalogue";
 import { breadcrumbJsonLd } from "@/lib/seo";
+import { order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Tyre Catalogue | Bulk Truck, Commercial & Passenger Tyres Adelaide",
-  description:
-    "Browse wholesale tyre stock available now in Adelaide. Filter by size, brand and application. Minimum order four tyres with free Adelaide-wide delivery from Regency Park.",
+  description: `Browse wholesale tyre stock available now in Adelaide. Filter by size, brand and application. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+, from Regency Park.`,
   alternates: { canonical: "/tyres" },
 };
 
@@ -42,8 +43,8 @@ export default function TyresPage() {
             <div>
               <h1 className="display text-[clamp(30px,5vw,48px)]">Shop available stock</h1>
               <p className="mt-2 max-w-xl text-[var(--color-text-muted)]">
-                Search by size, brand or pattern. Mix any products — checkout opens at
-                four tyres total.
+                Search by size, brand or pattern. No minimum order — checkout is open from
+                one tyre up.
               </p>
             </div>
             <span className="pill pill--muted">

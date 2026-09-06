@@ -14,10 +14,10 @@ import {
   clearCart as clearCartState,
   EMPTY_CART,
   getCartSubtotal,
+  getDeliveryFee,
   getTotalTyreQuantity,
-  meetsMinimumOrder,
+  qualifiesForFreeDelivery,
   removeLine,
-  tyresUntilMinimum,
   updateLineQuantity,
   type Cart,
   type CartLine,
@@ -32,8 +32,9 @@ type CartContextValue = {
   hydrated: boolean;
   totalTyres: number;
   subtotal: number;
-  minimumMet: boolean;
-  tyresRemaining: number;
+  /** Free-delivery qualification and fee assume delivery (not pickup) until checkout confirms the method. */
+  qualifiesForFreeDelivery: boolean;
+  deliveryFee: number;
   add: (line: AddPayload) => void;
   setQuantity: (id: string, quantity: number) => void;
   remove: (id: string) => void;
@@ -124,8 +125,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       hydrated,
       totalTyres: getTotalTyreQuantity(cart),
       subtotal: getCartSubtotal(cart),
-      minimumMet: meetsMinimumOrder(cart),
-      tyresRemaining: tyresUntilMinimum(cart),
+      qualifiesForFreeDelivery: qualifiesForFreeDelivery(cart),
+      deliveryFee: getDeliveryFee(cart),
       add,
       setQuantity,
       remove,

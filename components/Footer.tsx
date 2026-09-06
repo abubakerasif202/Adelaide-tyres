@@ -15,8 +15,8 @@ const columns = [
   {
     heading: "Delivery",
     links: [
-      { label: "Free Adelaide delivery", href: "/delivery" },
-      { label: "Minimum order 4 tyres", href: "/delivery#minimum" },
+      { label: "Adelaide delivery rates", href: "/delivery" },
+      { label: "No minimum order", href: "/delivery" },
       { label: "Regency Park warehouse", href: "/delivery#pickup" },
     ],
   },
@@ -71,7 +71,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col gap-1 py-6 text-[12px] text-white/55 sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} {business.name}</span>
-          <span>Bulk orders · Free Adelaide-wide delivery · 4 tyre minimum</span>
+          <span>Bulk orders · No minimum order · $50 delivery under 8 tyres, free from 8+</span>
         </div>
       </div>
     </footer>

@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { order } from "@/lib/config";
+import { formatCurrency, pluralTyres } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
 import { tyreFullName } from "@/lib/tyre";
 import { QuantitySelector } from "./QuantitySelector";
 import { PriceDisplay } from "./primitives";
 
 export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
-  const { add, totalTyres, minimumMet, tyresRemaining } = useCart();
+  const { add, totalTyres, qualifiesForFreeDelivery, deliveryFee } = useCart();
   const router = useRouter();
   const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
   const [added, setAdded] = useState(false);
@@ -54,9 +55,7 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
           max={tyre.stock || undefined}
           label={`Quantity for ${tyreFullName(tyre)}`}
         />
-        <span className="text-[13px] text-[var(--color-text-muted)]">
-          {order.minimumTyres} tyre minimum per order
-        </span>
+        <span className="text-[13px] text-[var(--color-text-muted)]">No minimum order</span>
       </div>
 
       <div className="mt-5 flex flex-col gap-2.5">
@@ -82,20 +81,21 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
       </div>
 
       <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] p-4 text-[13px]">
-        {minimumMet ? (
+        {qualifiesForFreeDelivery ? (
           <p className="font-semibold text-[var(--color-green)]">
-            ✓ Minimum order met · {totalTyres} tyres in cart · free Adelaide-wide delivery
+            ✓ {pluralTyres(totalTyres)} in cart · free Adelaide-wide delivery
           </p>
         ) : totalTyres > 0 ? (
           <p className="text-[var(--color-text-muted)]">
-            {totalTyres} in cart. Add {tyresRemaining} more{" "}
-            {tyresRemaining === 1 ? "tyre" : "tyres"} to qualify for checkout and free
-            Adelaide-wide delivery.
+            {pluralTyres(totalTyres)} in cart · {formatCurrency(deliveryFee)} Adelaide-wide
+            delivery. Add {order.delivery.freeQualifyingTyres - totalTyres} more to make delivery
+            free.
           </p>
         ) : (
           <p className="text-[var(--color-text-muted)]">
-            Free Adelaide-wide delivery on orders of {order.minimumTyres} tyres or more.
-            Mix any products to reach the minimum.
+            No minimum order. {formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under{" "}
+            {order.delivery.freeQualifyingTyres} tyres, free from {order.delivery.freeQualifyingTyres}{" "}
+            tyres up.
           </p>
         )}
       </div>

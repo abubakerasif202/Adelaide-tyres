@@ -39,16 +39,6 @@ export function getLineSubtotal(line: CartLine): number {
   return line.price * line.quantity;
 }
 
-/** Does the cart meet the business minimum (>= 4 tyres total)? */
-export function meetsMinimumOrder(cart: Cart): boolean {
-  return getTotalTyreQuantity(cart) >= order.minimumTyres;
-}
-
-/** How many more tyres are needed to reach the minimum (0 once met). */
-export function tyresUntilMinimum(cart: Cart): number {
-  return Math.max(0, order.minimumTyres - getTotalTyreQuantity(cart));
-}
-
 export type DeliveryMethod = "delivery" | "pickup";
 
 export type DeliveryDestination = {
@@ -57,21 +47,30 @@ export type DeliveryDestination = {
 };
 
 /**
- * Free delivery qualification. For this release the business rule is
- * Adelaide-wide free delivery once the tyre minimum is met. Pickup is always free.
- * Centralised here so the rule can tighten later (e.g. a postcode allow-list)
- * without touching UI.
+ * Free delivery qualification. No minimum order — the business rule is a flat
+ * Adelaide-wide delivery fee under 8 tyres, free from 8 tyres up. Pickup is
+ * always free. Centralised here so the rule can tighten later (e.g. a
+ * postcode allow-list) without touching UI.
  */
 export function qualifiesForFreeDelivery(
   cart: Cart,
   destination: DeliveryDestination = { method: "delivery" },
 ): boolean {
   if (destination.method === "pickup") return true;
-  return getTotalTyreQuantity(cart) >= order.freeDelivery.qualifyingTyres;
+  return getTotalTyreQuantity(cart) >= order.delivery.freeQualifyingTyres;
 }
 
+/** Delivery fee in AUD for the given cart/destination — $0 for pickup or 8+ tyres. */
+export function getDeliveryFee(
+  cart: Cart,
+  destination: DeliveryDestination = { method: "delivery" },
+): number {
+  return qualifiesForFreeDelivery(cart, destination) ? 0 : order.delivery.feeAud;
+}
+
+/** No minimum order — checkout is available as soon as the cart has an item. */
 export function canCheckout(cart: Cart): boolean {
-  return cart.lines.length > 0 && meetsMinimumOrder(cart);
+  return cart.lines.length > 0;
 }
 
 export function clampQuantity(quantity: number, stock: number): number {

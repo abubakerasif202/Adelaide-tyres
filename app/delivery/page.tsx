@@ -3,23 +3,23 @@ import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { business, order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 import { breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Free Adelaide-Wide Tyre Delivery | Regency Park Warehouse Pickup",
-  description:
-    "Free Adelaide-wide delivery on wholesale tyre orders of four or more tyres. Warehouse pickup available at 6 Birralee Rd, Regency Park SA 5010.",
+  title: "Adelaide Tyre Delivery Rates | Regency Park Warehouse Pickup",
+  description: `No minimum order. ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery on wholesale tyre orders under ${order.delivery.freeQualifyingTyres} tyres, free from ${order.delivery.freeQualifyingTyres} tyres up. Warehouse pickup available at 6 Birralee Rd, Regency Park SA 5010.`,
   alternates: { canonical: "/delivery" },
 };
 
 const faqs = [
   {
-    q: "What makes an order qualify for free delivery?",
-    a: `Any order of ${order.minimumTyres} or more tyres total, delivered within metropolitan Adelaide.`,
+    q: "Is there a minimum order?",
+    a: "No. Order any quantity, from a single tyre up.",
   },
   {
-    q: "Can I mix products to reach the minimum?",
-    a: "Yes. The minimum is four tyres in total across the order — mix any sizes, brands and patterns.",
+    q: "How much does delivery cost?",
+    a: `${formatCurrency(order.delivery.feeAud)} flat for orders of 1–${order.delivery.freeQualifyingTyres - 1} tyres delivered within metropolitan Adelaide. Free from ${order.delivery.freeQualifyingTyres} tyres up.`,
   },
   {
     q: "Do you deliver outside metropolitan Adelaide?",
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "Can I collect from the warehouse?",
-    a: `Yes. Choose warehouse pickup at checkout and collect from ${order.pickup.address}.`,
+    a: `Yes, and it's always free. Choose warehouse pickup at checkout and collect from ${order.pickup.address}.`,
   },
 ];
 
@@ -62,17 +62,19 @@ export default function DeliveryPage() {
 
       <PageHeader
         eyebrow="Delivery"
-        title="Free delivery. Adelaide wide."
-        intro={`Free Adelaide-wide delivery on every order of ${order.minimumTyres} or more tyres. Warehouse pickup available from Regency Park.`}
+        title="No minimum order. Adelaide wide."
+        intro={`${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery on orders under ${order.delivery.freeQualifyingTyres} tyres, free from ${order.delivery.freeQualifyingTyres} up. Warehouse pickup available from Regency Park.`}
         crumbs={[{ name: "Home", path: "/" }, { name: "Delivery", path: "/delivery" }]}
       />
 
       <section className="bg-[var(--color-surface-muted)]">
         <div className="container-x grid gap-4 py-14 md:grid-cols-3">
-          <div className="surface-card p-6" id="minimum">
-            <h2 className="display text-[20px]">Minimum order</h2>
+          <div className="surface-card p-6" id="pricing">
+            <h2 className="display text-[20px]">Delivery pricing</h2>
             <p className="mt-2 text-[14px] text-[var(--color-text-muted)]">
-              {order.minimumTyres} tyres total. Mix any products to get there.
+              No minimum order. {formatCurrency(order.delivery.feeAud)} flat for 1–
+              {order.delivery.freeQualifyingTyres - 1} tyres, free from{" "}
+              {order.delivery.freeQualifyingTyres} tyres up.
             </p>
           </div>
           <div className="surface-card p-6">

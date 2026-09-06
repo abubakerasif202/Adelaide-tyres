@@ -24,7 +24,7 @@ export function Hero() {
             Pay wholesale.
           </h1>
           <p className="mt-5 max-w-xl text-[17px] text-white/82">
-            Minimum order 4 tyres. Free Adelaide-wide delivery. Commercial, truck,
+            No minimum order. $50 Adelaide-wide delivery, free from 8 tyres. Commercial, truck,
             light-commercial and passenger tyres available from current stock.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -36,7 +36,7 @@ export function Hero() {
             </Link>
           </div>
           <p className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-white/75">
-            <span className="font-semibold text-white">✓ Free Adelaide-wide delivery</span>
+            <span className="font-semibold text-white">✓ No minimum order</span>
             <span aria-hidden>·</span>
             <span>{business.address.oneLine}</span>
           </p>

@@ -79,17 +79,23 @@ export async function POST(request: Request) {
   }
 
   const totalTyres = lines.reduce((sum, l) => sum + l.quantity, 0);
-  if (lines.length === 0 || totalTyres < order.minimumTyres) {
-    return NextResponse.json(
-      { error: `Minimum order is ${order.minimumTyres} tyres total.` },
-      { status: 422 },
-    );
+  if (lines.length === 0) {
+    return NextResponse.json({ error: "Your cart is empty." }, { status: 422 });
   }
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-  const freeDelivery = details.deliveryMethod === "pickup" || totalTyres >= order.minimumTyres;
+  const freeDelivery =
+    details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
+  const deliveryFee = freeDelivery ? 0 : order.delivery.feeAud;
 
-  const intent = await createPaymentIntent({ details, lines, totalTyres, subtotal, freeDelivery });
+  const intent = await createPaymentIntent({
+    details,
+    lines,
+    totalTyres,
+    subtotal,
+    freeDelivery,
+    deliveryFee,
+  });
 
   try {
     await sendNotification({
@@ -107,8 +113,14 @@ export async function POST(request: Request) {
         ...lines.map((l) => `  ${l.quantity} × ${l.brand} ${l.pattern} ${l.size} @ $${l.price}`),
         "",
         `Total tyres: ${totalTyres}`,
-        `Subtotal: $${subtotal} AUD (test pricing)`,
-        `Delivery: ${freeDelivery ? "Free Adelaide-wide" : "TBC"}`,
+        `Subtotal: $${subtotal} AUD`,
+        `Delivery: ${
+          details.deliveryMethod === "pickup"
+            ? "Free warehouse pickup"
+            : freeDelivery
+              ? "Free Adelaide-wide"
+              : `$${deliveryFee} Adelaide-wide`
+        }`,
         details.notes ? `Notes: ${details.notes}` : "",
       ]
         .filter(Boolean)

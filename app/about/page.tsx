@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
-import { business } from "@/lib/config";
+import { business, order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 import { breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "About Adelaide Wholesale Tyres | Regency Park Tyre Wholesaler",
-  description:
-    "Adelaide Wholesale Tyres supplies truck, commercial, passenger and light-commercial tyres in bulk from Regency Park. Minimum order four tyres, free Adelaide-wide delivery.",
+  description: `Adelaide Wholesale Tyres supplies truck, commercial, passenger and light-commercial tyres in bulk from Regency Park. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
   alternates: { canonical: "/about" },
 };
 
@@ -37,13 +37,14 @@ export default function AboutPage() {
           <div className="space-y-4 text-[16px] text-[var(--color-text-muted)]">
             <p>
               Adelaide Wholesale Tyres operates from {business.address.oneLine}. We hold
-              current stock across common truck and commercial fitments and sell in
-              minimum quantities of four tyres.
+              current stock across common truck and commercial fitments and sell in any
+              quantity — no minimum order.
             </p>
             <p>
               Orders are placed online or by enquiry. We confirm stock and wholesale
-              pricing, then deliver free across metropolitan Adelaide or hold the order for
-              warehouse pickup.
+              pricing, then deliver across metropolitan Adelaide — {formatCurrency(order.delivery.feeAud)}{" "}
+              under {order.delivery.freeQualifyingTyres} tyres, free from {order.delivery.freeQualifyingTyres}{" "}
+              up — or hold the order for free warehouse pickup.
             </p>
             <p>
               For workshops and fleets running regular volume, we set standing orders and
@@ -54,8 +55,11 @@ export default function AboutPage() {
             <h2 className="display text-[20px]">The essentials</h2>
             <ul className="mt-4 flex flex-col gap-2.5 text-[14px]">
               <li><strong>Location:</strong> {business.address.oneLine}</li>
-              <li><strong>Minimum order:</strong> 4 tyres total</li>
-              <li><strong>Delivery:</strong> Free across metropolitan Adelaide</li>
+              <li><strong>Minimum order:</strong> None</li>
+              <li>
+                <strong>Delivery:</strong> {formatCurrency(order.delivery.feeAud)} under{" "}
+                {order.delivery.freeQualifyingTyres} tyres, free {order.delivery.freeQualifyingTyres}+
+              </li>
               <li><strong>Customers:</strong> Trade, fleet and bulk buyers</li>
             </ul>
           </aside>

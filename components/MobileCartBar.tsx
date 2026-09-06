@@ -7,7 +7,7 @@ import { formatCurrency, pluralTyres } from "@/lib/format";
 
 export function MobileCartBar() {
   const pathname = usePathname();
-  const { hydrated, totalTyres, subtotal, minimumMet, tyresRemaining } = useCart();
+  const { hydrated, totalTyres, subtotal, qualifiesForFreeDelivery, deliveryFee } = useCart();
 
   if (!hydrated || totalTyres === 0) return null;
   if (pathname === "/cart" || pathname === "/checkout") return null;
@@ -18,11 +18,11 @@ export function MobileCartBar() {
         <div className="text-[13px]">
           <p className="font-bold">{pluralTyres(totalTyres)} · {formatCurrency(subtotal)}</p>
           <p className="text-[var(--color-text-muted)]">
-            {minimumMet ? "Minimum met" : `${tyresRemaining} more to checkout`}
+            {qualifiesForFreeDelivery ? "Free delivery" : `${formatCurrency(deliveryFee)} delivery`}
           </p>
         </div>
-        <Link href={minimumMet ? "/checkout" : "/cart"} className="btn btn--red min-h-[46px] px-5 py-2">
-          {minimumMet ? "Checkout" : "View cart"}
+        <Link href="/checkout" className="btn btn--red min-h-[46px] px-5 py-2">
+          Checkout
         </Link>
       </div>
     </div>
