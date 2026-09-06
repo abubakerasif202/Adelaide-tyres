@@ -1,0 +1,74 @@
+import Image from "next/image";
+
+type Props = {
+  src: string | null;
+  alt: string;
+  /** Rendered pixel box (square). */
+  size?: number;
+  priority?: boolean;
+  className?: string;
+};
+
+/**
+ * Renders a real product photo when one is supplied, otherwise a clean neutral
+ * tyre placeholder. No branded model photography is invented — when `src` is
+ * null this is deliberately generic and swap-ready.
+ */
+export function TyreImage({ src, alt, size = 120, priority = false, className }: Props) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={size}
+        height={size}
+        priority={priority}
+        className={className}
+        style={{ objectFit: "contain" }}
+      />
+    );
+  }
+
+  return (
+    <svg
+      role="img"
+      aria-label={alt}
+      width={size}
+      height={size}
+      viewBox="0 0 120 120"
+      className={className}
+    >
+      <defs>
+        <radialGradient id="tyreShade" cx="42%" cy="38%" r="70%">
+          <stop offset="0%" stopColor="#2b3130" />
+          <stop offset="60%" stopColor="#15191a" />
+          <stop offset="100%" stopColor="#0a0d0d" />
+        </radialGradient>
+      </defs>
+      <circle cx="60" cy="60" r="54" fill="url(#tyreShade)" />
+      <circle cx="60" cy="60" r="54" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
+      <circle cx="60" cy="60" r="30" fill="#f5f6f3" />
+      <circle cx="60" cy="60" r="30" fill="none" stroke="#c2c8c3" strokeWidth="1.5" />
+      <circle cx="60" cy="60" r="12" fill="#d6dad7" />
+      {Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        const x1 = 60 + Math.cos(angle) * 40;
+        const y1 = 60 + Math.sin(angle) * 40;
+        const x2 = 60 + Math.cos(angle) * 52;
+        const y2 = 60 + Math.sin(angle) * 52;
+        return (
+          <line
+            key={i}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke="#000"
+            strokeOpacity="0.4"
+            strokeWidth="4"
+          />
+        );
+      })}
+    </svg>
+  );
+}

@@ -1,0 +1,69 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { CatalogueBrowser } from "@/components/CatalogueBrowser";
+import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import {
+  getAllTyres,
+  uniqueBrands,
+  uniqueSizes,
+  uniqueApplications,
+  catalogueStats,
+} from "@/lib/catalogue";
+import { breadcrumbJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Tyre Catalogue | Bulk Truck, Commercial & Passenger Tyres Adelaide",
+  description:
+    "Browse wholesale tyre stock available now in Adelaide. Filter by size, brand and application. Minimum order four tyres with free Adelaide-wide delivery from Regency Park.",
+  alternates: { canonical: "/tyres" },
+};
+
+export default function TyresPage() {
+  const tyres = getAllTyres();
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Tyres", path: "/tyres" },
+            ]),
+          ),
+        }}
+      />
+      <div className="bg-[var(--color-surface-muted)]">
+        <div className="container-x py-10">
+          <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Tyres", path: "/tyres" }]} />
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="display text-[clamp(30px,5vw,48px)]">Shop available stock</h1>
+              <p className="mt-2 max-w-xl text-[var(--color-text-muted)]">
+                Search by size, brand or pattern. Mix any products — checkout opens at
+                four tyres total.
+              </p>
+            </div>
+            <span className="pill pill--muted">
+              {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units listed
+            </span>
+          </div>
+
+          <div className="mt-8">
+            <Suspense fallback={<p className="text-[var(--color-text-muted)]">Loading catalogue…</p>}>
+              <CatalogueBrowser
+                tyres={tyres}
+                sizes={uniqueSizes()}
+                brands={uniqueBrands()}
+                applications={uniqueApplications()}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+      <FreeDeliveryCTA />
+    </>
+  );
+}

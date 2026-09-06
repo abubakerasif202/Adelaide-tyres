@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+/*
+ * Adelaide Wholesale Tyres — design system.
+ * Premium dark-automotive-green identity. Barlow Condensed for impact,
+ * Barlow for everything functional.
+ */
+
+@theme {
+  /* Brand palette */
+  --color-green: #063b2c;
+  --color-green-dark: #052a20;
+  --color-green-deep: #04211a;
+  --color-ink: #090c0c;
+  --color-charcoal: #151a1a;
+  --color-gunmetal: #2c3233;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f6f3;
+  --color-border: #d6dad7;
+  --color-border-strong: #c2c8c3;
+  --color-field-border: #c4cec8;
+  --color-text: #151a1a;
+  --color-text-muted: #68716d;
+  --color-red: #f31217;
+  --color-red-hover: #d40f14;
+  --color-red-deep: #b60c11;
+  --color-white: #ffffff;
+
+  /* Typography */
+  --font-sans: var(--font-barlow), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-display: var(--font-barlow-condensed), "Arial Narrow", system-ui, sans-serif;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  /* Shadows — restrained */
+  --shadow-card: 0 10px 26px 0 rgba(9, 12, 12, 0.09);
+  --shadow-raise: 0 16px 40px -8px rgba(9, 12, 12, 0.16);
+  --shadow-red: 0 8px 18px -4px rgba(243, 18, 23, 0.28);
+
+  /* Layout */
+  --container-max: 1280px;
+  --header-height: 132px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.no-scroll {
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, p, figure, dl, dd, ul, ol {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-green);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.on-dark :focus-visible {
+  outline-color: #7fd1b3;
+}
+
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 64px);
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 12px 26px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+      transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .btn--red {
+    background: var(--color-red);
+    color: var(--color-white);
+    box-shadow: var(--shadow-red);
+  }
+  .btn--red:not(:disabled):hover {
+    background: var(--color-red-hover);
+    transform: translateY(-1px);
+  }
+  .btn--green {
+    background: var(--color-green);
+    color: var(--color-white);
+  }
+  .btn--green:not(:disabled):hover {
+    background: var(--color-green-dark);
+    transform: translateY(-1px);
+  }
+  .btn--dark {
+    background: var(--color-ink);
+    color: var(--color-white);
+  }
+  .btn--dark:not(:disabled):hover {
+    background: var(--color-charcoal);
+  }
+  .btn--outline {
+    background: transparent;
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+  .btn--outline:not(:disabled):hover {
+    border-color: var(--color-ink);
+    background: var(--color-white);
+  }
+  .btn--outline-light {
+    background: transparent;
+    color: var(--color-white);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .btn--outline-light:not(:disabled):hover {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+  .btn--white {
+    background: var(--color-white);
+    color: var(--color-ink);
+  }
+  .btn--white:not(:disabled):hover {
+    background: var(--color-surface-muted);
+  }
+
+  /* Form fields */
+  .field-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 7px;
+  }
+  .field-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 13px 16px;
+    background: var(--color-white);
+    border: 1px solid var(--color-field-border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field-input::placeholder {
+    color: #9aa39e;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-green);
+    box-shadow: 0 0 0 3px rgba(6, 59, 44, 0.12);
+  }
+  .field-input[aria-invalid="true"] {
+    border-color: var(--color-red);
+  }
+  .field-error {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-red-deep);
+  }
+
+  .surface-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+  .pill--green {
+    background: var(--color-green);
+    color: var(--color-white);
+  }
+  .pill--red {
+    background: var(--color-red);
+    color: var(--color-white);
+  }
+  .pill--muted {
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
+
+  .link-underline {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--color-border-strong);
+  }
+  .link-underline:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
