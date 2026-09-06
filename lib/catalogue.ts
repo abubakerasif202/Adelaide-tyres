@@ -128,15 +128,15 @@ export const catalogue: Tyre[] = [
     id: "greforce-g-pilot-29580r225",
     slug: "greforce-g-pilot-295-80r22-5",
     brand: "Greforce",
-    pattern: "G-PILOT",
+    pattern: "G-PILOT X1",
     size: "295/80R22.5",
     application: "truck",
     position: "steer",
     stock: 37,
     price: 359,
-    image: null,
+    image: "/images/tyres/greforce-g-pilot-295-80r22-5.webp",
     description:
-      "295/80R22.5 steer radial for prime movers and rigids. Five-rib tread for predictable handling on regional and highway routes.",
+      "295/80R22.5 steer radial for prime movers and rigids. Four straight grooves and a wide running surface for predictable handling and even wear on regional and highway routes.",
     featured: false,
   },
 ];

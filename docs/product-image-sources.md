@@ -5,14 +5,53 @@ Accuracy policy: a product only gets a photo when the exact model/pattern could 
 verified against manufacturer imagery. Where it could not, the neutral placeholder
 (`components/TyreImage.tsx`) is kept and the reason is recorded below.
 
-Date accessed: 2026-09-06.
+Dates accessed: 2026-09-06 (RMR61), 2026-09-07 (G-PILOT X1 + catalogue verification).
+See `docs/catalogue-verification.md` for the full model-name / size research on the
+four questionable SKUs.
+
+---
+
+## Greforce G-PILOT X1 295/80R22.5 — REAL IMAGE ✅
+
+Local file:
+`public/images/tyres/greforce-g-pilot-295-80r22-5.webp` (1000×1000, WebP, ~42 KB)
+
+Source page:
+https://www.greforcetire.com/566.html — official Greforce (Shandong Greforce Tire
+Co. / Shandong Kaixuan Tire Co.) product page for the **G-PILOT X1**.
+
+Direct image URL (original, before crop/convert):
+https://vhost-ln-s03-cdn.hcwebsite.com/35ae9121d02756c703a7014bef37bbd9/data/thumb/res/en/20240716/x1_0682265b.jpg_20240716141549_800x800.jpg
+(800×800 JPEG, white background, hosted on Greforce's own CDN)
+
+Verification:
+- Image is published on Greforce's own G-PILOT X1 product page.
+- That page lists the size **295/80R22.5** (and 315/80R22.5), **steer** position,
+  long-haul highway application, and a "four straight grooves / wide running
+  surface" rib tread — all matching our catalogue entry.
+- The tyre sidewall in the photo is moulded `GREFORCE`. The photo is a studio
+  render on white and does not show the size text, but its provenance (the exact
+  model's official page) is unambiguous.
+- Cross-checked the G-PILOT family: X1 = steer (this one), X3 = drive, X5 = light
+  truck — so the steer/rib match is specifically to X1.
+
+Optimisation performed:
+- Cropped out the "GREFORCE / together and better" logo banner across the top of
+  the source image, re-centred the tyre, padded to a 680×680 white square,
+  added a 30 px white margin, resized to 1000×1000.
+- Encoded WebP q88 (method 6). No background removal, no stretching, aspect
+  ratio preserved, tyre not cropped.
+
+Licensing / usage rights:
+Manufacturer product image for a tyre being resold. Not confirmed royalty-free —
+usage rights should be confirmed with Greforce before commercial launch.
 
 ---
 
 ## Ralson RMR61 295/80R22.5 — REAL IMAGE ✅
 
 Local file:
-`public/images/tyres/ralson-rmr61-295-80r22-5.webp` (1200×879, WebP, ~41 KB)
+`public/images/tyres/ralson-rmr61-295-80r22-5.webp` (1200×1200, WebP, ~59 KB)
 
 Source page:
 https://ralsontires.com/tires2/rmr61/ (Ralson Tire North America — official manufacturer site)
@@ -33,10 +72,10 @@ Verification:
   "all-position radial, even wear" description.
 
 Optimisation performed:
-- Cropped from the 2500×1026 marketing render to 1400×1026 to remove dead
-  background and centre the tyre (ImageMagick, lossless crop).
-- Resized to 1200 px wide and encoded to WebP q82 (method 6).
-- No background removal, no stretching; aspect ratio preserved.
+- Cropped from the 2500×1026 marketing render around the tyre, squared to
+  1:1 with a seamless edge-stretched gradient fill (no letterbox bars),
+  resized to 1200×1200 and encoded to WebP q85 (method 6).
+- No background removal, no stretching; aspect ratio preserved; tyre not cropped.
 
 Licensing / usage rights:
 Manufacturer marketing render of a product being resold. Usage rights should be
@@ -56,49 +95,40 @@ Why no image:
   at all.
 - No manufacturer photo of GR881W could be confidently isolated. Placeholder kept.
 
-## Greforce G-ARMOR 11R22.5 — PLACEHOLDER (model could not be found)
+## Greforce G-ARMOR 11R22.5 — PLACEHOLDER (model unverified — needs physical photo)
 
 Why no image:
-- No web result anywhere for a Greforce pattern called "G-ARMOR". Greforce's real
-  naming scheme is GR###, GRD##, LWD## (verified on greforcetire.com).
-- This pattern name could not be verified as a real product. Using any Greforce
-  photo would be a knowing substitution, which the brief forbids. Placeholder kept.
-- **Action for owner:** confirm the correct Greforce pattern name for this SKU.
+- No result anywhere for a Greforce pattern called "G-ARMOR" / "G-ARMOUR" —
+  not on greforcetire.com (product list, pages /563–/572, G-PILOT related links),
+  not on any distributor. Greforce **does** use a "G-" family ("G-PILOT"), so a
+  parallel "G-ARMOR" family is plausible but unproven.
+- Substituting any other Greforce pattern is forbidden. Placeholder kept.
+- **Action for owner:** see `docs/catalogue-verification.md` — take a sidewall
+  photo (brand, moulded pattern code, size, load index) + straight-on tread.
 
-## Greforce G-PILOT 295/80R22.5 — PLACEHOLDER (model could not be found)
-
-Why no image:
-- Same as G-ARMOR: no evidence of a Greforce pattern called "G-PILOT". Greforce
-  steer patterns found in searches are GR998, GR662, etc.
-- Could not be verified. Placeholder kept.
-- **Action for owner:** confirm the correct Greforce pattern name for this SKU.
-
-## Jumbo SS618 275/70R22.5 — PLACEHOLDER (specific model not found)
+## Jumbo SS618 275/70R22.5 — PLACEHOLDER (model unverified — needs physical photo)
 
 Why no image:
 - "Jumbo" is a real brand (Qingdao Grandstone Tyre) and the SS-series is real
   (SS200, SS366, SS580, SS668 verified on grandstonetyre.com), but no listing or
   photo for "SS618" specifically could be found.
-- SS668 (11R22.5 drive) exists and is close in numbering, but it is a different
-  pattern — substituting it would misrepresent the product. Placeholder kept.
-- **Action for owner:** confirm whether this SKU is SS618 or a neighbouring
-  SS-series pattern, then a Grandstone/Jumbo product photo can be sourced.
+- SS668 (11R22.5 drive) is the closest by number but is a different size and a
+  different block pattern — substituting it would misrepresent the product.
+- **Action for owner:** see `docs/catalogue-verification.md` — take a sidewall
+  photo (brand "JUMBO", moulded "SS___" code, size, ply) + straight-on tread.
 
-## Ralson RAC55 295/80R22.5 — PLACEHOLDER (model verified, but data mismatch)
+## Ralson RAC55 295/80R22.5 — PLACEHOLDER (catalogue data is INCORRECT for RAC55)
 
-Why no image, despite the model being real:
-- RAC55 is a real Ralson pattern with an official page:
-  https://ralsontires.com/tires/rac55/ — a clean render exists.
-- BUT the official RAC55 is an **open-shoulder all-position block tyre for
-  construction / waste haul**, offered in 315/80R22.5, 11R22.5, 11R24.5,
-  385/65R22.5, 425/65R22.5 — **not** 295/80R22.5, and **not** the "steer-axle rib
-  tread" our catalogue currently describes.
-- Putting the real RAC55 photo (which shows `315/80R22.5` on the sidewall and an
-  aggressive block tread) next to our "295/80R22.5 steer rib" copy would
-  misrepresent the product.
-- **Action for owner:** correct this catalogue entry — either the size/description
-  are wrong, or the pattern code is wrong. Once the real spec is known, the
-  matching Ralson render can be dropped in from ralsontires.com.
+Why no image:
+- RAC55 is a real Ralson pattern (https://ralsontires.com/tires/rac55/) but it is
+  an **all-position construction / waste-haul open-shoulder block tyre** offered in
+  315/80R22.5, 11R22.5, 11R24.5, 385/65R22.5, 425/65R22.5 — **not 295/80R22.5**,
+  and **not the "steer-axle rib" tread** the catalogue describes. Deep 24/32 tread.
+- Ralson's real 295/80R22.5 steer rib tyre is the **RMR61** (already a separate
+  SKU here). The "RAC55 295/80R22.5 steer rib" line cannot be photographed
+  accurately because it does not correspond to a real product as written.
+- **Action for owner:** see `docs/catalogue-verification.md` — the SKU needs to be
+  identified from the physical tyre before it gets a photo or a corrected entry.
 
 ---
 
@@ -107,11 +137,11 @@ Why no image, despite the model being real:
 | Product | Status | Source |
 |---|---|---|
 | Ralson RMR61 295/80R22.5 | ✅ real photo | ralsontires.com official |
-| Greforce GR881W 11R22.5 | placeholder | no isolatable GR881W photo |
-| Greforce G-ARMOR 11R22.5 | placeholder | pattern name unverifiable |
-| Greforce G-PILOT 295/80R22.5 | placeholder | pattern name unverifiable |
-| Jumbo SS618 275/70R22.5 | placeholder | SS618 not found (SS-series is real) |
-| Ralson RAC55 295/80R22.5 | placeholder | model real but catalogue size/desc mismatch |
+| Greforce G-PILOT X1 295/80R22.5 | ✅ real photo | greforcetire.com official |
+| Greforce GR881W 11R22.5 | placeholder | no isolatable GR881W photo (and see verification doc: real GR881 is a steer rib, not the drive block currently described) |
+| Greforce G-ARMOR 11R22.5 | placeholder | pattern unverified — needs physical photo |
+| Jumbo SS618 275/70R22.5 | placeholder | SS618 not found — needs physical photo |
+| Ralson RAC55 295/80R22.5 | placeholder | catalogue size/position/tread are wrong for RAC55 — needs physical photo |
 
 **Licensing note:** all candidate imagery is manufacturer/distributor marketing
 material for products being resold. None of it is confirmed royalty-free. Usage
