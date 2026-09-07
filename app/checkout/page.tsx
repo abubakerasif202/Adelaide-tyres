@@ -294,7 +294,7 @@ export default function CheckoutPage() {
                 </p>
                 {confirmation.mode === "test" && (
                   <p className="mx-auto mt-3 max-w-md text-[13px] text-[var(--color-text-muted)]">
-                    Test checkout: no payment was taken. Pricing shown is current wholesale pricing.
+                    Test checkout: no payment was taken. Pricing and availability are confirmed before dispatch.
                   </p>
                 )}
                 {!confirmation.notified && (
@@ -351,7 +351,7 @@ export default function CheckoutPage() {
                 </div>
               )}
               <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
-                Pricing shown is current wholesale pricing from live stock.
+                Pricing and availability are confirmed again before dispatch.
               </p>
             </div>
           </aside>

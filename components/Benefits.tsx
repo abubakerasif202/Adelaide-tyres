@@ -3,8 +3,8 @@ import { Reveal } from "./Reveal";
 const benefits = [
   { title: "No minimum order", copy: "Order any quantity" },
   { title: "8+ tyres", copy: "Free Adelaide-wide delivery", detail: "1–7 tyres · $50 delivery", highlight: true },
-  { title: "Live stock", copy: "Order from current Adelaide inventory" },
-  { title: "Trade support", copy: "Truck, commercial and passenger supply" },
+  { title: "Listed stock", copy: "Browse the Adelaide inventory shown online" },
+  { title: "Trade support", copy: "Truck and commercial tyre supply" },
 ];
 
 export function Benefits() {

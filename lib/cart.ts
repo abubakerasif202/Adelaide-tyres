@@ -5,6 +5,7 @@
 
 // Explicit .ts extension so Node's test runner can resolve this at runtime.
 import { order } from "./config.ts";
+import { getTyreBySlug } from "./catalogue.ts";
 
 export type CartLine = {
   id: string;
@@ -115,3 +116,44 @@ export function clearCart(): Cart {
 }
 
 export const EMPTY_CART: Cart = { lines: [] };
+
+/**
+ * Restores a browser-stored cart using catalogue data, never the stored price,
+ * name, stock or image. Browser storage is user-controlled and can be stale or
+ * edited, so it is only a record of SKU quantities. The orders API performs the
+ * same authority check again before any notification is sent.
+ */
+export function restoreStoredCart(input: unknown): Cart {
+  if (!input || typeof input !== "object" || !Array.isArray((input as Cart).lines)) {
+    return EMPTY_CART;
+  }
+
+  const quantities = new Map<string, number>();
+  for (const line of (input as { lines: unknown[] }).lines) {
+    if (!line || typeof line !== "object") continue;
+    const { slug, quantity } = line as { slug?: unknown; quantity?: unknown };
+    if (typeof slug !== "string" || typeof quantity !== "number" ||
+      !Number.isSafeInteger(quantity) || quantity < MIN_QTY_PER_LINE) continue;
+    const tyre = getTyreBySlug(slug);
+    if (!tyre || tyre.stock <= 0) continue;
+    quantities.set(slug, Math.min(tyre.stock, (quantities.get(slug) ?? 0) + quantity));
+  }
+
+  return {
+    lines: [...quantities.entries()].flatMap(([slug, quantity]) => {
+      const tyre = getTyreBySlug(slug);
+      if (!tyre) return [];
+      return [{
+        id: tyre.id,
+        slug: tyre.slug,
+        brand: tyre.brand,
+        pattern: tyre.pattern,
+        size: tyre.size,
+        price: tyre.price,
+        quantity,
+        stock: tyre.stock,
+        image: tyre.image,
+      }];
+    }),
+  };
+}

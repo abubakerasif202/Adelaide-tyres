@@ -13,6 +13,16 @@ test("catalogue filters by brand via the search box", async ({ page }) => {
   await expect(page.getByRole("article")).toHaveCount(13);
 });
 
+test("footer only links to published application categories", async ({ page }) => {
+  await page.goto("/");
+  const footer = page.locator("footer");
+  await expect(footer.getByRole("link", { name: "Truck tyres" })).toHaveAttribute("href", "/tyres?application=truck");
+  await expect(footer.getByRole("link", { name: "Commercial tyres" })).toHaveAttribute("href", "/tyres?application=commercial");
+  await expect(footer.getByRole("link", { name: "Passenger" })).toHaveCount(0);
+  await page.goto("/tyres?application=commercial");
+  await expect(page.getByRole("article")).not.toHaveCount(0);
+});
+
 test("product detail page shows price and add to cart", async ({ page }) => {
   await page.goto("/tyres/greforce-gr881w-11r22-5");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("11R22.5");

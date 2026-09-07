@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Adelaide Wholesale Tyres",
   },
   description:
-    "Buy wholesale tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up. Truck, commercial, passenger and light-commercial tyres available from Regency Park.",
+    "Buy wholesale truck and commercial tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up, from Regency Park.",
   applicationName: business.name,
   alternates: { canonical: "/" },
   openGraph: {

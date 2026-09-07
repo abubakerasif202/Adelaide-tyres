@@ -130,7 +130,7 @@ export default function CartPage() {
                   Back to stock
                 </Link>
                 <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
-                  Pricing shown is current wholesale pricing from live stock.
+                  Pricing and availability are confirmed again by the wholesale team before dispatch.
                 </p>
               </div>
             </aside>

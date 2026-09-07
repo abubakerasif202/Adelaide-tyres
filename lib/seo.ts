@@ -74,11 +74,12 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
 }
 
 export function productJsonLd(tyre: Tyre) {
-  return {
+  const product: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: tyreFullName(tyre),
     brand: { "@type": "Brand", name: tyre.brand },
+    sku: tyre.id,
     mpn: tyre.pattern,
     category: "Tyres",
     description: tyre.description,
@@ -94,4 +95,7 @@ export function productJsonLd(tyre: Tyre) {
       url: `${siteUrl}/tyres/${tyre.slug}`,
     },
   };
+  // Never put the neutral fallback in Product schema as though it were a photo.
+  if (tyre.image) product.image = `${siteUrl}${tyre.image}`;
+  return product;
 }

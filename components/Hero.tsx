@@ -24,8 +24,8 @@ export function Hero() {
             Pay <span className="text-[#7fd1b3]">wholesale.</span>
           </h1>
           <p className="hero__copy mt-5 max-w-xl text-[17px] leading-relaxed text-white/82 md:text-[18px]">
-            No minimum order. $50 Adelaide-wide delivery for 1–7 tyres. Free Adelaide-wide delivery from 8 tyres. Commercial, truck,
-            light-commercial and passenger tyres available from current stock.
+            No minimum order. $50 Adelaide-wide delivery for 1–7 tyres. Free Adelaide-wide delivery from 8 tyres. Commercial truck
+            tyres listed online for Adelaide workshops, fleets and transport operators.
           </p>
           <div className="hero__actions mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/tyres" className="btn btn--red">

@@ -8,9 +8,8 @@ const columns = [
     heading: "Shop",
     links: [
       { label: "All tyres", href: "/tyres" },
-      { label: "Truck & commercial", href: "/tyres?application=truck" },
-      { label: "Passenger", href: "/tyres?application=passenger" },
-      { label: "Light commercial", href: "/tyres?application=light-commercial" },
+      { label: "Truck tyres", href: "/tyres?application=truck" },
+      { label: "Commercial tyres", href: "/tyres?application=commercial" },
     ],
   },
   {

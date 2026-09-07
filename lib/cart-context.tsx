@@ -18,6 +18,7 @@ import {
   getTotalTyreQuantity,
   qualifiesForFreeDelivery,
   removeLine,
+  restoreStoredCart,
   updateLineQuantity,
   type Cart,
   type CartLine,
@@ -48,18 +49,7 @@ function readStoredCart(): Cart {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return EMPTY_CART;
-    const parsed = JSON.parse(raw) as Cart;
-    if (!parsed || !Array.isArray(parsed.lines)) return EMPTY_CART;
-    // Trust only well-formed lines.
-    const lines = parsed.lines.filter(
-      (l): l is CartLine =>
-        !!l &&
-        typeof l.id === "string" &&
-        typeof l.price === "number" &&
-        typeof l.quantity === "number" &&
-        l.quantity > 0,
-    );
-    return { lines };
+    return restoreStoredCart(JSON.parse(raw));
   } catch {
     return EMPTY_CART;
   }

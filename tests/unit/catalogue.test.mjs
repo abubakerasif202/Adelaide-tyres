@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import { catalogue, getTyreBySlug, uniqueBrands, uniqueSizes } from "../../lib/catalogue.ts";
 import { clampQuantity } from "../../lib/cart.ts";
 import { filterTyres, DEFAULT_FILTERS } from "../../lib/filter.ts";
@@ -85,4 +87,23 @@ test("low-stock SKUs clamp quantity to available stock", () => {
   assert.equal(clampQuantity(10, rmr61_275.stock), 3);
   assert.equal(clampQuantity(10, att420.stock), 2);
   assert.equal(clampQuantity(10, sfr22.stock), 2);
+});
+
+test("every catalogue image mapping has a complete provenance record and local asset", () => {
+  const manifest = JSON.parse(readFileSync("docs/product-image-manifest.json", "utf8"));
+  assert.equal(manifest.length, catalogue.length);
+  assert.equal(new Set(manifest.map((entry) => entry.sku)).size, catalogue.length);
+  for (const tyre of catalogue) {
+    const entry = manifest.find((candidate) => candidate.sku === tyre.id);
+    assert.ok(entry, `missing manifest entry for ${tyre.id}`);
+    assert.equal(entry.brand, tyre.brand);
+    assert.equal(entry.pattern, tyre.pattern);
+    assert.equal(entry.size, tyre.size);
+    assert.equal(entry.localPath, tyre.image);
+    if (tyre.image) {
+      assert.ok(entry.sourceUrl, `missing source URL for ${tyre.id}`);
+      assert.ok(entry.rights, `missing rights status for ${tyre.id}`);
+      assert.ok(statSync(resolve("public", tyre.image.slice(1))).isFile());
+    }
+  }
 });
