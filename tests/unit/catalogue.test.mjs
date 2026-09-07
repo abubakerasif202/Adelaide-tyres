@@ -107,3 +107,26 @@ test("every catalogue image mapping has a complete provenance record and local a
     }
   }
 });
+
+test("historical inventory transcription remains complete and does not republish withheld rows", () => {
+  const [, ...lines] = readFileSync("docs/source-inventory/brand-name-historical.csv", "utf8").trim().split("\n");
+  const rows = lines.map((line) => {
+    const [page, row, brand, pattern, size, quantity] = line.split(",");
+    return { page: Number(page), row: Number(row), brand, pattern, size, quantity: Number(quantity) };
+  });
+  assert.equal(rows.length, 53);
+  assert.equal(rows.reduce((sum, row) => sum + row.quantity, 0), 725);
+  assert.deepEqual(rows.find((row) => row.row === 19), {
+    page: 1, row: 19, brand: "Greforce", pattern: "G-PILOT", size: "295/80r22.5", quantity: 37,
+  });
+  for (const row of [4, 17, 23]) {
+    const source = rows.find((entry) => entry.row === row);
+    assert.ok(source);
+    const isPublished = catalogue.some((tyre) =>
+      tyre.brand.toLowerCase() === source.brand.toLowerCase() &&
+      tyre.pattern.toLowerCase() === source.pattern.toLowerCase() &&
+      tyre.size.toLowerCase() === source.size.toLowerCase(),
+    );
+    assert.equal(isPublished, false, `historical row ${row} must remain withheld`);
+  }
+});
