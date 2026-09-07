@@ -69,12 +69,13 @@ export default function CartPage() {
                         Pattern {line.pattern} · {line.stock} in stock
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-3">
                       <QuantitySelector
                         value={line.quantity}
                         onChange={(q) => setQuantity(line.id, q)}
                         min={1}
-                        max={line.stock || undefined}
+                        max={line.stock}
+                        disabled={line.stock <= 0}
                         label={`Quantity for ${tyreFullName(line)}`}
                         size="sm"
                       />
@@ -111,6 +112,7 @@ export default function CartPage() {
               <div className="surface-card p-6">
                 <h2 className="display text-[24px]">Order summary</h2>
                 <dl className="mt-4 flex flex-col gap-3 text-[14px]">
+                  <Row label="Tyre subtotal" value={formatCurrency(subtotal)} />
                   <Row label="Total tyres" value={String(totalTyres)} />
                   <Row
                     label="Delivery"
@@ -118,7 +120,7 @@ export default function CartPage() {
                   />
                   <div className="my-1 h-px bg-[var(--color-border)]" />
                   <Row label="Wholesale pricing" value={order.pricingIsPlaceholder ? "Test pricing" : "Current"} />
-                  <Row label="Order total" value={formatTotal(subtotal)} strong />
+                  <Row label="Order total" value={formatTotal(subtotal + deliveryFee)} strong />
                 </dl>
 
                 <Link href="/checkout" className="btn btn--red mt-5 w-full">
@@ -143,7 +145,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   return (
     <div className="flex items-center justify-between">
       <dt className={strong ? "font-bold" : "text-[var(--color-text-muted)]"}>{label}</dt>
-      <dd className={strong ? "display text-[18px]" : "font-semibold"}>{value}</dd>
+      <dd key={value} className={`commerce-summary-value ${strong ? "display text-[18px]" : "font-semibold"}`}>{value}</dd>
     </div>
   );
 }

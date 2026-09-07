@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTyreBySlug } from "@/lib/catalogue";
+import { validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
 import { createPaymentIntent } from "@/lib/payment";
@@ -11,8 +11,6 @@ import {
   looksAutomated,
   rateLimit,
 } from "@/lib/submission-security";
-
-type IncomingLine = { slug?: unknown; quantity?: unknown };
 
 export async function POST(request: Request) {
   if (!(await isSameOrigin())) {
@@ -26,6 +24,9 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
+    return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Malformed request." }, { status: 400 });
   }
 
@@ -52,36 +53,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please check the highlighted fields.", errors }, { status: 422 });
   }
 
-  // Re-price and re-validate stock server-side from the catalogue — never trust
-  // client prices.
-  const incoming = Array.isArray(body.lines) ? (body.lines as IncomingLine[]) : [];
-  const lines = [];
-  for (const item of incoming) {
-    const tyre = typeof item.slug === "string" ? getTyreBySlug(item.slug) : undefined;
-    const quantity = Math.floor(Number(item.quantity));
-    if (!tyre || !Number.isFinite(quantity) || quantity < 1) {
-      return NextResponse.json({ error: "One or more items are no longer available." }, { status: 409 });
-    }
-    if (tyre.stock > 0 && quantity > tyre.stock) {
-      return NextResponse.json(
-        { error: `Only ${tyre.stock} of ${tyre.brand} ${tyre.pattern} ${tyre.size} available.` },
-        { status: 409 },
-      );
-    }
-    lines.push({
-      id: tyre.id,
-      brand: tyre.brand,
-      pattern: tyre.pattern,
-      size: tyre.size,
-      quantity,
-      price: tyre.price,
-    });
+  const validated = validateOrderLines(body.lines);
+  if ("error" in validated) {
+    return NextResponse.json({ error: validated.error }, { status: 409 });
   }
-
-  const totalTyres = lines.reduce((sum, l) => sum + l.quantity, 0);
-  if (lines.length === 0) {
-    return NextResponse.json({ error: "Your cart is empty." }, { status: 422 });
-  }
+  const lines = validated.lines;
+  const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
@@ -98,7 +75,7 @@ export async function POST(request: Request) {
   });
 
   try {
-    await sendNotification({
+    const { delivered } = await sendNotification({
       subject: `New bulk order ${intent.reference} · ${totalTyres} tyres`,
       replyTo: details.email,
       text: [
@@ -126,11 +103,10 @@ export async function POST(request: Request) {
         .filter(Boolean)
         .join("\n"),
     });
+    return NextResponse.json({ ...intent, subtotal, totalTyres, notified: delivered });
   } catch (err) {
     console.error("Order notification failed", err);
     // The order is still valid; surface a soft warning to the client.
     return NextResponse.json({ ...intent, subtotal, totalTyres, notified: false });
   }
-
-  return NextResponse.json({ ...intent, subtotal, totalTyres, notified: true });
 }

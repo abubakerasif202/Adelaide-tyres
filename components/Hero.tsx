@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { business } from "@/lib/config";
 import { catalogueStats } from "@/lib/catalogue";
-import { TyreImage } from "./TyreImage";
+import { HeroArtwork } from "./HeroArtwork";
 
 export function Hero() {
   return (
-    <section className="on-dark relative isolate bg-[var(--color-green)] text-white">
+    <section className="hero on-dark relative isolate overflow-hidden bg-[var(--color-green)] text-white">
       <div
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         style={{
@@ -13,21 +13,21 @@ export function Hero() {
             "radial-gradient(1100px 520px at 78% 12%, rgba(255,255,255,0.10), transparent 60%), linear-gradient(160deg, #063b2c 0%, #05271e 62%, #04211a 100%)",
         }}
       />
-      <div className="container-x relative grid gap-10 pt-14 pb-24 md:pt-24 md:pb-32 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div>
-          <p className="eyebrow inline-flex rounded-full bg-white/10 px-3 py-1.5 text-[#bfe8d8]">
+      <div className="container-x relative grid gap-12 pb-28 pt-14 md:pb-32 md:pt-22 lg:min-h-[650px] lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+        <div className="relative z-10">
+          <p className="hero__eyebrow eyebrow inline-flex rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[#bfe8d8]">
             Adelaide&apos;s wholesale tyre store
           </p>
-          <h1 className="display mt-5 text-[clamp(44px,7vw,84px)]">
+          <h1 className="hero__title display mt-5 max-w-[820px] text-[clamp(48px,7vw,88px)]">
             Buy tyres in bulk.
             <br />
-            Pay wholesale.
+            Pay <span className="text-[#7fd1b3]">wholesale.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-[17px] text-white/82">
-            No minimum order. $50 Adelaide-wide delivery, free from 8 tyres. Commercial, truck,
+          <p className="hero__copy mt-5 max-w-xl text-[17px] leading-relaxed text-white/82 md:text-[18px]">
+            No minimum order. $50 Adelaide-wide delivery for 1–7 tyres. Free Adelaide-wide delivery from 8 tyres. Commercial, truck,
             light-commercial and passenger tyres available from current stock.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="hero__actions mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/tyres" className="btn btn--red">
               Shop available stock
             </Link>
@@ -35,26 +35,14 @@ export function Hero() {
               Get a wholesale quote
             </Link>
           </div>
-          <p className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-white/75">
+          <p className="hero__meta mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-white/75">
             <span className="font-semibold text-white">✓ No minimum order</span>
             <span aria-hidden>·</span>
             <span>{business.address.oneLine}</span>
           </p>
         </div>
 
-        <div className="relative">
-          <div className="mx-auto flex max-w-sm items-center justify-center rounded-[var(--radius-lg)] bg-white/5 p-10 ring-1 ring-white/10">
-            <TyreImage src={null} alt="Wholesale truck tyre" size={260} priority />
-          </div>
-          <div className="surface-card absolute -bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 text-center text-[var(--color-ink)]">
-            <span className="display block text-[26px] leading-none">
-              {catalogueStats.unitsListed}
-            </span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-              units in supplied stock list
-            </span>
-          </div>
-        </div>
+        <HeroArtwork units={catalogueStats.unitsListed} skuLines={catalogueStats.skuLines} />
       </div>
     </section>
   );

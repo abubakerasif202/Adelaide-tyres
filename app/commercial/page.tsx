@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Reveal } from "@/components/Reveal";
 import { PageHeader } from "@/components/PageHeader";
 import { EnquiryForm } from "@/components/EnquiryForm";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
@@ -8,17 +9,17 @@ import { breadcrumbJsonLd } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "Commercial & Fleet Tyre Supply Adelaide | Wholesale Truck Tyres",
   description:
-    "Wholesale truck and commercial tyre supply for Adelaide transport companies, workshops, mechanics and fleet operators. Bulk stock, recurring supply and free Adelaide-wide delivery from Regency Park.",
+    "Wholesale truck and commercial tyre supply for Adelaide transport companies, workshops, mechanics and fleet operators. No minimum order. $50 Adelaide-wide delivery for 1–7 tyres, free from 8 tyres. Regency Park warehouse pickup is free.",
   alternates: { canonical: "/commercial" },
 };
 
 const blocks = [
   { title: "Truck tyres", copy: "Steer, drive and trailer patterns in 22.5\" fitments from current stock." },
   { title: "Commercial tyres", copy: "Light-truck and medium commercial sizes for distribution and service fleets." },
-  { title: "Fleet purchasing", copy: "Consolidated ordering across sites with one delivery and one invoice." },
+  { title: "Fleet purchasing", copy: "Mix products and quantities from current Adelaide stock for your business." },
   { title: "Bulk stock", copy: "Order to your run rate — quantities aren't capped at a single set." },
-  { title: "Recurring supply", copy: "Set a standing order and we hold stock against your schedule." },
-  { title: "Free Adelaide delivery", copy: "Every qualifying order delivered across metropolitan Adelaide at no charge." },
+  { title: "Recurring supply", copy: "Contact the wholesale team to discuss your sizes, quantities and supply needs." },
+  { title: "Free Adelaide delivery", copy: "Free Adelaide-wide delivery for 8+ tyres. 1–7 tyres: $50 delivery. Warehouse pickup is free." },
 ];
 
 export default function CommercialPage() {
@@ -46,10 +47,10 @@ export default function CommercialPage() {
         <div className="container-x py-14">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {blocks.map((b) => (
-              <div key={b.title} className="surface-card p-6">
+              <Reveal key={b.title} className="surface-card p-6">
                 <h2 className="display text-[21px]">{b.title}</h2>
                 <p className="mt-2 text-[14px] text-[var(--color-text-muted)]">{b.copy}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { announcement, nav } from "@/lib/config";
 import { useCart } from "@/lib/cart-context";
 import { Logo } from "./Logo";
@@ -13,10 +13,10 @@ function CartLink({ onNavigate }: { onNavigate?: () => void }) {
     <Link
       href="/cart"
       onClick={onNavigate}
-      className="btn btn--green min-h-[44px] px-4 py-2"
+      className="header-cart btn btn--green min-h-[44px] px-4 py-2"
       aria-label={`Cart, ${hydrated ? totalTyres : 0} tyres`}
     >
-      Cart {hydrated ? totalTyres : 0}
+      Cart <span key={totalTyres} className="cart-count" aria-hidden="true">{hydrated ? totalTyres : 0}</span>
     </Link>
   );
 }
@@ -25,6 +25,8 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [compact, setCompact] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 24);
@@ -35,25 +37,71 @@ export function Header() {
 
   useEffect(() => {
     document.body.classList.toggle("no-scroll", open);
-    return () => document.body.classList.remove("no-scroll");
+    const pageRegions = [document.querySelector("main#main"), document.querySelector("footer")];
+    for (const region of pageRegions) {
+      if (region instanceof HTMLElement) region.inert = open;
+    }
+    if (open) menuRef.current?.querySelector<HTMLElement>("a")?.focus();
+    return () => {
+      document.body.classList.remove("no-scroll");
+      for (const region of pageRegions) {
+        if (region instanceof HTMLElement) region.inert = false;
+      }
+    };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeAtDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setOpen(false);
+    };
+    desktop.addEventListener("change", closeAtDesktop);
+    return () => desktop.removeEventListener("change", closeAtDesktop);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50">
+    <header className="site-header sticky top-0 z-50" data-compact={compact || undefined}>
       <div className="bg-[var(--color-ink)] text-white">
         <div className="container-x flex h-[38px] items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em]">
-          <span>{announcement.message}</span>
+          <span className="announcement-copy"><span className="sm:hidden">No minimum · $50 delivery 1–7 · Free 8+</span><span className="hidden sm:inline">{announcement.message}</span></span>
           <span className="hidden md:block text-white/70">{announcement.address}</span>
         </div>
       </div>
 
       <div
-        className={`border-b border-[var(--color-border)] bg-white transition-[padding] ${
+        className={`header-main border-b border-[var(--color-border)] bg-white/96 backdrop-blur-md ${
           compact ? "py-2" : "py-3.5"
         }`}
       >
         <div className="container-x flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Adelaide Wholesale Tyres home">
+          <Link href="/" aria-label="Adelaide Wholesale Tyres home" className="header-logo rounded-sm" onClick={() => setOpen(false)}>
             <Logo tone="dark" />
           </Link>
 
@@ -79,8 +127,9 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2.5">
-            <CartLink />
+            <CartLink onNavigate={() => setOpen(false)} />
             <button
+              ref={menuButtonRef}
               type="button"
               className="btn btn--outline min-h-[44px] px-4 py-2 lg:hidden"
               aria-expanded={open}
@@ -95,8 +144,9 @@ export function Header() {
 
       {open && (
         <div
+          ref={menuRef}
           id="mobile-nav"
-          className="lg:hidden fixed inset-x-0 bottom-0 top-[calc(38px+69px)] z-40 overflow-y-auto bg-white"
+          className="mobile-menu lg:hidden fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-white"
         >
           <nav aria-label="Mobile" className="container-x flex flex-col py-4">
             {nav.map((item) => (

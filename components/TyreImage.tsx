@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 type Props = {
   src: string | null;
@@ -10,6 +10,7 @@ type Props = {
   size?: number;
   priority?: boolean;
   className?: string;
+  sizes?: string;
 };
 
 /**
@@ -17,7 +18,8 @@ type Props = {
  * tyre placeholder. No branded model photography is invented — when `src` is
  * null this is deliberately generic and swap-ready.
  */
-export function TyreImage({ src, alt, size = 120, priority = false, className }: Props) {
+export function TyreImage({ src, alt, size = 120, priority = false, className, sizes }: Props) {
+  const gradientId = useId();
   const [failed, setFailed] = useState(false);
   const cls = ["shrink-0", className].filter(Boolean).join(" ");
 
@@ -28,10 +30,10 @@ export function TyreImage({ src, alt, size = 120, priority = false, className }:
         alt={alt}
         width={size}
         height={size}
-        priority={priority}
+        preload={priority}
         className={cls}
         style={{ objectFit: "contain" }}
-        sizes={`${size}px`}
+        sizes={sizes ?? `${size}px`}
         onError={() => setFailed(true)}
       />
     );
@@ -47,13 +49,13 @@ export function TyreImage({ src, alt, size = 120, priority = false, className }:
       className={cls}
     >
       <defs>
-        <radialGradient id="tyreShade" cx="42%" cy="38%" r="70%">
+        <radialGradient id={gradientId} cx="42%" cy="38%" r="70%">
           <stop offset="0%" stopColor="#2b3130" />
           <stop offset="60%" stopColor="#15191a" />
           <stop offset="100%" stopColor="#0a0d0d" />
         </radialGradient>
       </defs>
-      <circle cx="60" cy="60" r="54" fill="url(#tyreShade)" />
+      <circle cx="60" cy="60" r="54" fill={`url(#${gradientId})`} />
       <circle cx="60" cy="60" r="54" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
       <circle cx="60" cy="60" r="30" fill="#f5f6f3" />
       <circle cx="60" cy="60" r="30" fill="none" stroke="#c2c8c3" strokeWidth="1.5" />

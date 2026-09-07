@@ -71,7 +71,7 @@ are hidden rather than showing placeholder data.
 See **"Anything requiring real credentials / data"** in the handover notes:
 
 - `RESEND_API_KEY` / `ENQUIRY_TO_EMAIL` / `ENQUIRY_FROM_EMAIL` — form delivery
-- `STRIPE_SECRET_KEY` (+ publishable / webhook) — wire the live path in `lib/payment.ts`
+- Stripe is intentionally not enabled: checkout currently issues an order reference and collects no card details. Do not add a Stripe secret until the server-side payment, webhook and idempotency paths are implemented.
 - `NEXT_PUBLIC_BUSINESS_PHONE` / `NEXT_PUBLIC_BUSINESS_EMAIL` — real contact details
 - Wholesale prices and stock in `lib/catalogue.ts` are real, business-supplied
   figures. Product photography is verified only where noted in

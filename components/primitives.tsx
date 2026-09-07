@@ -4,11 +4,12 @@ export function StockBadge({ stock }: { stock: number }) {
   if (stock <= 0) {
     return <span className="pill pill--muted">Out of stock</span>;
   }
-  return <span className="pill pill--green">{stock} in stock</span>;
+  const label = stock <= 10 ? "Low stock" : stock >= 40 ? "High stock" : "Current stock";
+  return <span className="pill pill--green">{label} · {stock}</span>;
 }
 
 export function BadgePill({ label }: { label: string }) {
-  return <span className="pill pill--red">{label}</span>;
+  return <span className="pill pill--muted">{label}</span>;
 }
 
 export function PriceDisplay({ price, per = "ea" }: { price: number; per?: string }) {

@@ -52,6 +52,11 @@ export function EnquiryForm({ variant = "contact" }: { variant?: Variant }) {
         setStatus("error");
         return;
       }
+      if (data.delivered !== true) {
+        setFormError("Your enquiry could not be delivered. Please try again later. Your details are still here.");
+        setStatus("error");
+        return;
+      }
       setStatus("sent");
     } catch {
       setFormError("Network error. Please try again, or call us directly.");
@@ -61,7 +66,7 @@ export function EnquiryForm({ variant = "contact" }: { variant?: Variant }) {
 
   if (status === "sent") {
     return (
-      <div className="surface-card p-8 text-center">
+      <div className="surface-card p-8 text-center" role="status">
         <span className="pill pill--green">Received</span>
         <p className="mt-4 text-[16px] font-semibold">{HEADINGS[variant].success}</p>
       </div>

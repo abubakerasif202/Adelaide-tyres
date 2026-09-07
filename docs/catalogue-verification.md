@@ -3,6 +3,10 @@
 Research date: 2026-09-07. Sources are manufacturer sites first, then established
 distributors/wholesalers. Marketplace titles alone were not treated as proof.
 
+Publication status: the unverified G-ARMOR and SS618 lines, plus the incorrect
+RAC55 295/80R22.5 line, are excluded from the public catalogue until physical
+stock confirmation supplies an exact brand, pattern, size and application.
+
 Summary table:
 
 | Current SKU | Status | Verified real product | Correct size(s) | Action |

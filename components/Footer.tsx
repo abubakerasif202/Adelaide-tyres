@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { business } from "@/lib/config";
 import { Logo } from "./Logo";
+import { Reveal } from "./Reveal";
 
 const columns = [
   {
@@ -40,7 +41,8 @@ const columns = [
 export function Footer() {
   return (
     <footer className="on-dark bg-[var(--color-ink)] text-white/80">
-      <div className="container-x grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(4,1fr)]">
+      <div className="container-x grid gap-10 py-16 md:grid-cols-[1.4fr_repeat(4,1fr)]">
+        <Reveal>
         <div>
           <Logo tone="light" />
           <p className="mt-4 max-w-xs text-[14px]">
@@ -53,8 +55,10 @@ export function Footer() {
             {business.domain}
           </p>
         </div>
-        {columns.map((col) => (
-          <div key={col.heading}>
+        </Reveal>
+        {columns.map((col, index) => (
+          <Reveal key={col.heading} delay={index * 60}>
+          <div>
             <h3 className="eyebrow text-[#7fd1b3]">{col.heading}</h3>
             <ul className="mt-4 flex flex-col gap-2.5 text-[14px]">
               {col.links.map((link) => (
@@ -66,12 +70,13 @@ export function Footer() {
               ))}
             </ul>
           </div>
+          </Reveal>
         ))}
       </div>
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col gap-1 py-6 text-[12px] text-white/55 sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} {business.name}</span>
-          <span>Bulk orders · No minimum order · $50 delivery under 8 tyres, free from 8+</span>
+          <span>No minimum order · $50 delivery for 1–7 tyres · Free delivery from 8 tyres</span>
         </div>
       </div>
     </footer>

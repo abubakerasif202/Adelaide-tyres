@@ -24,6 +24,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Malformed request." }, { status: 400 });
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+  }
 
   if (looksAutomated({ honeypot: body.company_website, startedAt: Number(body.startedAt) })) {
     return NextResponse.json({ ok: true });

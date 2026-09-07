@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { getDeliveryFee, getLineSubtotal, qualifiesForFreeDelivery } from "@/lib/cart";
 import { business, order } from "@/lib/config";
@@ -30,6 +30,10 @@ export default function CheckoutPage() {
   const [confirmation, setConfirmation] = useState<{ reference: string; mode: string; notified: boolean } | null>(null);
   const [startedAt] = useState(() => Date.now());
 
+  useEffect(() => {
+    if (hasErrors(errors)) document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [errors]);
+
   const destination = { method: details.deliveryMethod };
   const freeDelivery = qualifiesForFreeDelivery(cart, destination);
   const deliveryFee = getDeliveryFee(cart, destination);
@@ -38,11 +42,12 @@ export default function CheckoutPage() {
 
   const summaryRows = useMemo(
     () => [
-      { label: "Tyres", value: String(totalTyres) },
+      { label: "Tyre subtotal", value: formatCurrency(subtotal) },
+      { label: "Total tyres", value: String(totalTyres) },
       { label: "Delivery", value: freeDelivery ? "Free" : formatCurrency(deliveryFee) },
       { label: "Wholesale pricing", value: order.pricingIsPlaceholder ? "Test pricing" : "Current" },
     ],
-    [totalTyres, freeDelivery, deliveryFee],
+    [subtotal, totalTyres, freeDelivery, deliveryFee],
   );
 
   if (hydrated && cart.lines.length === 0 && !confirmation) {
@@ -69,7 +74,6 @@ export default function CheckoutPage() {
     const found = validateCheckoutDetails(details);
     setErrors(found);
     if (!hasErrors(found)) setStep(2);
-    else document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }
 
   async function placeOrder() {
@@ -123,8 +127,8 @@ export default function CheckoutPage() {
               <div className="mt-4">
                 <DeliveryStatus
                   totalTyres={totalTyres}
-                  qualifiesForFreeDelivery={freeDelivery}
-                  deliveryFee={deliveryFee}
+                  qualifiesForFreeDelivery={totalTyres >= order.delivery.freeQualifyingTyres}
+                  deliveryFee={getDeliveryFee(cart)}
                 />
               </div>
               <ul className="mt-5 flex flex-col gap-4">
@@ -146,7 +150,8 @@ export default function CheckoutPage() {
                       value={line.quantity}
                       onChange={(q) => setQuantity(line.id, q)}
                       min={1}
-                      max={line.stock || undefined}
+                      max={line.stock}
+                      disabled={line.stock <= 0}
                       label={`Quantity for ${tyreFullName(line)}`}
                       size="sm"
                     />
@@ -159,7 +164,7 @@ export default function CheckoutPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" className="btn btn--red" onClick={goToDelivery}>
                   Continue to delivery
                 </button>
@@ -188,7 +193,7 @@ export default function CheckoutPage() {
                     checked={details.deliveryMethod === "delivery"}
                     onChange={() => set({ deliveryMethod: "delivery" })}
                     title="Adelaide delivery"
-                    copy={`${business.serviceArea.description} — ${formatCurrency(order.delivery.feeAud)}, free at ${order.delivery.freeQualifyingTyres}+ tyres`}
+                    copy={`${getDeliveryFee(cart) === 0 ? "FREE" : formatCurrency(getDeliveryFee(cart))} · ${business.serviceArea.description}`}
                   />
                   <FulfilmentOption
                     checked={details.deliveryMethod === "pickup"}
@@ -224,7 +229,7 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" className="btn btn--outline" onClick={() => setStep(0)}>
                   Back
                 </button>
@@ -264,7 +269,7 @@ export default function CheckoutPage() {
                   {submitError}
                 </p>
               )}
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>
                   Back
                 </button>
@@ -298,7 +303,7 @@ export default function CheckoutPage() {
                     please also call or email to confirm.
                   </p>
                 )}
-                <div className="mt-6 flex justify-center gap-3">
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Link href="/tyres" className="btn btn--green">
                     Continue shopping
                   </Link>
@@ -325,7 +330,7 @@ export default function CheckoutPage() {
                 <div className="my-1 h-px bg-[var(--color-border)]" />
                 <div className="flex justify-between">
                   <dt className="font-bold">Order total</dt>
-                  <dd className="display text-[18px]">{formatTotal(subtotal)}</dd>
+                  <dd className="commerce-summary-value display text-[18px]" key={subtotal + deliveryFee}>{formatTotal(subtotal + deliveryFee)}</dd>
                 </div>
               </dl>
               {freeDelivery ? (
@@ -380,7 +385,7 @@ function FulfilmentOption({
 }) {
   return (
     <label
-      className={`flex cursor-pointer gap-3 rounded-[var(--radius-md)] border p-4 ${
+      className={`fulfilment-option flex cursor-pointer gap-3 rounded-[var(--radius-md)] border p-4 ${
         checked ? "border-[var(--color-green)] bg-[#eef5f1]" : "border-[var(--color-border)] bg-white"
       }`}
     >

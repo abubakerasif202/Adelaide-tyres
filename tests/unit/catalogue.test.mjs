@@ -4,8 +4,12 @@ import { catalogue, getTyreBySlug, uniqueBrands, uniqueSizes } from "../../lib/c
 import { clampQuantity } from "../../lib/cart.ts";
 import { filterTyres, DEFAULT_FILTERS } from "../../lib/filter.ts";
 
-test("all 28 real SKUs load", () => {
-  assert.equal(catalogue.length, 28);
+test("all 25 verified catalogue SKUs load", () => {
+  assert.equal(catalogue.length, 25);
+});
+
+test("verified production inventory totals 491 tyres", () => {
+  assert.equal(catalogue.reduce((total, tyre) => total + tyre.stock, 0), 491);
 });
 
 test("every SKU has a unique slug", () => {
@@ -20,10 +24,7 @@ test("every SKU has a unique id", () => {
 
 const spotChecks = [
   { slug: "greforce-gr881w-11r22-5", brand: "Greforce", pattern: "GR881W", size: "11R22.5", stock: 107, price: 220 },
-  { slug: "greforce-g-armor-11r22-5", brand: "Greforce", pattern: "G-ARMOR", size: "11R22.5", stock: 74, price: 230 },
   { slug: "ralson-rmr61-295-80r22-5", brand: "Ralson", pattern: "RMR61", size: "295/80R22.5", stock: 51, price: 450 },
-  { slug: "ralson-rac55-295-80r22-5", brand: "Ralson", pattern: "RAC55", size: "295/80R22.5", stock: 38, price: 525 },
-  { slug: "jumbo-ss618-275-70r22-5", brand: "Jumbo", pattern: "SS618", size: "275/70R22.5", stock: 40, price: 235 },
 ];
 
 for (const expected of spotChecks) {
@@ -60,10 +61,10 @@ test("size filtering surfaces every real size", () => {
 test("model search finds real SKUs case-insensitively", () => {
   const cases = [
     ["RMR61", 5],
-    ["295/80R22.5", 6],
-    ["ralson", 14],
+    ["295/80R22.5", 5],
+    ["ralson", 13],
     ["GR881W", 1],
-    ["11R22.5", 10],
+    ["11R22.5", 9],
     ["ATT101", 2],
     ["235/75R17.5", 3],
     ["SFR22", 1],

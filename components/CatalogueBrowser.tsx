@@ -129,7 +129,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
       </div>
 
       <div className="mt-6 flex items-center justify-between">
-        <p className="text-[14px] font-semibold text-[var(--color-text-muted)]">
+        <p aria-live="polite" aria-atomic="true" className="text-[14px] font-semibold text-[var(--color-text-muted)]">
           {results.length} {results.length === 1 ? "result" : "results"}
           {activeCount > 0 && ` · ${activeCount} filter${activeCount === 1 ? "" : "s"} active`}
         </p>
@@ -165,9 +165,9 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
           </a>
         </div>
       ) : (
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((tyre, i) => (
-            <ProductCard key={tyre.id} tyre={tyre} priority={i < 3} />
+        <div className="catalogue-results mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {results.map((tyre) => (
+            <ProductCard key={tyre.id} tyre={tyre} />
           ))}
         </div>
       )}

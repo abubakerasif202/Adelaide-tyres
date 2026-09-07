@@ -1,11 +1,11 @@
 /**
  * Payment integration boundary.
  *
- * No card details are ever collected or stored by this application. When a real
- * provider (Stripe) is configured via STRIPE_SECRET_KEY, wire its server SDK in
- * `createPaymentIntent` below. Until then the site runs a development/test
- * checkout that records the order intent and returns a test reference — no
- * charge, no PCI surface.
+ * No card details are ever collected or stored by this application. Payment
+ * provider configuration must remain inert until its complete server-side
+ * payment integration is implemented.
+ * The current order-reference checkout takes no charge and exposes no PCI
+ * surface.
  */
 
 import { randomUUID } from "node:crypto";
@@ -36,7 +36,8 @@ export type OrderIntentResult = {
 };
 
 export function isPaymentConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  // A secret alone must never switch checkout into an unwired live path.
+  return false;
 }
 
 export async function createPaymentIntent(
@@ -45,18 +46,6 @@ export async function createPaymentIntent(
   void input; // reserved for the live provider integration below
   const reference = `AWT-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-  if (!isPaymentConfigured()) {
-    // Development / test checkout — validated order captured, no charge taken.
-    return { reference, mode: "test", requiresPayment: false };
-  }
-
-  // LIVE: integrate the Stripe server SDK here, e.g.
-  //   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-  //   const intent = await stripe.paymentIntents.create({
-  //     amount: Math.round(input.subtotal * 100),
-  //     currency: "aud",
-  //     metadata: { reference, totalTyres: String(input.totalTyres) },
-  //   });
-  //   return { reference, mode: "live", requiresPayment: true, clientSecret: intent.client_secret! };
-  throw new Error("Payment provider configured but not yet wired. See lib/payment.ts.");
+  // Order-reference checkout — no charge taken and no card data collected.
+  return { reference, mode: "test", requiresPayment: false };
 }

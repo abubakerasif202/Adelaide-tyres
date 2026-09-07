@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { order } from "@/lib/config";
 import type { Tyre } from "@/lib/catalogue";
@@ -9,13 +10,29 @@ import { QuantitySelector } from "./QuantitySelector";
 import { TyreImage } from "./TyreImage";
 import { BadgePill, PriceDisplay, StockBadge, tyreTitle } from "./primitives";
 
-export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?: boolean }) {
-  const { add } = useCart();
+export function ProductCard({
+  tyre,
+  priority = false,
+  variant = "compact",
+}: {
+  tyre: Tyre;
+  priority?: boolean;
+  variant?: "compact" | "feature";
+}) {
+  const { add, cart } = useCart();
   const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
   const [added, setAdded] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+  }, []);
+  const remainingStock = Math.max(0, tyre.stock - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
   const soldOut = tyre.stock <= 0;
+  const atStockLimit = remainingStock === 0;
+  const selectedQty = Math.min(qty, Math.max(1, remainingStock));
 
   function handleAdd() {
+    if (atStockLimit) return;
     add({
       id: tyre.id,
       slug: tyre.slug,
@@ -25,14 +42,56 @@ export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?:
       price: tyre.price,
       stock: tyre.stock,
       image: tyre.image,
-      quantity: qty,
+      quantity: selectedQty,
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setAdded(false), 1000);
+  }
+
+  if (variant === "feature") {
+    const title = tyreTitle(tyre);
+    const isRalsonHeroPhoto = tyre.id === "ralson-rmr61-29580r225";
+    const isGreforceCutout = tyre.id === "greforce-g-pilot-x1-29580r225";
+
+    return (
+      <article className="surface-card product-card product-card--feature flex h-full flex-col overflow-hidden">
+        <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
+          {isRalsonHeroPhoto ? (
+            <Image src={tyre.image!} alt={title} fill sizes="(max-width: 639px) calc(100vw - 32px), 340px" className="product-card__media-cover" />
+          ) : isGreforceCutout ? (
+            <Image src="/images/tyres/greforce-g-pilot-295-80r22-5-cutout.png" alt={title} fill sizes="(max-width: 639px) calc(100vw - 32px), 340px" className="product-card__media-contain" />
+          ) : (
+            <TyreImage src={null} alt={title} size={190} className="product-card__placeholder" />
+          )}
+          <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+        </Link>
+
+        <div className="flex flex-1 flex-col gap-3.5 px-5 pb-5 pt-[18px]">
+          <Link href={`/tyres/${tyre.slug}`} className="flex flex-col gap-0.5 rounded-lg">
+            <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--color-red)]">{tyre.brand}</span>
+            <span className="display text-[clamp(28px,2.4vw,34px)] leading-none text-[var(--color-ink)]">{tyre.size}</span>
+            <span className="text-[14px] font-semibold text-[var(--color-text-muted)]">Pattern {tyre.pattern}</span>
+          </Link>
+          <div className="h-px w-full bg-[#e2e5e1]" />
+          <div className="flex flex-wrap items-end justify-between gap-3.5">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">Wholesale price</span>
+              <PriceDisplay price={tyre.price} />
+            </div>
+            <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${title}`} size="sm" />
+          </div>
+          <button type="button" className="btn btn--red w-full" data-added={added} aria-live="polite" onClick={handleAdd} disabled={soldOut || atStockLimit}>
+            {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
+          </button>
+          <p className="mt-auto text-[12px] font-medium text-[var(--color-text-muted)]">{order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8</p>
+        </div>
+      </article>
+    );
   }
 
   return (
-    <article className="surface-card flex flex-col gap-3.5 p-[18px]">
+    <article className="surface-card product-card flex flex-col gap-3.5 p-[18px]">
       <div className="flex h-7 items-start justify-between">
         {tyre.badge ? <BadgePill label={tyre.badge} /> : <span />}
         <StockBadge stock={tyre.stock} />
@@ -42,12 +101,12 @@ export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?:
         href={`/tyres/${tyre.slug}`}
         className="flex items-center gap-[18px] rounded-[10px] focus-visible:outline-offset-4"
       >
-        <TyreImage src={tyre.image} alt={tyreTitle(tyre)} size={112} priority={priority} />
-        <div className="flex flex-col gap-0.5">
+        <TyreImage src={tyre.image} alt={tyreTitle(tyre)} size={124} priority={priority} className="product-card__image" />
+        <div className="min-w-0 flex flex-col gap-0.5">
           <span className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-red)]">
             {tyre.brand}
           </span>
-          <span className="display text-[30px] text-[var(--color-ink)]">{tyre.size}</span>
+          <span className="display text-[clamp(25px,2.3vw,30px)] text-[var(--color-ink)]">{tyre.size}</span>
           <span className="text-[15px] font-semibold text-[var(--color-text-muted)]">
             Pattern {tyre.pattern}
           </span>
@@ -64,10 +123,11 @@ export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?:
           <PriceDisplay price={tyre.price} />
         </div>
         <QuantitySelector
-          value={qty}
+          value={selectedQty}
           onChange={setQty}
           min={1}
-          max={tyre.stock || undefined}
+          max={Math.max(1, remainingStock)}
+          disabled={atStockLimit}
           label={`Quantity for ${tyreTitle(tyre)}`}
           size="sm"
         />
@@ -76,14 +136,16 @@ export function ProductCard({ tyre, priority = false }: { tyre: Tyre; priority?:
       <button
         type="button"
         className="btn btn--red w-full"
+        data-added={added}
+        aria-live="polite"
         onClick={handleAdd}
-        disabled={soldOut}
+        disabled={soldOut || atStockLimit}
       >
-        {soldOut ? "Out of stock" : added ? "Added ✓" : `Add ${qty} to cart`}
+        {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
       </button>
 
       <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
-        No minimum order · {order.delivery.freeQualifyingTyres}+ tyres ships free Adelaide-wide.
+        {order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8
       </p>
     </article>
   );

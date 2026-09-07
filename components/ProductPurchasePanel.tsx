@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { order } from "@/lib/config";
 import { formatCurrency, pluralTyres } from "@/lib/format";
@@ -12,13 +12,21 @@ import { QuantitySelector } from "./QuantitySelector";
 import { PriceDisplay } from "./primitives";
 
 export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
-  const { add, totalTyres, qualifiesForFreeDelivery, deliveryFee } = useCart();
+  const { add, cart, totalTyres, qualifiesForFreeDelivery, deliveryFee } = useCart();
   const router = useRouter();
   const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
   const [added, setAdded] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+  }, []);
+  const remainingStock = Math.max(0, tyre.stock - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
   const soldOut = tyre.stock <= 0;
+  const atStockLimit = remainingStock === 0;
+  const selectedQty = Math.min(qty, Math.max(1, remainingStock));
 
   function addToCart() {
+    if (atStockLimit) return;
     add({
       id: tyre.id,
       slug: tyre.slug,
@@ -28,10 +36,11 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
       price: tyre.price,
       stock: tyre.stock,
       image: tyre.image,
-      quantity: qty,
+      quantity: selectedQty,
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setAdded(false), 1000);
   }
 
   return (
@@ -49,10 +58,11 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
 
       <div className="mt-5 flex items-center gap-3">
         <QuantitySelector
-          value={qty}
+          value={selectedQty}
           onChange={setQty}
           min={1}
-          max={tyre.stock || undefined}
+          max={Math.max(1, remainingStock)}
+          disabled={atStockLimit}
           label={`Quantity for ${tyreFullName(tyre)}`}
         />
         <span className="text-[13px] text-[var(--color-text-muted)]">No minimum order</span>
@@ -62,15 +72,17 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
         <button
           type="button"
           className="btn btn--red w-full"
+          data-added={added}
+          aria-live="polite"
           onClick={addToCart}
-          disabled={soldOut}
+          disabled={soldOut || atStockLimit}
         >
-          {soldOut ? "Out of stock" : added ? "Added to cart ✓" : `Add ${qty} to cart`}
+          {soldOut ? "Out of stock" : added ? "Added to cart ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
         </button>
         <button
           type="button"
           className="btn btn--green w-full"
-          disabled={soldOut}
+          disabled={soldOut || atStockLimit}
           onClick={() => {
             addToCart();
             router.push("/cart");
@@ -78,6 +90,16 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
         >
           Add & go to cart
         </button>
+      </div>
+
+      <div className="mt-5 border-y border-[var(--color-border)] py-4 text-[13px]">
+        <p className="font-bold text-[var(--color-green)]">NO MINIMUM ORDER</p>
+        <dl className="mt-2 flex flex-col gap-1.5">
+          <div className="flex justify-between gap-3"><dt>1–7 tyres</dt><dd className="font-semibold">{formatCurrency(order.delivery.feeAud)} delivery</dd></div>
+          <div className="flex justify-between gap-3"><dt>{order.delivery.freeQualifyingTyres}+ tyres</dt><dd className="font-semibold text-[var(--color-green)]">FREE delivery</dd></div>
+          <div className="flex justify-between gap-3"><dt>Warehouse pickup</dt><dd className="font-semibold text-[var(--color-green)]">FREE</dd></div>
+        </dl>
+        <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">Adelaide-wide delivery</p>
       </div>
 
       <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] p-4 text-[13px]">
