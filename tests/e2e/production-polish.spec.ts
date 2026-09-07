@@ -103,6 +103,12 @@ test("quantity is capped at verified stock on product and cart", async ({ page }
   await expect(page.getByRole("spinbutton", { name: quantityName })).toHaveValue("107");
 });
 
+test("removed catalogue SKUs return a real 404", async ({ page }) => {
+  const response = await page.goto("/tyres/greforce-g-armor-11r22-5");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+});
+
 const routes = ["/", "/tyres", product, "/tyres/ralson-rmr61-295-80r22-5", "/tyres/jumbo-ss398-295-80r22-5", "/cart", "/checkout", "/commercial", "/delivery", "/contact"];
 
 for (const width of [1440, 1280, 1024, 768, 430, 390, 360]) {

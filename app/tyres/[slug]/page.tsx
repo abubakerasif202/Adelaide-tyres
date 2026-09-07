@@ -14,6 +14,8 @@ import { formatCurrency } from "@/lib/format";
 
 type Params = { params: Promise<{ slug: string }> };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return catalogue.map((t) => ({ slug: t.slug }));
 }
@@ -21,7 +23,12 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const tyre = getTyreBySlug(slug);
-  if (!tyre) return { title: "Tyre not found" };
+  if (!tyre) {
+    return {
+      title: "Tyre not found",
+      robots: { index: false, follow: false },
+    };
+  }
   return {
     title: `${tyreSeoName(tyre)} | Adelaide`,
     description: `${tyreFullName(tyre)} available wholesale in Adelaide. ${tyre.description} No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+, from Regency Park.`,
