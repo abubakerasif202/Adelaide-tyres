@@ -4,6 +4,7 @@
  * Route Handlers and Server Components (app/api/**, app/checkout/success)
  * import this module.
  */
+import "server-only";
 import Stripe from "stripe";
 
 let client: Stripe | null = null;

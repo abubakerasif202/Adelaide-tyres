@@ -4,12 +4,18 @@
  * No card details are ever collected or stored by this application — Stripe
  * Checkout hosts the card entry page. This module only exists server-side.
  *
- * When STRIPE_SECRET_KEY is unset, checkout falls back to the order-reference
- * flow (no charge, no card capture) so the site never claims a live payment
- * capability it cannot honour. Only Route Handlers import this module.
+ * Card checkout stays disabled (falling back to the order-reference / invoice
+ * flow — no charge, no card capture) unless STRIPE_SECRET_KEY,
+ * STRIPE_WEBHOOK_SECRET, and a durable order-store connection string are all
+ * present. A Stripe secret key alone is not sufficient: without the webhook
+ * secret we cannot safely verify fulfilment events, and without a database
+ * there is nowhere durable to record that an order was actually paid — see
+ * lib/order-store.ts.
  */
+import "server-only";
 import { randomUUID } from "node:crypto";
 import { getStripeClient, isStripeConfigured } from "./stripe-client.ts";
+import { hasDurableOrderStore, getOrderStore } from "./order-store.ts";
 import { business, order as orderConfig, siteUrl } from "./config.ts";
 import type { CheckoutDetails } from "./checkout-validation.ts";
 
@@ -35,9 +41,9 @@ export type OrderIntentResult = {
   requiresPayment: boolean;
 };
 
-/** True once a secret key is present. Metadata still governs test/live mode. */
+/** True once Stripe, its webhook secret, and a durable order store are all configured. */
 export function isPaymentConfigured(): boolean {
-  return isStripeConfigured();
+  return isStripeConfigured() && Boolean(process.env.STRIPE_WEBHOOK_SECRET) && hasDurableOrderStore();
 }
 
 function generateReference(): string {
@@ -58,20 +64,16 @@ export type CheckoutSessionResult = {
 };
 
 /**
- * Creates a Stripe Checkout Session for immediate card payment. Prices are
- * computed entirely from the already-revalidated, server-trusted order
- * lines/delivery fee — nothing here is sourced from client-submitted amounts.
- *
- * Metadata carries the fields needed to fulfil the order from the webhook
- * (see app/api/webhooks/stripe/route.ts), since this project has no order
- * database — Stripe's own object store is the persistence layer for this
- * reference and its fulfilment flag.
+ * Creates a Stripe Checkout Session for immediate card payment, and records
+ * a pending order row before returning — the durable order store (not
+ * Stripe's own object store, and never the client redirect) is the source of
+ * truth the webhook and the success page both read from.
  */
 export async function createCheckoutSession(
   input: OrderIntentInput,
 ): Promise<CheckoutSessionResult> {
-  if (!isStripeConfigured()) {
-    throw new Error("Stripe is not configured.");
+  if (!isPaymentConfigured()) {
+    throw new Error("Stripe is not fully configured.");
   }
   const stripe = getStripeClient();
   const reference = generateReference();
@@ -106,10 +108,10 @@ export async function createCheckoutSession(
     });
   }
 
-  const linesSummary = input.lines
-    .map((l) => `${l.quantity}x ${l.brand} ${l.pattern} ${l.size}`)
-    .join(" | ")
-    .slice(0, 480);
+  const address =
+    input.details.deliveryMethod === "delivery"
+      ? `${input.details.address}, ${input.details.suburb} SA ${input.details.postcode}`
+      : orderConfig.pickup.address;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -119,30 +121,33 @@ export async function createCheckoutSession(
     client_reference_id: reference,
     success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}/checkout?cancelled=1`,
-    metadata: {
-      reference,
-      business: business.shortName,
-      name: input.details.name.slice(0, 200),
-      phone: input.details.phone.slice(0, 60),
-      email: input.details.email.slice(0, 160),
-      abn: (input.details.abn ?? "").slice(0, 20),
-      deliveryMethod: input.details.deliveryMethod,
-      address: input.details.deliveryMethod === "delivery"
-        ? `${input.details.address}, ${input.details.suburb} SA ${input.details.postcode}`.slice(0, 300)
-        : orderConfig.pickup.address,
-      notes: (input.details.notes ?? "").slice(0, 400),
-      totalTyres: String(input.totalTyres),
-      lines: linesSummary,
-      fulfilled: "false",
-    },
-    payment_intent_data: {
-      metadata: { reference, fulfilled: "false" },
-    },
+    metadata: { reference, business: business.shortName },
   });
 
   if (!session.url) {
     throw new Error("Stripe did not return a Checkout Session URL.");
   }
+
+  const amountTotalCents =
+    session.amount_total ?? Math.round((input.subtotal + input.deliveryFee) * 100);
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null);
+
+  const store = await getOrderStore();
+  await store.createPendingOrder({
+    reference,
+    checkoutSessionId: session.id,
+    paymentIntentId,
+    amountTotalCents,
+    currency: orderConfig.currency,
+    customerEmail: input.details.email,
+    customerName: input.details.name,
+    customerPhone: input.details.phone,
+    deliveryMethod: input.details.deliveryMethod,
+    deliveryAddress: address,
+    notes: input.details.notes ?? "",
+    lines: input.lines,
+  });
 
   return { url: session.url, reference };
 }

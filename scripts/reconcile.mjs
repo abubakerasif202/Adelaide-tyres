@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { catalogue } from '../lib/catalogue.ts';
 
 export function reconcile() {
-  return readFileSync(new URL('../docs/source-inventory/brand-name-historical.csv', import.meta.url), 'utf8').trim().split('\n').slice(1).map(line => {
+  return readFileSync(new URL('../docs/source-inventory/brand-name-historical.csv', import.meta.url), 'utf8').trim().split(/\r?\n/).slice(1).map(line => {
     const [page, row, brand, pattern, size, rawQuantity] = line.split(',');
     const normalizedPattern = Number(row) === 19 ? 'G-PILOT X1' : pattern;
     const product = catalogue.find(p => p.brand === brand && p.pattern === normalizedPattern && p.size.toLowerCase() === size.toLowerCase());

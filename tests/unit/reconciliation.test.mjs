@@ -19,5 +19,5 @@ test('historical records form a complete mutually exclusive partition', () => {
   assert.equal(rows[19].rawQuantity,'09');
   assert.equal(rows[19].quantity,9);
   const expectedCsv = [Object.keys(rows[0]).join(','), ...rows.map(row => Object.values(row).map(value => '"' + String(value).replaceAll('"', '""') + '"').join(','))].join('\n');
-  assert.equal(readFileSync('docs/source-inventory/reconciliation.csv', 'utf8').trim(), expectedCsv);
+  assert.equal(readFileSync('docs/source-inventory/reconciliation.csv', 'utf8').replace(/\r\n/g, '\n').trim(), expectedCsv);
 });

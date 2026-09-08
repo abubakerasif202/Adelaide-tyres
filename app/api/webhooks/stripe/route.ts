@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe-client";
-import { sendNotification } from "@/lib/notify";
-import { order as orderConfig } from "@/lib/config";
+import { getOrderStore } from "@/lib/order-store";
+import { processStripeEvent, defaultNotify } from "@/lib/webhook-handlers";
 
 // Needs the raw request body for signature verification — must run on Node,
 // not the Edge runtime, and must not have its body pre-parsed.
@@ -10,14 +10,11 @@ export const runtime = "nodejs";
 
 /**
  * Stripe webhook handler. Verifies the signature against the raw body, then
- * fulfils paid Checkout Sessions exactly once.
- *
- * Idempotency: this project has no order database, so the PaymentIntent's own
- * metadata is the durable "fulfilled" flag — metadata can be read and updated
- * on a PaymentIntent regardless of its status, so a retried or duplicate
- * `checkout.session.completed` event (Stripe redelivers on timeout, and the
- * same event can also arrive out of order relative to async payment methods)
- * is detected and skipped rather than re-sent.
+ * hands the authenticated event to processStripeEvent() (lib/webhook-handlers.ts),
+ * which is unit-tested directly for concurrency and duplicate-delivery safety.
+ * Every state transition it makes is a guarded database operation — see
+ * lib/order-store-neon.ts — so a redelivered or duplicate event can never
+ * double-fulfil an order or send a duplicate notification.
  */
 export async function POST(request: Request) {
   if (!isStripeConfigured()) {
@@ -46,78 +43,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed":
-      case "checkout.session.async_payment_succeeded":
-        await fulfilCheckoutSession(stripe, event.data.object as Stripe.Checkout.Session);
-        break;
-      case "checkout.session.async_payment_failed":
-      case "checkout.session.expired":
-        // No fulfilment occurred; nothing to reverse. Left for observability.
-        break;
-      default:
-        break;
-    }
+    const store = await getOrderStore();
+    await processStripeEvent(event, { store, notify: defaultNotify });
   } catch (err) {
     console.error(`Stripe webhook handling failed for ${event.type}`, err);
-    // A 500 tells Stripe to retry delivery; the fulfilled-flag check makes
-    // the eventual retry safe.
+    // A non-2xx response tells Stripe to retry delivery later. Every
+    // transition in processStripeEvent is idempotent/guarded, so a retry —
+    // of this event or a concurrently-arriving duplicate — is always safe.
     return NextResponse.json({ error: "Webhook handling failed." }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
-}
-
-async function fulfilCheckoutSession(stripe: Stripe, session: Stripe.Checkout.Session) {
-  if (session.payment_status !== "paid") return;
-
-  const paymentIntentId =
-    typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-  if (!paymentIntentId) {
-    console.error("Checkout Session has no PaymentIntent; cannot verify fulfilment state.", session.id);
-    return;
-  }
-
-  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-  if (paymentIntent.metadata.fulfilled === "true") {
-    // Already handled by a prior delivery of this (or an equivalent) event.
-    return;
-  }
-
-  const meta = session.metadata ?? {};
-  const reference = meta.reference ?? session.client_reference_id ?? paymentIntentId;
-  const totalAud = ((session.amount_total ?? 0) / 100).toFixed(2);
-
-  const { delivered } = await sendNotification({
-    subject: `PAID order ${reference} · ${totalAud} AUD`,
-    replyTo: meta.email,
-    text: [
-      `Reference: ${reference} (Stripe Checkout — PAID)`,
-      `Payment intent: ${paymentIntentId}`,
-      `Contact: ${meta.name ?? ""} · ${meta.phone ?? ""} · ${meta.email ?? ""}`,
-      meta.abn ? `ABN: ${meta.abn}` : "",
-      `Fulfilment: ${meta.deliveryMethod ?? "delivery"}`,
-      meta.address ? `Address: ${meta.address}` : `Pickup: ${orderConfig.pickup.address}`,
-      "",
-      `Lines: ${meta.lines ?? "(see Stripe Checkout Session for full line items)"}`,
-      "",
-      `Total tyres: ${meta.totalTyres ?? "?"}`,
-      `Amount paid: $${totalAud} AUD`,
-      meta.notes ? `Notes: ${meta.notes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  });
-
-  if (!delivered) {
-    // Notification transport is unconfigured/unavailable. Do not mark the
-    // PaymentIntent as fulfilled — the next retry of this webhook should try
-    // again rather than silently drop a paid order.
-    console.error(`Order ${reference} paid but notification could not be delivered.`);
-    throw new Error("Notification transport unavailable.");
-  }
-
-  await stripe.paymentIntents.update(paymentIntentId, {
-    metadata: { ...paymentIntent.metadata, fulfilled: "true" },
-  });
 }

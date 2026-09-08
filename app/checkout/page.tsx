@@ -21,8 +21,6 @@ import { QuantitySelector } from "@/components/QuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 
-const STRIPE_ENABLED = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-
 export default function CheckoutPage() {
   return (
     <Suspense fallback={null}>
@@ -42,6 +40,24 @@ function CheckoutPageInner() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ reference: string; mode: string; notified: boolean } | null>(null);
   const [startedAt] = useState(() => Date.now());
+  // Never inferred from a build-time env var — the server is the only source
+  // of truth for whether Stripe, its webhook, and the order store are all
+  // actually configured (see app/api/checkout/status/route.ts).
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+  useEffect(() => {
+    let ignore = false;
+    fetch("/api/checkout/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!ignore) setStripeEnabled(Boolean(data.enabled));
+      })
+      .catch(() => {
+        if (!ignore) setStripeEnabled(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (hasErrors(errors)) document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -296,7 +312,7 @@ function CheckoutPageInner() {
                 Payment
               </h1>
 
-              {STRIPE_ENABLED && (
+              {stripeEnabled && (
                 <div className="surface-card mt-4 p-6">
                   <p className="text-[15px] font-bold">Pay securely by card now</p>
                   <p className="mt-1 text-[14px] text-[var(--color-text-muted)]">
@@ -328,7 +344,7 @@ function CheckoutPageInner() {
 
               <div className="surface-card mt-4 p-6">
                 <p className="text-[15px] font-bold">
-                  {STRIPE_ENABLED ? "Or submit for invoice" : "Submit your order"}
+                  {stripeEnabled ? "Or submit for invoice" : "Submit your order"}
                 </p>
                 <p className="mt-1 text-[14px] text-[var(--color-text-muted)]">
                   This site does not take card details online for this option. Submit your order now

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isStripeConfigured, getStripeClient } from "@/lib/stripe-client";
+import { hasDurableOrderStore, getOrderStore } from "@/lib/order-store";
 import { formatTotal } from "@/lib/format";
 import { ClearCartOnMount } from "@/components/ClearCartOnMount";
 
@@ -10,26 +11,42 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-type Status = "paid" | "pending" | "not-found" | "unavailable";
+type Status = "paid" | "pending" | "failed" | "cancelled" | "refunded" | "not-found" | "unavailable";
 
-async function getSessionStatus(
+async function getOrderStatus(
   sessionId: string | undefined,
 ): Promise<{ status: Status; reference?: string; amount?: string }> {
   if (!isStripeConfigured()) return { status: "unavailable" };
   if (!sessionId) return { status: "not-found" };
 
+  // The durable order store — written only by the signature-verified webhook
+  // — is the source of truth. Reaching this page at all never by itself
+  // implies payment succeeded.
+  if (hasDurableOrderStore()) {
+    try {
+      const store = await getOrderStore();
+      const order = await store.getByCheckoutSessionId(sessionId);
+      if (order) {
+        return {
+          status: order.status,
+          reference: order.reference,
+          amount: formatTotal(order.amountTotalCents / 100),
+        };
+      }
+    } catch (err) {
+      console.error("Order store lookup failed on success page", err);
+    }
+  }
+
+  // No order row yet (webhook hasn't landed) or the store is unavailable —
+  // fall back to asking Stripe directly, still never trusting the redirect.
   try {
     const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const reference = session.metadata?.reference ?? session.client_reference_id ?? sessionId;
     const amount =
       typeof session.amount_total === "number" ? formatTotal(session.amount_total / 100) : undefined;
-
-    // The success URL alone never proves payment — only Stripe's own record
-    // of the session's payment_status does.
-    if (session.payment_status === "paid") {
-      return { status: "paid", reference, amount };
-    }
+    if (session.payment_status === "paid") return { status: "paid", reference, amount };
     return { status: "pending", reference, amount };
   } catch (err) {
     console.error("Could not retrieve Checkout Session", err);
@@ -43,7 +60,7 @@ export default async function CheckoutSuccessPage({
   searchParams: Promise<{ session_id?: string }>;
 }) {
   const { session_id: sessionId } = await searchParams;
-  const result = await getSessionStatus(sessionId);
+  const result = await getOrderStatus(sessionId);
 
   return (
     <div className="bg-[var(--color-surface-muted)]">
@@ -70,6 +87,30 @@ export default async function CheckoutSuccessPage({
                 Reference <strong className="text-[var(--color-text)]">{result.reference}</strong>. Some
                 payment methods take a little longer to confirm — we&apos;ll email you as soon as it
                 clears. No need to pay again.
+              </p>
+            </>
+          )}
+
+          {result.status === "refunded" && (
+            <>
+              <span className="pill">Refunded</span>
+              <h1 className="display mt-4 text-[32px]">This order has been refunded</h1>
+              <p className="mt-2 text-[var(--color-text-muted)]">
+                Reference <strong className="text-[var(--color-text)]">{result.reference}</strong>. Contact
+                the wholesale team if you have any questions about this refund.
+              </p>
+            </>
+          )}
+
+          {(result.status === "failed" || result.status === "cancelled") && (
+            <>
+              <span className="pill pill--red">{result.status === "failed" ? "Payment failed" : "Payment cancelled"}</span>
+              <h1 className="display mt-4 text-[32px]">
+                {result.status === "failed" ? "This payment didn't go through" : "This checkout was cancelled"}
+              </h1>
+              <p className="mt-2 text-[var(--color-text-muted)]">
+                Reference <strong className="text-[var(--color-text)]">{result.reference}</strong>. No
+                charge was made. Please return to checkout to try again.
               </p>
             </>
           )}
