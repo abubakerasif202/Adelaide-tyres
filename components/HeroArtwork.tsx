@@ -24,7 +24,7 @@ export function HeroArtwork({ units, skuLines }: { units: number; skuLines: numb
           src="/images/tyres/ralson-rmr61-295-80r22-5.webp"
           alt="Ralson RMR61 295/80R22.5 tyre from current Adelaide stock"
           fill
-          preload
+          priority
           sizes="(max-width: 1023px) min(100vw - 32px, 520px), 42vw"
           className="hero__tyre object-cover"
         />

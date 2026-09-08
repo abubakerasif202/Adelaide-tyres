@@ -46,7 +46,7 @@ export default function HomePage() {
           <div className="mt-8 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] items-stretch gap-5">
             {preview.map((tyre, i) => (
               <Reveal key={tyre.id} delay={(i % 3) * 70} className="h-full">
-                <ProductCard tyre={tyre} variant="feature" />
+                <ProductCard tyre={tyre} variant="feature" priority={i === 0} />
               </Reveal>
             ))}
           </div>

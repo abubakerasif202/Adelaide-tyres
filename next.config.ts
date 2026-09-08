@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Pin the workspace root so a stray parent lockfile doesn't widen file tracing.
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
   async headers() {
     return [
       {

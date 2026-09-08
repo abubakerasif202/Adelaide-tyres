@@ -30,7 +30,7 @@ export function TyreImage({ src, alt, size = 120, priority = false, className, s
         alt={alt}
         width={size}
         height={size}
-        preload={priority}
+        priority={priority}
         className={cls}
         style={{ objectFit: "contain" }}
         sizes={sizes ?? `${size}px`}
