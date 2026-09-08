@@ -124,6 +124,19 @@ export class PostgresOrderStore implements OrderStore {
     return rows.length > 0;
   }
 
+  async releaseStaleClaims(olderThanMinutes: number): Promise<number> {
+    const rows = await this.sql`
+      update orders
+      set status = 'pending', notify_claimed_at = null, updated_at = now()
+      where status = 'paid'
+        and notified_at is null
+        and notify_claimed_at is not null
+        and notify_claimed_at < now() - make_interval(mins => ${olderThanMinutes})
+      returning checkout_session_id
+    `;
+    return rows.length;
+  }
+
   async getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null> {
     const rows = (await this.sql`
       select * from orders where checkout_session_id = ${checkoutSessionId}

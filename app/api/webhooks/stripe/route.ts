@@ -13,7 +13,7 @@ export const runtime = "nodejs";
  * hands the authenticated event to processStripeEvent() (lib/webhook-handlers.ts),
  * which is unit-tested directly for concurrency and duplicate-delivery safety.
  * Every state transition it makes is a guarded database operation — see
- * lib/order-store-neon.ts — so a redelivered or duplicate event can never
+ * lib/order-store-postgres.ts — so a redelivered or duplicate event can never
  * double-fulfil an order or send a duplicate notification.
  */
 export async function POST(request: Request) {

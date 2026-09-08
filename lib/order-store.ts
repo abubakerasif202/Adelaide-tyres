@@ -66,6 +66,19 @@ export interface OrderStore {
   /** Atomically transitions a paid order to refunded. No-ops if the order isn't currently paid. */
   transitionPaidToRefunded(paymentIntentId: string): Promise<boolean>;
 
+  /**
+   * Recovery path for a claim that never resolved: if the process handling
+   * claimFulfilment is killed (OOM, deploy restart) between the claim and the
+   * notify/release step, the order is stuck at status "paid" with no
+   * notification sent and no further webhook redelivery able to re-claim it
+   * (claimFulfilment requires status "pending"). This releases any claim
+   * older than olderThanMinutes back to "pending" so the next redelivered or
+   * manually-replayed event can retry it. Intended to run from
+   * scripts/release-stale-claims.mjs on a schedule (cron) or on demand.
+   * Returns the number of orders released.
+   */
+  releaseStaleClaims(olderThanMinutes: number): Promise<number>;
+
   getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null>;
   getByPaymentIntentId(paymentIntentId: string): Promise<OrderRecord | null>;
 

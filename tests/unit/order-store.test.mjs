@@ -88,3 +88,14 @@ test("transitionPaidToRefunded only affects paid orders, looked up by PaymentInt
   const final = await store.getByCheckoutSessionId("s5");
   assert.equal(final.status, "refunded");
 });
+
+test("releaseStaleClaims is a documented no-op on the in-memory store", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(order("s6"));
+  await store.claimFulfilment("s6");
+
+  const released = await store.releaseStaleClaims(0);
+  assert.equal(released, 0, "the in-memory store never survives the crash this recovers from — see order-store.ts");
+  const final = await store.getByCheckoutSessionId("s6");
+  assert.equal(final.status, "paid", "the claim is untouched, not silently released");
+});

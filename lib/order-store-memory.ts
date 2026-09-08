@@ -58,6 +58,15 @@ export class MemoryOrderStore implements OrderStore {
     return false;
   }
 
+  /**
+   * No-op: this store is single-process and never survives the crash that
+   * releaseStaleClaims exists to recover from (see order-store.ts), so
+   * there's nothing to reconcile here.
+   */
+  async releaseStaleClaims(): Promise<number> {
+    return 0;
+  }
+
   async getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null> {
     return this.orders.get(checkoutSessionId) ?? null;
   }
