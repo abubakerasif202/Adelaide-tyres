@@ -10,6 +10,7 @@ import {
   getTotalTyreQuantity,
   qualifiesForFreeDelivery,
   removeLine,
+  restoreStoredCart,
   updateLineQuantity,
 } from "../../lib/cart.ts";
 
@@ -106,4 +107,27 @@ test("removeLine drops the line and returns a new cart", () => {
 
 test("clearCart empties the cart", () => {
   assert.deepEqual(clearCart(), { lines: [] });
+});
+
+test("stored cart restores only current catalogue facts and aggregates duplicate quantities", () => {
+  const cart = restoreStoredCart({
+    lines: [
+      { slug: "greforce-gr881w-11r22-5", quantity: 60, price: 1, stock: 999 },
+      { slug: "greforce-gr881w-11r22-5", quantity: 60, price: 1, stock: 999 },
+      { slug: "missing", quantity: 1 },
+      { slug: "ralson-rmr61-295-80r22-5", quantity: 1.5 },
+    ],
+  });
+  assert.equal(cart.lines.length, 1);
+  assert.deepEqual(cart.lines[0], {
+    id: "greforce-gr881w-11r225",
+    slug: "greforce-gr881w-11r22-5",
+    brand: "Greforce",
+    pattern: "GR881W",
+    size: "11R22.5",
+    price: 220,
+    quantity: 107,
+    stock: 107,
+    image: null,
+  });
 });

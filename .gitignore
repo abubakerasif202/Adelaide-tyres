@@ -18,3 +18,9 @@ next-env.d.ts
 .gstack/
 .env*
 !.env.example
+
+# Local audit/session working files — not part of the shipped project.
+/audit-artifacts/
+/lh-*.json
+/codex-session-*.md
+*.zip

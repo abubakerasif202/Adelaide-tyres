@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Adelaide Wholesale Tyres",
   },
   description:
-    "Buy wholesale tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up. Truck, commercial, passenger and light-commercial tyres available from Regency Park.",
+    "Buy wholesale truck and commercial tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up, from Regency Park.",
   applicationName: business.name,
   alternates: { canonical: "/" },
   openGraph: {
@@ -49,6 +49,12 @@ export const metadata: Metadata = {
       "Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, $50 Adelaide-wide delivery under 8 tyres, free for 8+.",
   },
   robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#063b2c",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

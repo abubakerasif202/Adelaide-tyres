@@ -7,7 +7,7 @@ import { breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "About Adelaide Wholesale Tyres | Regency Park Tyre Wholesaler",
-  description: `Adelaide Wholesale Tyres supplies truck, commercial, passenger and light-commercial tyres in bulk from Regency Park. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
+  description: `Adelaide Wholesale Tyres supplies truck and commercial tyres in bulk from Regency Park. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
   alternates: { canonical: "/about" },
 };
 

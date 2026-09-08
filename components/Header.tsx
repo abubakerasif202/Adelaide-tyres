@@ -101,7 +101,7 @@ export function Header() {
         }`}
       >
         <div className="container-x flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Adelaide Wholesale Tyres home" className="header-logo rounded-sm" onClick={() => setOpen(false)}>
+          <Link href="/" aria-label="AWT — Adelaide Wholesale Tyres home" className="header-logo rounded-sm" onClick={() => setOpen(false)}>
             <Logo tone="dark" />
           </Link>
 

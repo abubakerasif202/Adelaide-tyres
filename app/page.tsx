@@ -34,26 +34,26 @@ export default function HomePage() {
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="Shop available stock"
-              title="Order from current stock"
+              title="Order from listed stock"
               intro="Wholesale pricing per tyre. No minimum order — mix any products, any quantity."
             />
             <span className="pill pill--muted">
               <span className="size-[7px] rounded-full bg-[var(--color-green)]" aria-hidden />
-              Current Adelaide stock · {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units
+              Listed Adelaide stock · {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units
             </span>
           </Reveal>
 
           <div className="mt-8 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] items-stretch gap-5">
             {preview.map((tyre, i) => (
               <Reveal key={tyre.id} delay={(i % 3) * 70} className="h-full">
-                <ProductCard tyre={tyre} variant="feature" />
+                <ProductCard tyre={tyre} variant="feature" priority={i === 0} />
               </Reveal>
             ))}
           </div>
 
           <Reveal className="mt-10 text-center">
             <Link href="/tyres" className="btn btn--green">
-              View all current stock
+              View all listed stock
             </Link>
           </Reveal>
         </div>

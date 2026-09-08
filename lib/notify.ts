@@ -20,12 +20,13 @@ export function isNotifyConfigured(): boolean {
 
 export async function sendNotification(message: Message): Promise<{ delivered: boolean }> {
   if (!isNotifyConfigured()) {
-    console.info("[notify:dev] %s\n%s", message.subject, message.text);
+    console.info("[notify:dev] Transport is not configured; no notification sent.");
     return { delivered: false };
   }
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    signal: AbortSignal.timeout(10_000),
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",

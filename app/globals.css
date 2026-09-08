@@ -21,7 +21,7 @@
   --color-field-border: #c4cec8;
   --color-text: #151a1a;
   --color-text-muted: #68716d;
-  --color-red: #f31217;
+  --color-red: #df1015;
   --color-red-hover: #d40f14;
   --color-red-deep: #b60c11;
   --color-white: #ffffff;
@@ -387,19 +387,11 @@ img {
   }
 }
 
-/* Progressive scroll reveal. Markup remains visible when JavaScript is unavailable. */
+/* Visible layout wrapper — content must not depend on a client scroll observer. */
 .reveal {
   --reveal-delay: 0ms;
-}
-.reveal[data-reveal-ready="true"] {
-  opacity: 0;
-  transform: translateY(18px);
-}
-.reveal[data-reveal-ready="true"].is-visible {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.56s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay),
-    transform 0.56s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay);
+  transform: none;
 }
 
 .site-header {
@@ -601,12 +593,6 @@ footer a {
   .hero__visual {
     animation-duration: 0.42s;
   }
-  .reveal[data-reveal-ready="true"] {
-    transform: translateY(10px);
-  }
-  .reveal[data-reveal-ready="true"].is-visible {
-    transition-duration: 0.4s;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -614,11 +600,6 @@ footer a {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
-  }
-  .reveal[data-reveal-ready="true"],
-  .reveal[data-reveal-ready="true"].is-visible {
-    opacity: 1;
-    transform: none;
   }
   .hero__tyre,
   .hero__eyebrow,

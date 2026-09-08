@@ -5,13 +5,17 @@ Accuracy policy: a product only gets a photo when the exact model/pattern could 
 verified against manufacturer imagery. Where it could not, the neutral placeholder
 (`components/TyreImage.tsx`) is kept and the reason is recorded below.
 
+`docs/product-image-manifest.json` is the machine-readable 25-SKU audit record
+used by the asset-integrity test. It includes every SKU, local mapping, source URL,
+rights status, check date, dimensions and unresolved-image status.
+
 Dates accessed: 2026-09-06 (RMR61), 2026-09-07 (G-PILOT X1 + catalogue verification).
 See `docs/catalogue-verification.md` for the full model-name / size research on the
 four questionable SKUs.
 
 ---
 
-## Greforce G-PILOT X1 295/80R22.5 — REAL IMAGE ✅
+## Greforce G-PILOT X1 295/80R22.5 — EXISTING GENUINE ASSET, RIGHTS PENDING
 
 Local file:
 `public/images/tyres/greforce-g-pilot-295-80r22-5.webp` (1000×1000, WebP, ~42 KB)
@@ -48,7 +52,7 @@ usage rights should be confirmed with Greforce before commercial launch.
 
 ---
 
-## Ralson RMR61 295/80R22.5 — REAL IMAGE ✅
+## Ralson RMR61 295/80R22.5 — EXISTING GENUINE ASSET, RIGHTS PENDING
 
 Local file:
 `public/images/tyres/ralson-rmr61-295-80r22-5.webp` (1200×1200, WebP, ~59 KB)
@@ -136,13 +140,15 @@ Why no image:
 
 | Product | Status | Source |
 |---|---|---|
-| Ralson RMR61 295/80R22.5 | ✅ real photo | ralsontires.com official |
-| Greforce G-PILOT X1 295/80R22.5 | ✅ real photo | greforcetire.com official |
+| Ralson RMR61 295/80R22.5 | existing exact-model asset; rights pending | ralsontires.com official |
+| Greforce G-PILOT X1 295/80R22.5 | existing exact-model asset; rights pending | greforcetire.com official |
 | Greforce GR881W 11R22.5 | placeholder | no isolatable GR881W photo (and see verification doc: real GR881 is a steer rib, not the drive block currently described) |
 | Greforce G-ARMOR 11R22.5 | placeholder | pattern unverified — needs physical photo |
 | Jumbo SS618 275/70R22.5 | placeholder | SS618 not found — needs physical photo |
 | Ralson RAC55 295/80R22.5 | placeholder | catalogue size/position/tread are wrong for RAC55 — needs physical photo |
 
 **Licensing note:** all candidate imagery is manufacturer/distributor marketing
-material for products being resold. None of it is confirmed royalty-free. Usage
+material for products being resold. None of it is confirmed royalty-free. The site
+therefore has 2 exact-model local assets with rights pending and 23 neutral
+fallbacks; it does not claim licensed or complete genuine-image coverage. Usage
 rights should be confirmed with each manufacturer before commercial launch.

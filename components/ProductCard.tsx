@@ -51,16 +51,23 @@ export function ProductCard({
 
   if (variant === "feature") {
     const title = tyreTitle(tyre);
+    // Only the Ralson hero photo is a wide studio shot meant to bleed edge to
+    // edge; every other verified photo (tracked in docs/product-image-manifest.json)
+    // gets a contained treatment so it isn't cropped.
     const isRalsonHeroPhoto = tyre.id === "ralson-rmr61-29580r225";
-    const isGreforceCutout = tyre.id === "greforce-g-pilot-x1-29580r225";
 
     return (
       <article className="surface-card product-card product-card--feature flex h-full flex-col overflow-hidden">
         <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
-          {isRalsonHeroPhoto ? (
-            <Image src={tyre.image!} alt={title} fill sizes="(max-width: 639px) calc(100vw - 32px), 340px" className="product-card__media-cover" />
-          ) : isGreforceCutout ? (
-            <Image src="/images/tyres/greforce-g-pilot-295-80r22-5-cutout.png" alt={title} fill sizes="(max-width: 639px) calc(100vw - 32px), 340px" className="product-card__media-contain" />
+          {tyre.image ? (
+            <Image
+              src={tyre.image}
+              alt={title}
+              fill
+              priority={priority}
+              sizes="(max-width: 639px) calc(100vw - 32px), 340px"
+              className={isRalsonHeroPhoto ? "product-card__media-cover" : "product-card__media-contain"}
+            />
           ) : (
             <TyreImage src={null} alt={title} size={190} className="product-card__placeholder" />
           )}

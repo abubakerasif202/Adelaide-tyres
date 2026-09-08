@@ -109,9 +109,26 @@ test("removed catalogue SKUs return a real 404", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
 });
 
+test("Product structured data identifies the SKU and only exposes a verified local image", async ({ page }) => {
+  await page.goto("/tyres/ralson-rmr61-295-80r22-5");
+  const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
+  const productSchema = schemas.map((schema) => JSON.parse(schema)).find((schema) => schema["@type"] === "Product");
+  expect(productSchema).toMatchObject({
+    sku: "ralson-rmr61-29580r225",
+    image: expect.stringMatching(/ralson-rmr61-295-80r22-5\.webp$/),
+    offers: { priceCurrency: "AUD", availability: "https://schema.org/InStock" },
+  });
+
+  await page.goto(product);
+  const fallbackSchemas = await page.locator('script[type="application/ld+json"]').allTextContents();
+  const fallbackSchema = fallbackSchemas.map((schema) => JSON.parse(schema)).find((schema) => schema["@type"] === "Product");
+  expect(fallbackSchema).toMatchObject({ sku: "greforce-gr881w-11r225" });
+  expect(fallbackSchema).not.toHaveProperty("image");
+});
+
 const routes = ["/", "/tyres", product, "/tyres/ralson-rmr61-295-80r22-5", "/tyres/jumbo-ss398-295-80r22-5", "/cart", "/checkout", "/commercial", "/delivery", "/contact"];
 
-for (const width of [1440, 1280, 1024, 768, 430, 390, 360]) {
+for (const width of [1440, 1280, 1024, 768, 430, 390, 375, 360, 320]) {
   test(`required routes remain within ${width}px and render without browser errors`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Widths are explicitly covered in one browser project");
     test.setTimeout(90_000);

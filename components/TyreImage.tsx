@@ -30,7 +30,7 @@ export function TyreImage({ src, alt, size = 120, priority = false, className, s
         alt={alt}
         width={size}
         height={size}
-        preload={priority}
+        priority={priority}
         className={cls}
         style={{ objectFit: "contain" }}
         sizes={sizes ?? `${size}px`}
@@ -42,12 +42,13 @@ export function TyreImage({ src, alt, size = 120, priority = false, className, s
   return (
     <svg
       role="img"
-      aria-label={alt}
+      aria-label={`Illustration only — photo pending for ${alt}`}
       width={size}
       height={size}
-      viewBox="0 0 120 120"
+      viewBox="0 0 120 132"
       className={cls}
     >
+      <text x="60" y="128" textAnchor="middle" fontSize="9" fill="#68716d">Photo pending</text>
       <defs>
         <radialGradient id={gradientId} cx="42%" cy="38%" r="70%">
           <stop offset="0%" stopColor="#2b3130" />

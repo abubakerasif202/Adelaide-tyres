@@ -79,8 +79,15 @@ export default async function TyreDetailPage({ params }: Params) {
         <div className="container-x py-10">
           <Breadcrumbs items={crumbs} />
 
+          {/*
+            Mobile/tablet stack in DOM order: image, then the buy box (title,
+            price, add-to-cart) — the conversion action must not be buried
+            below specs/description. Desktop pins each block to an explicit
+            grid cell so the buy box becomes the sticky right-hand column
+            regardless of DOM order.
+          */}
           <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_400px]">
-            <div>
+            <div className="lg:col-start-1 lg:row-start-1">
               <div className="surface-card product-detail-visual grid aspect-square place-items-center p-6 sm:p-10">
                 <TyreImage
                   src={tyre.image}
@@ -91,39 +98,9 @@ export default async function TyreDetailPage({ params }: Params) {
                   className="h-auto w-full max-w-[460px]"
                 />
               </div>
-
-
-              <div className="mt-10">
-                <h2 className="display text-[24px]">Specifications</h2>
-                <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                  {specs
-                    .filter(([, v]) => v)
-                    .map(([k, v]) => (
-                      <div key={k} className="flex justify-between border-b border-[var(--color-border)] py-2">
-                        <dt className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                          {k}
-                        </dt>
-                        <dd className="text-[14px] font-semibold capitalize">{v}</dd>
-                      </div>
-                    ))}
-                </dl>
-                {!tyre.loadIndex && (
-                  <p className="mt-3 text-[13px] text-[var(--color-text-muted)]">
-                    Full load index, speed rating and construction details are confirmed
-                    on your quote or invoice.
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-10">
-                <h2 className="display text-[24px]">About this tyre</h2>
-                <p className="mt-3 max-w-2xl text-[15px] text-[var(--color-text-muted)]">
-                  {tyre.description}
-                </p>
-              </div>
             </div>
 
-            <div className="lg:sticky lg:top-[160px] lg:self-start">
+            <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-[160px] lg:self-start">
               <span className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-red)]">
                 {tyre.brand}
               </span>
@@ -134,6 +111,35 @@ export default async function TyreDetailPage({ params }: Params) {
               <div className="mt-5">
                 <ProductPurchasePanel tyre={tyre} />
               </div>
+            </div>
+
+            <div className="lg:col-start-1 lg:row-start-2">
+              <h2 className="display text-[24px]">Specifications</h2>
+              <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                {specs
+                  .filter(([, v]) => v)
+                  .map(([k, v]) => (
+                    <div key={k} className="flex justify-between border-b border-[var(--color-border)] py-2">
+                      <dt className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
+                        {k}
+                      </dt>
+                      <dd className="text-[14px] font-semibold capitalize">{v}</dd>
+                    </div>
+                  ))}
+              </dl>
+              {!tyre.loadIndex && (
+                <p className="mt-3 text-[13px] text-[var(--color-text-muted)]">
+                  Full load index, speed rating and construction details are confirmed
+                  on your quote or invoice.
+                </p>
+              )}
+            </div>
+
+            <div className="lg:col-start-1 lg:row-start-3">
+              <h2 className="display text-[24px]">About this tyre</h2>
+              <p className="mt-3 max-w-2xl text-[15px] text-[var(--color-text-muted)]">
+                {tyre.description}
+              </p>
             </div>
           </div>
 
