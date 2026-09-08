@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readSubmission } from "@/lib/request-body";
 import { sendNotification } from "@/lib/notify";
 import {
   clampString,
@@ -20,8 +21,9 @@ export async function POST(request: Request) {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
-  } catch {
+    body = await readSubmission(request);
+  } catch (error) {
+    if (error instanceof RangeError) return NextResponse.json({ error: "Request too large." }, { status: 413 });
     return NextResponse.json({ error: "Malformed request." }, { status: 400 });
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) {

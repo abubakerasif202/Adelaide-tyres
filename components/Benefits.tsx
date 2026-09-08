@@ -20,7 +20,7 @@ export function Benefits() {
                 : "border-[var(--color-border)] bg-white"
             }`}
           >
-            <h3 className="display text-[21px]">{b.title}</h3>
+            <h2 className="display text-[21px]">{b.title}</h2>
             <p
               className={`mt-1.5 text-[13px] ${
                 b.highlight ? "text-white/80" : "text-[var(--color-text-muted)]"

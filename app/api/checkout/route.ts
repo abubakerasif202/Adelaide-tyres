@@ -3,8 +3,7 @@ import { readSubmission } from "@/lib/request-body";
 import { validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
-import { createPaymentIntent } from "@/lib/payment";
-import { sendNotification } from "@/lib/notify";
+import { createCheckoutSession, isPaymentConfigured } from "@/lib/payment";
 import {
   clampString,
   clientKey,
@@ -13,11 +12,18 @@ import {
   rateLimit,
 } from "@/lib/submission-security";
 
+/** Creates a Stripe Checkout Session for immediate card payment. */
 export async function POST(request: Request) {
+  if (!isPaymentConfigured()) {
+    return NextResponse.json(
+      { error: "Card payment is not available yet. Please submit your order for invoice instead." },
+      { status: 503 },
+    );
+  }
   if (!(await isSameOrigin())) {
     return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   }
-  if (!rateLimit(`orders:${await clientKey()}`, 6)) {
+  if (!rateLimit(`checkout:${await clientKey()}`, 6)) {
     return NextResponse.json({ error: "Too many attempts. Try again shortly." }, { status: 429 });
   }
 
@@ -33,8 +39,7 @@ export async function POST(request: Request) {
   }
 
   if (looksAutomated({ honeypot: body.company_website, startedAt: Number(body.startedAt) })) {
-    // Silently accept so bots get no signal; nothing is processed.
-    return NextResponse.json({ reference: "AWT-TEST-0000", mode: "test", requiresPayment: false });
+    return NextResponse.json({ error: "Please try again." }, { status: 400 });
   }
 
   const rawDetails = (body.details ?? {}) as Record<string, unknown>;
@@ -60,55 +65,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validated.error }, { status: 409 });
   }
   const lines = validated.lines;
+  if (lines.length > 20) {
+    return NextResponse.json(
+      { error: "This order has too many distinct items for card checkout — please submit for invoice instead." },
+      { status: 413 },
+    );
+  }
   const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
-
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
     details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
   const deliveryFee = freeDelivery ? 0 : order.delivery.feeAud;
 
-  const intent = await createPaymentIntent({
-    details,
-    lines,
-    totalTyres,
-    subtotal,
-    freeDelivery,
-    deliveryFee,
-  });
-
   try {
-    const { delivered } = await sendNotification({
-      subject: `New bulk order ${intent.reference} · ${totalTyres} tyres`,
-      replyTo: details.email,
-      text: [
-        `Reference: ${intent.reference} (${intent.mode})`,
-        `Contact: ${details.name} · ${details.phone} · ${details.email}`,
-        details.abn ? `ABN: ${details.abn}` : "",
-        `Fulfilment: ${details.deliveryMethod}`,
-        details.deliveryMethod === "delivery"
-          ? `Address: ${details.address}, ${details.suburb} SA ${details.postcode}`
-          : `Pickup: ${order.pickup.address}`,
-        "",
-        ...lines.map((l) => `  ${l.quantity} × ${l.brand} ${l.pattern} ${l.size} @ $${l.price}`),
-        "",
-        `Total tyres: ${totalTyres}`,
-        `Subtotal: $${subtotal} AUD`,
-        `Delivery: ${
-          details.deliveryMethod === "pickup"
-            ? "Free warehouse pickup"
-            : freeDelivery
-              ? "Free Adelaide-wide"
-              : `$${deliveryFee} Adelaide-wide`
-        }`,
-        details.notes ? `Notes: ${details.notes}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+    const session = await createCheckoutSession({
+      details,
+      lines,
+      totalTyres,
+      subtotal,
+      freeDelivery,
+      deliveryFee,
     });
-    return NextResponse.json({ ...intent, subtotal, totalTyres, notified: delivered });
+    return NextResponse.json({ url: session.url, reference: session.reference });
   } catch (err) {
-    console.error("Order notification failed", err);
-    // The order is still valid; surface a soft warning to the client.
-    return NextResponse.json({ ...intent, subtotal, totalTyres, notified: false });
+    console.error("Stripe Checkout Session creation failed", err);
+    return NextResponse.json({ error: "Could not start card checkout. Please try again or submit for invoice." }, { status: 502 });
   }
 }

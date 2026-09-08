@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { getDeliveryFee, getLineSubtotal, qualifiesForFreeDelivery } from "@/lib/cart";
 import { business, order } from "@/lib/config";
@@ -20,8 +21,20 @@ import { QuantitySelector } from "@/components/QuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 
+const STRIPE_ENABLED = Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutPageInner />
+    </Suspense>
+  );
+}
+
+function CheckoutPageInner() {
   const { cart, hydrated, totalTyres, subtotal, setQuantity, clear } = useCart();
+  const searchParams = useSearchParams();
+  const cancelled = searchParams.get("cancelled") === "1";
   const [step, setStep] = useState<CheckoutStepIndex>(0);
   const [details, setDetails] = useState<CheckoutDetails>(EMPTY_CHECKOUT_DETAILS);
   const [errors, setErrors] = useState<CheckoutErrors>({});
@@ -76,6 +89,34 @@ export default function CheckoutPage() {
     if (!hasErrors(found)) setStep(2);
   }
 
+  async function payByCard() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startedAt,
+          company_website: "",
+          details,
+          lines: cart.lines.map((l) => ({ slug: l.slug, quantity: l.quantity })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        if (data.errors) setErrors(data.errors);
+        setSubmitError(data.error ?? "Could not start card checkout. Please try again.");
+        if (data.errors) setStep(1);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setSubmitError("Network error. Please check your connection and try again.");
+      setSubmitting(false);
+    }
+  }
+
   async function placeOrder() {
     setSubmitting(true);
     setSubmitError(null);
@@ -95,6 +136,10 @@ export default function CheckoutPage() {
         if (data.errors) setErrors(data.errors);
         setSubmitError(data.error ?? "Something went wrong. Please try again.");
         if (data.errors) setStep(1);
+        return;
+      }
+      if (data.notified !== true) {
+        setSubmitError("Your order request could not be delivered. Your cart and details are still here. Please contact the wholesale team before retrying if you are unsure whether they received it.");
         return;
       }
       setConfirmation({ reference: data.reference, mode: data.mode, notified: data.notified });
@@ -117,6 +162,11 @@ export default function CheckoutPage() {
 
   return (
     <Shell step={step}>
+      {cancelled && step < 3 && (
+        <p className="surface-card mb-6 p-4 text-[14px]" role="status">
+          Payment was cancelled — your cart is unchanged. You can try again or submit for invoice.
+        </p>
+      )}
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         <div>
           {step === 0 && (
@@ -245,10 +295,44 @@ export default function CheckoutPage() {
               <h1 id="payment-step" className="display text-[clamp(28px,4vw,40px)]">
                 Payment
               </h1>
+
+              {STRIPE_ENABLED && (
+                <div className="surface-card mt-4 p-6">
+                  <p className="text-[15px] font-bold">Pay securely by card now</p>
+                  <p className="mt-1 text-[14px] text-[var(--color-text-muted)]">
+                    Card details are entered on Stripe&apos;s secure checkout page — this site never
+                    sees or stores them.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn--green mt-4"
+                    onClick={payByCard}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Redirecting to secure checkout…" : `Pay ${formatCurrency(subtotal + deliveryFee)} by card`}
+                  </button>
+                  <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
+                    By paying you agree to our{" "}
+                    <Link href="/terms" className="underline">
+                      terms
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="underline">
+                      privacy policy
+                    </Link>
+                    . Payments are processed by Stripe; card data is handled entirely on Stripe&apos;s
+                    infrastructure.
+                  </p>
+                </div>
+              )}
+
               <div className="surface-card mt-4 p-6">
-                <p className="text-[15px]">
-                  This site does not take card details online. Submit your order now and the
-                  wholesale team confirms stock, final pricing and payment (EFT or card on
+                <p className="text-[15px] font-bold">
+                  {STRIPE_ENABLED ? "Or submit for invoice" : "Submit your order"}
+                </p>
+                <p className="mt-1 text-[14px] text-[var(--color-text-muted)]">
+                  This site does not take card details online for this option. Submit your order now
+                  and the wholesale team confirms stock, final pricing and payment (EFT or card on
                   invoice) before dispatch.
                 </p>
                 <ul className="mt-4 flex flex-col gap-2 text-[14px] text-[var(--color-text-muted)]">
@@ -263,20 +347,21 @@ export default function CheckoutPage() {
                   <li>✓ Order reference issued immediately</li>
                   <li>✓ No card data stored by this website</li>
                 </ul>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>
+                    Back
+                  </button>
+                  <button type="button" className="btn btn--red" onClick={placeOrder} disabled={submitting}>
+                    {submitting ? "Placing order…" : "Place bulk order"}
+                  </button>
+                </div>
               </div>
+
               {submitError && (
                 <p className="field-error mt-4" role="alert">
                   {submitError}
                 </p>
               )}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>
-                  Back
-                </button>
-                <button type="button" className="btn btn--red" onClick={placeOrder} disabled={submitting}>
-                  {submitting ? "Placing order…" : "Place bulk order"}
-                </button>
-              </div>
             </section>
           )}
 

@@ -128,7 +128,7 @@ test("Product structured data identifies the SKU and only exposes a verified loc
 
 const routes = ["/", "/tyres", product, "/tyres/ralson-rmr61-295-80r22-5", "/tyres/jumbo-ss398-295-80r22-5", "/cart", "/checkout", "/commercial", "/delivery", "/contact"];
 
-for (const width of [1440, 1280, 1024, 768, 430, 390, 360]) {
+for (const width of [1440, 1280, 1024, 768, 430, 390, 375, 360, 320]) {
   test(`required routes remain within ${width}px and render without browser errors`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Widths are explicitly covered in one browser project");
     test.setTimeout(90_000);

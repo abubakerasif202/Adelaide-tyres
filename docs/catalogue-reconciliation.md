@@ -4,9 +4,16 @@ Source: `docs/source-inventory/brand-name-historical.csv`, a verbatim
 transcription of the supplied historical `Brand name.pdf`. The PDF binary was
 not available locally. Current catalogue source: `lib/catalogue.ts`.
 
+The complete 53-row deliverable is [reconciliation.csv](source-inventory/reconciliation.csv).
+Regenerate it with `node scripts/reconcile.mjs --csv`. Raw quantity text `09`
+is preserved separately from numeric quantity `9`. The owner corrected this
+notation after the original chat transcription; the binary has not been inspected.
+All 25 published SKUs are represented; there are no current-only products.
+Published matches total 454 + 37 = 491 units. All groups sum to 725 units.
+
 | Category | Rows | Units | Publication result |
 | --- | ---: | ---: | --- |
-| Exact raw brand/pattern/normalised-size match | 24 | 491 | Published, current quantity equals historical quantity; prices are repository-only current values. |
+| Exact raw brand/pattern/normalised-size match | 24 | 454 | Published, current quantity equals historical quantity; prices are repository-only current values. |
 | Normalised model match | 1 | 37 | Greforce G-PILOT → published G-PILOT X1; manufacturer verification exists. |
 | Withheld identity conflict | 3 | 152 | Not published: RAC55 295/80R22.5 (38), G-ARMOR 11R22.5 (74), SS618 275/70R22.5 (40). |
 | Historical-only rows | 25 | 82 | Not published; no current stock/price/publication authority. |

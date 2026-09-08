@@ -104,6 +104,11 @@ test("every catalogue image mapping has a complete provenance record and local a
       assert.ok(entry.sourceUrl, `missing source URL for ${tyre.id}`);
       assert.ok(entry.rights, `missing rights status for ${tyre.id}`);
       assert.ok(statSync(resolve("public", tyre.image.slice(1))).isFile());
+      const shared = catalogue.filter(other => other.image === tyre.image);
+      assert.ok(shared.every(other => other.brand === tyre.brand && other.pattern === tyre.pattern), `cross-pattern asset reuse for ${tyre.id}`);
+    } else {
+      assert.equal(entry.supplierRequest, 'docs/supplier-image-requests.md');
+      assert.ok(entry.requestNotes, `missing supplier request for ${tyre.id}`);
     }
   }
 });
