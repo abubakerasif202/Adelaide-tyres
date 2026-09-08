@@ -1,7 +1,7 @@
 /**
  * Durable order + webhook-idempotency contract. Two implementations exist:
- * - order-store-neon.ts: the real, production-safe implementation backed by
- *   Postgres, using guarded UPDATEs so concurrent/duplicate webhook delivery
+ * - order-store-postgres.ts: the real, production-safe implementation backed
+ *   by Postgres, using guarded UPDATEs so concurrent/duplicate webhook delivery
  *   can never double-fulfil an order.
  * - order-store-memory.ts: a single-process in-memory implementation used
  *   only in tests and local dev without a database configured. It is NOT
@@ -83,8 +83,8 @@ export function hasDurableOrderStore(): boolean {
 export async function getOrderStore(): Promise<OrderStore> {
   if (cached) return cached;
   if (hasDurableOrderStore()) {
-    const { NeonOrderStore } = await import("./order-store-neon.ts");
-    cached = new NeonOrderStore();
+    const { PostgresOrderStore } = await import("./order-store-postgres.ts");
+    cached = new PostgresOrderStore();
   } else {
     const { MemoryOrderStore } = await import("./order-store-memory.ts");
     console.warn(

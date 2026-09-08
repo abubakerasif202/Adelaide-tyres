@@ -1,5 +1,5 @@
 import "server-only";
-import { neon } from "@neondatabase/serverless";
+import postgres from "postgres";
 import type { NewOrderInput, OrderLine, OrderRecord, OrderStatus, OrderStore } from "./order-store.ts";
 
 type OrderRow = {
@@ -33,28 +33,33 @@ function fromRow(row: OrderRow): OrderRecord {
     deliveryMethod: row.delivery_method,
     deliveryAddress: row.delivery_address,
     notes: row.order_notes,
-    // The HTTP driver returns jsonb columns already parsed, but guard against
-    // a driver/config change that starts returning the raw text instead.
-    lines: typeof row.lines === "string" ? JSON.parse(row.lines) : row.lines,
+    lines: row.lines,
     notifiedAt: row.notified_at,
   };
 }
 
 /**
- * Postgres (Neon) implementation. Every state transition is a single guarded
- * UPDATE/INSERT statement — the WHERE clause encodes the precondition, so
- * concurrent or duplicate callers race safely at the database level instead
- * of relying on application-level locking.
+ * Postgres implementation (any standard Postgres provider — currently
+ * Supabase). Every state transition is a single guarded UPDATE/INSERT
+ * statement — the WHERE clause encodes the precondition, so concurrent or
+ * duplicate callers race safely at the database level instead of relying on
+ * application-level locking.
+ *
+ * Uses postgres.js over the standard Postgres wire protocol (not a
+ * provider-specific HTTP driver), so this works against any Postgres,
+ * pooled or direct. `prepare: false` is required for Supabase's transaction
+ * pooler (pgbouncer in transaction mode doesn't support prepared
+ * statements) and is harmless against a direct connection.
  */
-export class NeonOrderStore implements OrderStore {
-  private sql: ReturnType<typeof neon>;
+export class PostgresOrderStore implements OrderStore {
+  private sql: ReturnType<typeof postgres>;
 
   constructor() {
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
     if (!connectionString) {
-      throw new Error("NeonOrderStore requires DATABASE_URL or POSTGRES_URL.");
+      throw new Error("PostgresOrderStore requires DATABASE_URL or POSTGRES_URL.");
     }
-    this.sql = neon(connectionString);
+    this.sql = postgres(connectionString, { prepare: false, max: 1, idle_timeout: 20, connect_timeout: 10 });
   }
 
   async createPendingOrder(order: NewOrderInput): Promise<void> {
@@ -67,7 +72,7 @@ export class NeonOrderStore implements OrderStore {
         ${order.reference}, ${order.checkoutSessionId}, ${order.paymentIntentId}, 'pending',
         ${order.amountTotalCents}, ${order.currency}, ${order.customerEmail}, ${order.customerName},
         ${order.customerPhone}, ${order.deliveryMethod}, ${order.deliveryAddress}, ${order.notes},
-        ${JSON.stringify(order.lines)}::jsonb
+        ${this.sql.json(order.lines)}
       )
       on conflict (checkout_session_id) do nothing
     `;
@@ -81,7 +86,7 @@ export class NeonOrderStore implements OrderStore {
         and status = 'pending'
         and notify_claimed_at is null
       returning *
-    `) as OrderRow[];
+    `) as unknown as OrderRow[];
     return rows[0] ? fromRow(rows[0]) : null;
   }
 
@@ -102,34 +107,34 @@ export class NeonOrderStore implements OrderStore {
   }
 
   async transitionPendingTo(checkoutSessionId: string, status: "failed" | "cancelled"): Promise<boolean> {
-    const rows = (await this.sql`
+    const rows = await this.sql`
       update orders set status = ${status}, updated_at = now()
       where checkout_session_id = ${checkoutSessionId} and status = 'pending'
       returning checkout_session_id
-    `) as unknown[];
+    `;
     return rows.length > 0;
   }
 
   async transitionPaidToRefunded(paymentIntentId: string): Promise<boolean> {
-    const rows = (await this.sql`
+    const rows = await this.sql`
       update orders set status = 'refunded', updated_at = now()
       where payment_intent_id = ${paymentIntentId} and status = 'paid'
       returning checkout_session_id
-    `) as unknown[];
+    `;
     return rows.length > 0;
   }
 
   async getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null> {
     const rows = (await this.sql`
       select * from orders where checkout_session_id = ${checkoutSessionId}
-    `) as OrderRow[];
+    `) as unknown as OrderRow[];
     return rows[0] ? fromRow(rows[0]) : null;
   }
 
   async getByPaymentIntentId(paymentIntentId: string): Promise<OrderRecord | null> {
     const rows = (await this.sql`
       select * from orders where payment_intent_id = ${paymentIntentId}
-    `) as OrderRow[];
+    `) as unknown as OrderRow[];
     return rows[0] ? fromRow(rows[0]) : null;
   }
 

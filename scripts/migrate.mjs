@@ -3,7 +3,7 @@
 // POSTGRES_URL. Run once after provisioning the database, and again after
 // adding a new numbered migration file. Safe to re-run: every statement here
 // uses IF NOT EXISTS / idempotent DDL.
-import { neon } from "@neondatabase/serverless";
+import postgres from "postgres";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -14,14 +14,15 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const sql = neon(connectionString);
+const sql = postgres(connectionString, { prepare: false, max: 1 });
 const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
 
 for (const file of files) {
   console.log(`Applying ${file}...`);
   const text = readFileSync(join(dir, file), "utf8");
-  await sql.query(text);
+  await sql.unsafe(text);
 }
 
 console.log(`Applied ${files.length} migration file(s).`);
+await sql.end();
