@@ -71,3 +71,29 @@ test("hero headline and CTAs do not clip at a 320px viewport", async ({ page }) 
 
   await expect(page.locator("body")).toContainText("Ready for your next order.");
 });
+
+test("Stage 2 catalogue exposes a desktop filter rail and preserves URL filter state", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/tyres?brand=Ralson&stock=in");
+
+  const rail = page.getByRole("complementary", { name: "Tyre filters" });
+  await expect(rail).toBeVisible();
+  await expect(rail.getByRole("combobox", { name: "Brand" })).toHaveValue("Ralson");
+  await expect(rail.getByRole("checkbox", { name: "In stock only" })).toBeChecked();
+  await expect(page.getByRole("article").first()).toContainText("Ralson");
+});
+
+test("Stage 2 mobile catalogue opens filters without losing URL state", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/tyres");
+
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Tyre filters" });
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByRole("combobox", { name: "Brand" }).selectOption("Ralson");
+  await expect(page).toHaveURL(/brand=Ralson/);
+  await dialog.getByRole("button", { name: "Close filters" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("article").first()).toContainText("Ralson");
+});

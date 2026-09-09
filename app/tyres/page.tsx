@@ -41,10 +41,9 @@ export default function TyresPage() {
           <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Tyres", path: "/tyres" }]} />
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="display text-[clamp(30px,5vw,48px)]">Shop available stock</h1>
+              <h1 className="display text-[clamp(36px,5vw,56px)]">Wholesale tyre catalogue</h1>
               <p className="mt-2 max-w-xl text-[var(--color-text-muted)]">
-                Search by size, brand or pattern. No minimum order — checkout is open from
-                one tyre up.
+                Search current Adelaide stock by size, brand or pattern. No minimum order.
               </p>
             </div>
             <span className="pill pill--muted">

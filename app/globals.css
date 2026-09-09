@@ -649,6 +649,190 @@ footer a {
   border-top: 3px solid var(--color-red);
 }
 
+/* ---------------------------------------------------------------
+   Catalogue workspace: ~280px desktop filter rail + results column,
+   collapsing to a single column with a modal filter sheet on mobile.
+   --------------------------------------------------------------- */
+.catalogue-shell {
+  display: grid;
+  gap: 24px;
+}
+
+.catalogue-filter-rail {
+  display: none;
+  align-self: start;
+  padding: 20px;
+}
+
+.catalogue-search {
+  margin-bottom: 14px;
+}
+
+.catalogue-search .field-input {
+  min-height: 56px;
+  border-color: var(--color-border-strong);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.catalogue-mobile-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.catalogue-filter-trigger {
+  min-height: 44px;
+}
+
+.catalogue-results-clear {
+  margin-top: 10px;
+}
+
+.filter-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.filter-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--color-ink);
+}
+
+.filter-rail__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.filter-rail__count {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-red);
+  color: var(--color-white);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.filter-rail__group > .field-label {
+  margin-bottom: 7px;
+}
+
+.filter-rail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.filter-rail__chip {
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.filter-rail__chip:hover {
+  border-color: var(--color-ink);
+}
+
+.filter-rail__chip.is-active {
+  border-color: transparent;
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.filter-rail__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filter-rail__toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-green);
+}
+
+.catalogue-filter-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+.catalogue-filter-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(9, 12, 12, 0.58);
+}
+
+.catalogue-filter-dialog {
+  position: absolute;
+  inset: auto 0 0;
+  max-height: min(82vh, 720px);
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  background: var(--color-white);
+  padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+  box-shadow: 0 -18px 44px rgba(9, 12, 12, 0.2);
+}
+
+.catalogue-filter-dialog:focus {
+  outline: none;
+}
+
+/* Touch-sized controls inside the sheet; the desktop rail is pointer-driven. */
+.catalogue-filter-dialog .filter-rail__chip,
+.catalogue-filter-dialog .field-input {
+  min-height: 44px;
+}
+
+@media (min-width: 1024px) {
+  .catalogue-shell {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .catalogue-filter-rail {
+    display: block;
+    position: sticky;
+    top: 112px;
+  }
+
+  .catalogue-mobile-toolbar .catalogue-filter-trigger,
+  .catalogue-filter-sheet {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
