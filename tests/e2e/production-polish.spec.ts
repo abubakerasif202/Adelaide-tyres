@@ -119,10 +119,12 @@ test("Product structured data identifies the SKU and only exposes a verified loc
     offers: { priceCurrency: "AUD", availability: "https://schema.org/InStock" },
   });
 
-  await page.goto(product);
+  // jumbo-ss398-295-80r22-5 is the only catalogue SKU with no verified image, so its
+  // Product schema must omit `image` rather than advertise the neutral placeholder.
+  await page.goto("/tyres/jumbo-ss398-295-80r22-5");
   const fallbackSchemas = await page.locator('script[type="application/ld+json"]').allTextContents();
   const fallbackSchema = fallbackSchemas.map((schema) => JSON.parse(schema)).find((schema) => schema["@type"] === "Product");
-  expect(fallbackSchema).toMatchObject({ sku: "greforce-gr881w-11r225" });
+  expect(fallbackSchema).toMatchObject({ sku: "jumbo-ss398-29580r225" });
   expect(fallbackSchema).not.toHaveProperty("image");
 });
 

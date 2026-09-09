@@ -55,6 +55,10 @@ test('card checkout redirects to Stripe when the server confirms it is enabled',
   await page.route('**/api/checkout', route =>
     route.fulfill({ json: { url: 'https://checkout.stripe.com/test-session', reference: 'AWT-TEST-1' } }),
   );
+  // Stub Stripe's hosted page so the assertion tests our redirect, not network egress.
+  await page.route('https://checkout.stripe.com/**', route =>
+    route.fulfill({ contentType: 'text/html', body: '<html><body>stub</body></html>' }),
+  );
   await page.goto('/tyres/greforce-gr881w-11r22-5');
   await page.getByRole('button', { name: 'Add & go to cart' }).click();
   await page.getByRole('link', { name: 'Continue to checkout' }).click();
