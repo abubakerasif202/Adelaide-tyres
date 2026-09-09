@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("homepage hero and stock preview render", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Buy tyres in bulk");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Ready for your next order");
   await expect(page.getByRole("link", { name: "Shop available stock" }).first()).toBeVisible();
   await expect(page.getByRole("article").first()).toBeVisible();
 });
