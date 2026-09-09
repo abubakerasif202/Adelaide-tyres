@@ -4,7 +4,7 @@
 
 **Goal:** Apply the approved Stitch visual system to the Adelaide Wholesale Tyres homepage, catalogue, and product-detail experience on desktop and mobile without changing verified commerce behaviour or business facts.
 
-**Architecture:** Keep the existing Next.js App Router/server-component structure and existing data boundaries. Visual work stays in page/components/CSS; catalogue filtering continues to use `lib/filter.ts`, products continue to come from `lib/catalogue.ts`, and cart/order/payment boundaries are not redesigned in Stage 2. Add focused Playwright coverage for the new visible structure and responsive catalogue controls, then verify the existing regression suite unchanged.
+**Architecture:** Keep the existing Next.js App Router/server-component structure and current data boundaries. Visual work stays in pages, focused components and `app/globals.css`; catalogue filtering remains URL-driven through `lib/filter.ts`; products remain sourced from `lib/catalogue.ts`; cart/order/payment code is not redesigned in Stage 2. Add focused Playwright coverage for the new visual/interaction structure, then run the existing regression suite unchanged.
 
 **Tech Stack:** Node.js 22.x, Next.js 16.3.3 App Router, React 19.2.6, TypeScript 5.9.3, Tailwind CSS 4.2.1, Playwright 1.62.1.
 
@@ -13,22 +13,22 @@
 ## Global Constraints
 
 - Work only on `redesign/stitch-stage-2`; do not merge or push to `master` without owner approval.
-- Read `AGENTS.md` before implementation and follow its Next.js 16.3.3 documentation requirement.
+- Read `AGENTS.md` first and follow its Next.js 16.3.3 documentation requirement before editing Next.js code.
 - Stitch controls layout and visual treatment; repository code/config/catalogue controls facts and behaviour.
 - Preserve: no minimum order; $50 Adelaide-wide delivery for 1–7 tyres; free Adelaide-wide delivery for 8+ tyres; free warehouse pickup; `6 Birralee Rd, Regency Park SA 5010`.
 - Products, prices, stock, application, optional technical fields and image paths remain sourced from `lib/catalogue.ts`.
-- Public phone/email affordances remain environment-backed; never hardcode demo contact details from Stitch.
-- Do not introduce Stitch demo products or unsupported claims, freight schedules, awards, ratings, fitting claims, or 30-day credit workflows.
-- Do not restructure `lib/cart.ts`, `lib/cart-context.tsx`, order persistence, checkout validation, payment code, or webhooks for visual convenience.
-- Do not add a new animation/UI framework; use the existing CSS/Tailwind system.
-- Preserve the Stage-1 product-card media plate and single stock badge.
+- Public phone/email affordances remain environment-backed; never hardcode Stitch demo contact details.
+- Do not introduce Stitch demo products or unsupported market-leading, freight, depot, fitting, award, rating or 30-day-credit claims.
+- Do not restructure `lib/cart.ts`, `lib/cart-context.tsx`, checkout validation, order persistence, payment code or webhooks for visual convenience.
+- Do not add another animation/UI framework. Extend the current Tailwind/CSS token system.
+- Preserve the Stage-1 dark product-media plate and single stock badge.
 - Keep server-rendered content server-rendered; only interaction components remain client components.
-- Behaviour changes require a failing test first. Pure CSS/layout edits must still run relevant Playwright regressions.
-- Use these supplied Stitch references: `adelaide_wholesale_tyres_homepage`, `adelaide_wholesale_tyres_catalogue`, `adelaide_wholesale_tyres_mobile_catalogue`, `adelaide_wholesale_tyres_product_detail_page`, and `adelaide_wholesale_tyres_mobile_product_detail_page`.
+- Behaviour changes require a failing test first. Pure layout/CSS changes still require targeted Playwright regression checks.
+- Stitch references for this stage: `adelaide_wholesale_tyres_homepage`, `adelaide_wholesale_tyres_catalogue`, `adelaide_wholesale_tyres_mobile_catalogue`, `adelaide_wholesale_tyres_product_detail_page`, `adelaide_wholesale_tyres_mobile_product_detail_page`.
 
-## Execution preflight
+## Execution Preflight
 
-- [ ] **Step 1: Enter an isolated local worktree for the existing Stage 2 branch**
+- [ ] **Step 1: Enter an isolated worktree for the existing Stage 2 branch**
 
 ```powershell
 git fetch origin
@@ -36,7 +36,7 @@ git worktree add .worktrees\stitch-stage-2 redesign/stitch-stage-2
 Set-Location .worktrees\stitch-stage-2
 ```
 
-If that branch is already checked out in an isolated worktree, use the existing worktree instead of creating another.
+If `redesign/stitch-stage-2` is already checked out in an isolated worktree, use that existing worktree instead.
 
 - [ ] **Step 2: Install locked dependencies**
 
@@ -44,7 +44,7 @@ If that branch is already checked out in an isolated worktree, use the existing 
 npm install
 ```
 
-- [ ] **Step 3: Confirm the baseline before production edits**
+- [ ] **Step 3: Verify the baseline before production edits**
 
 ```powershell
 npm run typecheck
@@ -54,11 +54,11 @@ npm run build
 npm run test:e2e
 ```
 
-Expected: all commands exit `0`. If a baseline command fails, stop and report the failure before changing Stage 2 code.
+Expected: every command exits `0`. If any command fails, stop before Stage 2 edits and report the baseline failure.
 
 ---
 
-### Task 1: Homepage Stitch integration
+### Task 1: Homepage Stitch Integration
 
 **Files:**
 - Modify: `components/Hero.tsx`
@@ -66,15 +66,17 @@ Expected: all commands exit `0`. If a baseline command fails, stop and report th
 - Modify: `components/Benefits.tsx`
 - Modify: `app/page.tsx`
 - Modify: `app/globals.css`
-- Create/modify: `tests/e2e/stitch-stage-2.spec.ts`
+- Create: `tests/e2e/stitch-stage-2.spec.ts`
+- Regression only: `components/Header.tsx`
+- Regression only: `components/Footer.tsx`
 
 **Interfaces:**
 - Consumes: `business`, `order`, `catalogueStats`, `formatCurrency`, `ProductCard`, `CommercialTeaser`, `FreeDeliveryCTA`.
-- Produces: a server-rendered homepage whose H1 is `Wholesale tyres. Ready for your next order.`, whose delivery copy is configuration-derived, and whose existing product/cart interactions remain unchanged.
+- Produces: a server-rendered homepage with the approved H1, configuration-derived delivery copy, verified product imagery, and unchanged catalogue/cart interaction paths.
 
 - [ ] **Step 1: Write the failing homepage acceptance test**
 
-Create `tests/e2e/stitch-stage-2.spec.ts` with:
+Create `tests/e2e/stitch-stage-2.spec.ts`:
 
 ```ts
 import { expect, test } from "@playwright/test";
@@ -106,17 +108,17 @@ test("Stage 2 homepage uses the approved Stitch hierarchy with verified content"
 });
 ```
 
-- [ ] **Step 2: Run the homepage test and confirm the expected red state**
+- [ ] **Step 2: Verify the test fails for the intended reason**
 
 ```powershell
 npx playwright test tests/e2e/stitch-stage-2.spec.ts --project=desktop --grep "Stage 2 homepage"
 ```
 
-Expected: FAIL because the current H1 is `Buy tyres in bulk. Pay wholesale.` rather than the approved Stage 2 H1.
+Expected: FAIL because the current H1 is `Buy tyres in bulk. Pay wholesale.`.
 
-- [ ] **Step 3: Update `components/Hero.tsx` to the approved content hierarchy**
+- [ ] **Step 3: Replace the hero content hierarchy in `components/Hero.tsx`**
 
-Change imports to include configured order values and formatter:
+Use these imports:
 
 ```ts
 import { business, order } from "@/lib/config";
@@ -124,17 +126,15 @@ import { catalogueStats } from "@/lib/catalogue";
 import { formatCurrency } from "@/lib/format";
 ```
 
-Replace the hero eyebrow/title/copy with:
+Use this visible copy:
 
 ```tsx
 <p className="hero__kicker">Adelaide Wholesale Tyres</p>
-
 <h1 className="hero__title display">
   Wholesale tyres.
   <br />
   <span>Ready for your next order.</span>
 </h1>
-
 <p className="hero__copy">
   No minimum order. {formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery
   for 1–{order.delivery.freeQualifyingTyres - 1} tyres. Free Adelaide-wide delivery
@@ -143,31 +143,23 @@ Replace the hero eyebrow/title/copy with:
 </p>
 ```
 
-Keep these routes exactly:
+Keep these routes and labels exactly:
 
 ```tsx
-<Link href="/tyres" className="btn btn--red">
-  Shop available stock
-</Link>
-<Link href="/contact?type=quote" className="btn btn--outline-light">
-  Get a wholesale quote
-</Link>
+<Link href="/tyres" className="btn btn--red">Shop available stock</Link>
+<Link href="/contact?type=quote" className="btn btn--outline-light">Get a wholesale quote</Link>
 ```
 
-Keep `business.address.oneLine` in the location/meta line. Do not add a phone number.
+Keep `business.address.oneLine` in the hero meta line. Do not add a phone number.
 
-- [ ] **Step 4: Make `Benefits.tsx` derive numeric delivery copy from config**
+- [ ] **Step 4: Derive all `Benefits.tsx` delivery numbers from config**
 
 Use:
 
 ```ts
 import { order } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
-```
 
-Build the cards from config:
-
-```ts
 const benefits = [
   { title: "No minimum order", copy: "Order from one tyre up" },
   {
@@ -181,11 +173,9 @@ const benefits = [
 ] as const;
 ```
 
-Retain `Reveal` and semantic headings.
+Keep `Reveal` and the existing semantic card headings.
 
-- [ ] **Step 5: Apply the Stitch homepage visual treatment without adding new client state**
-
-In `app/globals.css`, keep the current tokens and add/adjust these Stage 2 rules:
+- [ ] **Step 5: Add the approved hero typography rules to `app/globals.css`**
 
 ```css
 .hero__kicker {
@@ -224,31 +214,43 @@ In `app/globals.css`, keep the current tokens and add/adjust these Stage 2 rules
 }
 ```
 
-Keep green/charcoal/red as the primary visual system. Do not add a decorative pill above the H1.
+Keep the existing green/charcoal/red palette. Do not put a decorative pill above the H1.
 
-- [ ] **Step 6: Refine `HeroArtwork.tsx` only as a visual asset container**
+- [ ] **Step 6: Refine only the framing in `HeroArtwork.tsx`**
 
-Keep this exact image path:
-
-```tsx
-src="/images/tyres/ralson-rmr61-295-80r22-5.webp"
-```
-
-Keep the verified alt text, `next/image`, explicit `sizes`, and live `units`/`skuLines`. Adjust framing/classes to match the Stitch industrial product bay; do not replace the tyre with a demo brand.
-
-- [ ] **Step 7: Preserve homepage data flow in `app/page.tsx`**
-
-Keep the page as a server component and retain:
+Keep the exact asset and alt source:
 
 ```tsx
-<Hero />
-<Benefits />
-// stock preview still resolves through getTyreBySlug(...)
-<CommercialTeaser />
-<FreeDeliveryCTA />
+<Image
+  src="/images/tyres/ralson-rmr61-295-80r22-5.webp"
+  alt="Ralson RMR61 295/80R22.5 tyre from current Adelaide stock"
+  fill
+  priority
+  sizes="(max-width: 1023px) min(100vw - 32px, 520px), 42vw"
+  className="hero__tyre object-cover"
+/>
 ```
 
-Visual spacing and headings may change, but the preview must continue resolving real catalogue slugs through `getTyreBySlug`.
+Only adjust the surrounding studio frame, borders, shadows and spacing to match Stitch. Keep live `units` and `skuLines`; do not substitute a Stitch demo tyre.
+
+- [ ] **Step 7: Keep homepage server/data boundaries intact in `app/page.tsx`**
+
+Retain the existing real catalogue preview construction:
+
+```ts
+const preview = [
+  "ralson-rmr61-295-80r22-5",
+  "ralson-rdr55-11r22-5",
+  "greforce-gr881w-11r22-5",
+  "greforce-grd1919-11r22-5",
+  "jumbo-ss398-295-80r22-5",
+  "greforce-g-pilot-x1-295-80r22-5",
+  "ralson-rac55-11r22-5",
+  "haulmax-att101-11r22-5",
+].map(getTyreBySlug).filter((tyre) => tyre !== undefined);
+```
+
+Keep `Hero`, `Benefits`, the stock preview, `CommercialTeaser`, and `FreeDeliveryCTA` in that order. Adjust only section framing and spacing.
 
 - [ ] **Step 8: Run homepage regressions**
 
@@ -269,7 +271,7 @@ git commit -m "feat: apply Stitch Stage 2 homepage design"
 
 ---
 
-### Task 2: Catalogue desktop workspace and mobile filter sheet
+### Task 2: Catalogue Desktop Workspace and Mobile Filter Sheet
 
 **Files:**
 - Modify: `app/tyres/page.tsx`
@@ -283,7 +285,7 @@ git commit -m "feat: apply Stitch Stage 2 homepage design"
 - Consumes: `Tyre[]`, `TyreFilters`, `filtersFromParams()`, `paramsFromFilters()`, `filterTyres()`, `activeFilterCount()`, `ProductCard`.
 - Produces: a 280px desktop filter rail and accessible mobile filter sheet while preserving URL-driven filter state and existing ProductCard/cart behaviour.
 
-- [ ] **Step 1: Add failing catalogue tests before changing the component**
+- [ ] **Step 1: Add failing catalogue tests**
 
 Append:
 
@@ -309,59 +311,37 @@ test("Stage 2 mobile catalogue opens filters without losing URL state", async ({
 
   await dialog.getByRole("combobox", { name: "Brand" }).selectOption("Ralson");
   await expect(page).toHaveURL(/brand=Ralson/);
-
   await dialog.getByRole("button", { name: "Close filters" }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("article").first()).toContainText("Ralson");
 });
 ```
 
-- [ ] **Step 2: Run the catalogue tests and confirm the expected red state**
+- [ ] **Step 2: Verify the catalogue tests fail for the intended reason**
 
 ```powershell
 npx playwright test tests/e2e/stitch-stage-2.spec.ts --project=desktop --grep "Stage 2 catalogue"
 ```
 
-Expected: FAIL because the current `CatalogueBrowser` has one top filter card and no filter `aside` or mobile dialog.
+Expected: FAIL because `CatalogueBrowser` currently has one horizontal filter card and no `aside`/mobile dialog.
 
-- [ ] **Step 3: Keep URL/filter ownership in `CatalogueBrowser` and add only mobile-sheet UI state**
+- [ ] **Step 3: Keep URL state ownership in `CatalogueBrowser`**
 
-Change:
+Change the React import to:
 
 ```ts
 import { useCallback, useMemo, useState } from "react";
 ```
 
-Inside `CatalogueBrowser` add:
+Add:
 
 ```ts
 const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 ```
 
-Do not duplicate `TyreFilters` into local state; `filters` remains derived from `searchParams`.
+Keep `filters` derived from `searchParams`. Do not create a second local `TyreFilters` store.
 
-- [ ] **Step 4: Extract current controls into a local `FilterControls` function**
-
-Add inside `components/CatalogueBrowser.tsx`:
-
-```ts
-type FilterControlsProps = {
-  filters: TyreFilters;
-  sizes: string[];
-  brands: string[];
-  applications: string[];
-  onPatch: (partial: Partial<TyreFilters>) => void;
-  onClear: () => void;
-};
-```
-
-Implement `FilterControls` by moving the existing search, Size, Brand, Application, In-stock and Sort controls into that function. Keep these accessible names exactly: `Search tyres`, `Size`, `Brand`, `Application`, `In stock only`, `Sort results`.
-
-Use the existing `APPLICATION_LABELS`; do not rename serialized values.
-
-- [ ] **Step 5: Create one reusable clear callback**
-
-Use:
+- [ ] **Step 4: Add one shared clear callback**
 
 ```ts
 const clearFilters = useCallback(() => {
@@ -376,11 +356,26 @@ const clearFilters = useCallback(() => {
 }, [filters.sort, setFilters]);
 ```
 
-This preserves the current sort while clearing active filters.
+- [ ] **Step 5: Extract a local `FilterControls` renderer without changing control semantics**
 
-- [ ] **Step 6: Replace the top filter card with desktop rail + results column**
+Add this interface in `CatalogueBrowser.tsx`:
 
-Use this structure:
+```ts
+type FilterControlsProps = {
+  filters: TyreFilters;
+  sizes: string[];
+  brands: string[];
+  applications: string[];
+  onPatch: (partial: Partial<TyreFilters>) => void;
+  onClear: () => void;
+};
+```
+
+Move the existing search, Size, Brand, Application, In-stock and Sort controls into `FilterControls`. Preserve these accessible names exactly: `Search tyres`, `Size`, `Brand`, `Application`, `In stock only`, `Sort results`. Keep `APPLICATION_LABELS` for visible application labels and the existing URL values for serialization.
+
+- [ ] **Step 6: Render a desktop rail and results column**
+
+Use this top-level structure:
 
 ```tsx
 <div className="catalogue-shell">
@@ -396,66 +391,85 @@ Use this structure:
   </aside>
 
   <section aria-label="Tyre catalogue results" className="min-w-0">
-    {/* mobile trigger, result count, clear action, cards/no-results */}
+    <div className="catalogue-mobile-toolbar">
+      <button
+        type="button"
+        className="catalogue-filter-trigger btn btn--outline"
+        aria-expanded={mobileFiltersOpen}
+        onClick={() => setMobileFiltersOpen(true)}
+      >
+        Filters{activeCount > 0 ? ` (${activeCount})` : ""}
+      </button>
+      <p aria-live="polite" aria-atomic="true" className="text-[14px] font-semibold text-[var(--color-text-muted)]">
+        {results.length} {results.length === 1 ? "result" : "results"}
+      </p>
+    </div>
+
+    {activeCount > 0 && (
+      <button type="button" className="link-underline text-[13px] font-bold uppercase tracking-wide" onClick={clearFilters}>
+        Clear filters
+      </button>
+    )}
+
+    {results.length === 0 ? (
+      <div className="surface-card mt-6 p-10 text-center">
+        <h3 className="display text-[22px]">No tyres match those filters</h3>
+        <p className="mx-auto mt-2 max-w-md text-[var(--color-text-muted)]">
+          Try a broader size or brand, or send us the size you need and we&apos;ll check what&apos;s inbound.
+        </p>
+        <a href="/contact?type=quote" className="btn btn--green mt-5">Request a size</a>
+      </div>
+    ) : (
+      <div className="catalogue-results mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {results.map((tyre) => <ProductCard key={tyre.id} tyre={tyre} />)}
+      </div>
+    )}
   </section>
 </div>
 ```
 
-Keep the existing `results`, active-filter count, no-results state, sort behaviour and ProductCard mapping.
+- [ ] **Step 7: Add the mobile filter sheet**
 
-- [ ] **Step 7: Add the mobile trigger and filter sheet**
-
-Use:
+Render this adjacent to the catalogue shell when `mobileFiltersOpen` is true:
 
 ```tsx
-<button
-  type="button"
-  className="catalogue-filter-trigger btn btn--outline"
-  aria-expanded={mobileFiltersOpen}
-  onClick={() => setMobileFiltersOpen(true)}
->
-  Filters{activeCount > 0 ? ` (${activeCount})` : ""}
-</button>
-```
-
-When open, render:
-
-```tsx
-<div className="catalogue-filter-sheet lg:hidden">
-  <button
-    type="button"
-    className="catalogue-filter-backdrop"
-    aria-label="Close filters"
-    onClick={() => setMobileFiltersOpen(false)}
-  />
-  <div role="dialog" aria-modal="true" aria-label="Tyre filters" className="catalogue-filter-dialog">
-    <div className="flex items-center justify-between gap-4">
-      <h2 className="display text-[28px]">Filters</h2>
-      <button
-        type="button"
-        className="btn btn--outline min-h-[44px] px-4 py-2"
-        onClick={() => setMobileFiltersOpen(false)}
-      >
-        Close filters
-      </button>
-    </div>
-    <FilterControls
-      filters={filters}
-      sizes={sizes}
-      brands={brands}
-      applications={applications}
-      onPatch={patch}
-      onClear={clearFilters}
+{mobileFiltersOpen && (
+  <div className="catalogue-filter-sheet lg:hidden">
+    <button
+      type="button"
+      className="catalogue-filter-backdrop"
+      aria-label="Close filters"
+      onClick={() => setMobileFiltersOpen(false)}
     />
+    <div role="dialog" aria-modal="true" aria-label="Tyre filters" className="catalogue-filter-dialog">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="display text-[28px]">Filters</h2>
+        <button
+          type="button"
+          className="btn btn--outline min-h-[44px] px-4 py-2"
+          onClick={() => setMobileFiltersOpen(false)}
+        >
+          Close filters
+        </button>
+      </div>
+      <div className="mt-5">
+        <FilterControls
+          filters={filters}
+          sizes={sizes}
+          brands={brands}
+          applications={applications}
+          onPatch={patch}
+          onClear={clearFilters}
+        />
+      </div>
+    </div>
   </div>
-</div>
+)}
 ```
 
-Do not alter URL serialization when the sheet opens/closes.
+Opening/closing the sheet must not change filter URL state.
 
-- [ ] **Step 8: Add catalogue layout CSS using existing tokens**
-
-Add:
+- [ ] **Step 8: Add catalogue layout CSS**
 
 ```css
 .catalogue-shell {
@@ -467,6 +481,13 @@ Add:
   display: none;
   align-self: start;
   padding: 20px;
+}
+
+.catalogue-mobile-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .catalogue-filter-trigger {
@@ -509,18 +530,16 @@ Add:
     top: 112px;
   }
 
-  .catalogue-filter-trigger,
+  .catalogue-mobile-toolbar .catalogue-filter-trigger,
   .catalogue-filter-sheet {
     display: none;
   }
 }
 ```
 
-Keep the Stage-1 ProductCard structure and stock/cart logic unchanged.
+- [ ] **Step 9: Apply the Stitch catalogue page framing in `app/tyres/page.tsx`**
 
-- [ ] **Step 9: Update `app/tyres/page.tsx` only for page framing**
-
-Keep metadata, JSON-LD and catalogue helper calls. Use:
+Keep metadata, JSON-LD, `getAllTyres()`, `uniqueSizes()`, `uniqueBrands()` and `uniqueApplications()`. Change the visible heading block to:
 
 ```tsx
 <h1 className="display text-[clamp(36px,5vw,56px)]">Wholesale tyre catalogue</h1>
@@ -529,9 +548,7 @@ Keep metadata, JSON-LD and catalogue helper calls. Use:
 </p>
 ```
 
-Do not add demo-brand copy or freight claims.
-
-- [ ] **Step 10: Verify filtering, URL restoration and cart interaction**
+- [ ] **Step 10: Verify filtering, URL restoration, sizing and cart interaction**
 
 ```powershell
 npm run build
@@ -540,7 +557,7 @@ npx playwright test tests/e2e/smoke.spec.ts --grep "catalogue filters|cart has n
 npx playwright test tests/e2e/production-polish.spec.ts --grep "required routes remain within|quantity is capped"
 ```
 
-Expected: PASS on applicable desktop/mobile projects.
+Expected: PASS on applicable desktop/mobile runs.
 
 - [ ] **Step 11: Commit the catalogue slice**
 
@@ -551,7 +568,7 @@ git commit -m "feat: add Stitch catalogue workspace and mobile filters"
 
 ---
 
-### Task 3: Product-detail and purchase-panel Stitch integration
+### Task 3: Product Detail and Purchase Panel Stitch Integration
 
 **Files:**
 - Modify: `app/tyres/[slug]/page.tsx`
@@ -560,12 +577,12 @@ git commit -m "feat: add Stitch catalogue workspace and mobile filters"
 - Modify: `tests/e2e/stitch-stage-2.spec.ts`
 - Reuse unchanged: `components/DeliveryStatus.tsx`
 - Reuse unchanged: `components/QuantitySelector.tsx`
-- Reuse unchanged: `lib/seo.ts`
-- Reuse unchanged: `lib/catalogue.ts`
+- Regression only: `lib/seo.ts`
+- Regression only: `lib/catalogue.ts`
 
 **Interfaces:**
 - Consumes: `Tyre`, `tyreFullName()`, `APPLICATION_LABELS`, `ProductPurchasePanel`, `DeliveryStatus`, `QuantitySelector`, existing cart context.
-- Produces: Stitch-style product media/purchase composition with a full verified product H1 and shared delivery-progress widget, without changing quantity/stock/cart rules.
+- Produces: Stitch-style media/purchase composition with a full verified product H1 and shared delivery-progress widget without changing stock or cart rules.
 
 - [ ] **Step 1: Add failing product-detail acceptance tests**
 
@@ -607,17 +624,17 @@ test("Stage 2 product detail does not fabricate optional tyre specifications", a
 });
 ```
 
-- [ ] **Step 2: Run the product-detail tests and confirm the expected red state**
+- [ ] **Step 2: Verify the product tests fail for the intended reason**
 
 ```powershell
 npx playwright test tests/e2e/stitch-stage-2.spec.ts --project=desktop --grep "Stage 2 product detail"
 ```
 
-Expected: FAIL because the current H1 is only the tyre size and the purchase panel does not render `DeliveryStatus`.
+Expected: FAIL because the current H1 is only the size and `ProductPurchasePanel` does not render `DeliveryStatus`.
 
-- [ ] **Step 3: Update the product-detail identity hierarchy**
+- [ ] **Step 3: Update the product identity hierarchy**
 
-In `app/tyres/[slug]/page.tsx`, keep metadata/JSON-LD code unchanged. Use:
+Keep metadata and JSON-LD untouched. Replace the visible identity block with:
 
 ```tsx
 <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--color-red)]">
@@ -631,11 +648,9 @@ In `app/tyres/[slug]/page.tsx`, keep metadata/JSON-LD code unchanged. Use:
 </p>
 ```
 
-Do not add inferred technical values.
+- [ ] **Step 4: Use a dedicated Stage 2 media bay**
 
-- [ ] **Step 4: Turn the media card into the Stage 2 industrial product bay**
-
-Keep the existing `TyreImage` source and alt. Use:
+Replace the current light media card with:
 
 ```tsx
 <div className="product-detail-media surface-card">
@@ -665,28 +680,33 @@ Add:
 }
 ```
 
-Do not tint the tyre image itself.
+Do not add a colour overlay to the tyre image itself.
 
-- [ ] **Step 5: Give specifications an explicit accessible region and keep optional-field filtering**
+- [ ] **Step 5: Mark the specifications as a named region while preserving exact filtering**
 
-Use:
+Change the specifications container to:
 
 ```tsx
 <section aria-label="Tyre specifications">
   <h2 className="display text-[24px]">Specifications</h2>
-  <dl>{/* existing filtered specification rows */}</dl>
+  <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+    {specs
+      .filter(([, value]) => value)
+      .map(([key, value]) => (
+        <div key={key} className="flex justify-between border-b border-[var(--color-border)] py-2">
+          <dt className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
+            {key}
+          </dt>
+          <dd className="text-[14px] font-semibold capitalize">{value}</dd>
+        </div>
+      ))}
+  </dl>
 </section>
 ```
 
-Retain:
+Keep the existing informational note below the region when `loadIndex` is absent.
 
-```ts
-specs.filter(([, value]) => value)
-```
-
-That filtering rule prevents empty/unverified technical fields from rendering.
-
-- [ ] **Step 6: Reuse `DeliveryStatus` in `ProductPurchasePanel.tsx` instead of duplicated status copy**
+- [ ] **Step 6: Reuse `DeliveryStatus` inside `ProductPurchasePanel.tsx`**
 
 Add:
 
@@ -694,7 +714,7 @@ Add:
 import { DeliveryStatus } from "./DeliveryStatus";
 ```
 
-Keep the static fulfilment tier table, quantity selector and add-to-cart actions. Replace the final conditional delivery-status block with:
+Keep `addToCart()`, `remainingStock`, `selectedQty`, `QuantitySelector`, the two purchase buttons and the static delivery/pickup tier table unchanged. Replace only the duplicated final delivery-status conditional with:
 
 ```tsx
 <div className="mt-4">
@@ -706,11 +726,9 @@ Keep the static fulfilment tier table, quantity selector and add-to-cart actions
 </div>
 ```
 
-Do not change `addToCart()`, `remainingStock`, `selectedQty`, stock ceilings, or the cart line shape.
+- [ ] **Step 7: Preserve the mobile overflow fix**
 
-- [ ] **Step 7: Preserve the known mobile overflow fix while matching Stitch composition**
-
-Keep a one-column mobile fallback and 400px desktop purchase column. The effective layout must remain equivalent to:
+Keep the page grid single-column by default and switch to a 400px purchase column only at desktop. The layout must remain equivalent to:
 
 ```css
 .product-detail-layout {
@@ -727,9 +745,9 @@ Keep a one-column mobile fallback and 400px desktop purchase column. The effecti
 }
 ```
 
-If Tailwind grid classes remain in the page, retain `grid-cols-1` before the `lg:` columns.
+If the page continues using Tailwind layout utilities, retain `grid-cols-1` before any `lg:grid-cols-*` class.
 
-- [ ] **Step 8: Run product/cart/structured-data regressions**
+- [ ] **Step 8: Run product, cart and structured-data regressions**
 
 ```powershell
 npm run build
@@ -749,18 +767,18 @@ git commit -m "feat: apply Stitch Stage 2 product detail design"
 
 ---
 
-### Task 4: Cross-page fidelity, responsive QA and release evidence
+### Task 4: Fidelity, Responsive QA and Handoff Evidence
 
 **Files:**
-- Modify only if a regression is found: `app/globals.css`
-- Modify only if an acceptance gap is found: `tests/e2e/stitch-stage-2.spec.ts`
+- Modify if the final acceptance test needs extension: `tests/e2e/stitch-stage-2.spec.ts`
+- Modify if browser QA identifies a Stage 2 responsive defect: `app/globals.css`
 - Create: `docs/stitch-stage-2-fidelity.md`
 
 **Interfaces:**
-- Consumes: implemented homepage/catalogue/product-detail screens and supplied Stitch screenshots.
-- Produces: documented visual comparison evidence and a verified feature branch ready for owner review, not production deployment.
+- Consumes: the three implemented Stage 2 surfaces and five supplied Stitch reference screens.
+- Produces: a branch with fresh automated verification and a factual fidelity report ready for owner review, not production deployment.
 
-- [ ] **Step 1: Add final fabricated-content guards for all Stage 2 routes**
+- [ ] **Step 1: Add fabricated-content guards for all Stage 2 routes**
 
 Append:
 
@@ -789,68 +807,39 @@ npm run build
 npm run test:e2e
 ```
 
-Expected: every command exits `0`. Do not claim Stage 2 complete if any command fails.
+Expected: every command exits `0`. A failed command blocks completion.
 
-- [ ] **Step 3: Perform browser QA at required viewports**
+- [ ] **Step 3: Perform browser QA at all required widths**
 
-Review:
+Review these viewport widths:
 
 ```text
-Desktop: 1440, 1280, 1024
-Tablet: 768
-Mobile: 430, 390, 375, 360, 320
+1440, 1280, 1024, 768, 430, 390, 375, 360, 320
 ```
 
-On `/`, `/tyres`, and `/tyres/ralson-rmr61-295-80r22-5`, confirm no horizontal overflow, no introduced console errors, no clipped H1/CTA/product metadata, practical 44px+ mobile targets, functional filter sheet, correct URL filter state, usable cards at 320px, and working quantity/add-to-cart state.
+On `/`, `/tyres`, and `/tyres/ralson-rmr61-295-80r22-5`, verify no horizontal overflow, no introduced console errors, no clipped H1/CTA/product metadata, practical 44px+ touch targets, working mobile filters, correct URL restoration, usable product cards at 320px, and working quantity/add-to-cart state.
 
-- [ ] **Step 4: Compare rendered screens against supplied Stitch references**
+- [ ] **Step 4: Compare implementation against the Stitch references**
 
-Use:
+Compare:
 - Homepage → `adelaide_wholesale_tyres_homepage/screen.png`
 - Catalogue desktop → `adelaide_wholesale_tyres_catalogue/screen.png`
 - Catalogue mobile → `adelaide_wholesale_tyres_mobile_catalogue/screen.png`
 - Product desktop → `adelaide_wholesale_tyres_product_detail_page/screen.png`
 - Product mobile → `adelaide_wholesale_tyres_mobile_product_detail_page/screen.png`
 
-Compare headline hierarchy, palette, spacing, media framing, card proportions, desktop filter density, mobile filter composition, purchase hierarchy, control typography, and mobile stacking. Unsupported Stitch copy/data is an intentional deviation, not a fidelity defect.
+Check headline hierarchy, palette, spacing, media framing, product-card proportions, desktop filter density, mobile filter composition, purchase-panel hierarchy, control typography and mobile stacking. Unsupported Stitch demo data is an intentional deviation, not a fidelity defect.
 
-- [ ] **Step 5: Write `docs/stitch-stage-2-fidelity.md` with actual results**
+- [ ] **Step 5: Write `docs/stitch-stage-2-fidelity.md` after verification**
 
-Use this structure and replace the command-result lines with the observed outcomes:
+The report must contain these sections with the observed results from this execution:
+- `Reference screens`: name the five Stitch references above.
+- `Verified matches`: list concrete matches for hero hierarchy, catalogue workspace, Stage-1 card treatment, product-detail media/purchase hierarchy and responsive composition.
+- `Intentional deviations`: state that demo phone/email values, demo tyre brands, unsupported market-leading/freight/depot/credit claims and absent optional tyre specifications were deliberately omitted.
+- `Behaviour verification`: record each command (`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, `npm run test:e2e`) with its observed pass/fail result and exit status.
+- `Visual verification`: record every viewport reviewed and any remaining intentional visual differences.
 
-```md
-# Stitch Stage 2 Fidelity Report
-
-## Reference screens
-- Homepage: adelaide_wholesale_tyres_homepage
-- Catalogue desktop/mobile: adelaide_wholesale_tyres_catalogue / adelaide_wholesale_tyres_mobile_catalogue
-- Product desktop/mobile: adelaide_wholesale_tyres_product_detail_page / adelaide_wholesale_tyres_mobile_product_detail_page
-
-## Verified matches
-- Hero hierarchy and palette
-- Catalogue workspace/filter hierarchy
-- Stage-1 product-card media treatment
-- Product-detail media/purchase hierarchy
-- Mobile responsive composition
-
-## Intentional deviations
-- Demo phone/email values omitted because contact details are environment-backed.
-- Stitch demo tyre brands omitted because products come from lib/catalogue.ts.
-- Unsupported market-leading/freight/depot/credit claims omitted.
-- Optional tyre specifications render only when present in the Tyre record.
-
-## Behaviour verification
-- npm run typecheck: [actual outcome]
-- npm run lint: [actual outcome]
-- npm test: [actual outcome]
-- npm run build: [actual outcome]
-- npm run test:e2e: [actual outcome]
-
-## Visual verification
-Document the desktop/mobile viewport sizes reviewed and any remaining intentional visual differences.
-```
-
-The committed report must contain actual outcomes rather than bracketed instruction text.
+Do not write the report before the commands and visual comparisons have actually been completed.
 
 - [ ] **Step 6: Inspect the final branch diff**
 
@@ -861,16 +850,16 @@ git diff origin/master...HEAD --stat
 git diff origin/master...HEAD
 ```
 
-Confirm there are no changes to payment/webhook/order-persistence files and no accidental Stitch demo data.
+Confirm the branch contains no changes to payment/webhook/order-persistence files and no accidental Stitch demo data.
 
-- [ ] **Step 7: Commit final QA evidence**
+- [ ] **Step 7: Commit the final acceptance test/report**
 
 ```powershell
 git add tests/e2e/stitch-stage-2.spec.ts docs/stitch-stage-2-fidelity.md
 git commit -m "test: verify Stitch Stage 2 storefront fidelity"
 ```
 
-If a final responsive CSS fix was required, include `app/globals.css` in the same commit after its targeted regression passes.
+If browser QA required a responsive CSS repair, include `app/globals.css` in this commit only after the targeted regression and full quality gate pass again.
 
 - [ ] **Step 8: Stop for owner review**
 
