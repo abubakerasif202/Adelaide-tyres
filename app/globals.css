@@ -288,8 +288,6 @@ img {
   }
   .product-card__media-contain {
     inset: 6% 0 !important;
-    width: 100% !important;
-    height: 88% !important;
     object-fit: contain;
     filter: saturate(0.12) brightness(1.02) contrast(1.04) drop-shadow(0 14px 18px rgba(0, 0, 0, 0.55));
   }

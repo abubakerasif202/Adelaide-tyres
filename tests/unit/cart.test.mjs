@@ -128,6 +128,6 @@ test("stored cart restores only current catalogue facts and aggregates duplicate
     price: 220,
     quantity: 107,
     stock: 107,
-    image: null,
+    image: "/images/tyres/greforce-gr881w-11r22-5.webp",
   });
 });

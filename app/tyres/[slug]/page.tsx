@@ -86,7 +86,7 @@ export default async function TyreDetailPage({ params }: Params) {
             grid cell so the buy box becomes the sticky right-hand column
             regardless of DOM order.
           */}
-          <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_400px]">
+          <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_400px]">
             <div className="lg:col-start-1 lg:row-start-1">
               <div className="surface-card product-detail-visual grid aspect-square place-items-center p-6 sm:p-10">
                 <TyreImage

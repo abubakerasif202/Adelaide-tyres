@@ -49,9 +49,24 @@ export const order = {
   pricingIsPlaceholder: false,
 } as const;
 
-export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL || `https://${business.domain}`
-).replace(/\/$/, "");
+/**
+ * NEXT_PUBLIC_SITE_URL is optional and public-facing; a malformed value must
+ * never take the whole site down (it previously did — every route 500'd
+ * because `new URL()` on the raw env value threw during layout metadata
+ * evaluation). Validate it and fall back to the known domain instead.
+ */
+function resolveSiteUrl(): string {
+  const fallback = `https://${business.domain}`;
+  const candidate = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!candidate) return fallback;
+  try {
+    return new URL(candidate).toString().replace(/\/$/, "");
+  } catch {
+    return fallback;
+  }
+}
+
+export const siteUrl = resolveSiteUrl();
 
 export const nav = [
   { label: "Shop Tyres", href: "/tyres" },

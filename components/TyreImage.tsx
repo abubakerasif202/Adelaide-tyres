@@ -32,7 +32,7 @@ export function TyreImage({ src, alt, size = 120, priority = false, className, s
         height={size}
         priority={priority}
         className={cls}
-        style={{ objectFit: "contain" }}
+        style={{ objectFit: "contain", aspectRatio: "1 / 1" }}
         sizes={sizes ?? `${size}px`}
         onError={() => setFailed(true)}
       />
