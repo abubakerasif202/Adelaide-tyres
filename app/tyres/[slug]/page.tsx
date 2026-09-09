@@ -80,53 +80,60 @@ export default async function TyreDetailPage({ params }: Params) {
           <Breadcrumbs items={crumbs} />
 
           {/*
-            Mobile/tablet stack in DOM order: image, then the buy box (title,
-            price, add-to-cart) — the conversion action must not be buried
-            below specs/description. Desktop pins each block to an explicit
-            grid cell so the buy box becomes the sticky right-hand column
-            regardless of DOM order.
+            Mobile/tablet DOM order follows the Stage 2 spec priority:
+            identity, media, price/stock + quantity + add-to-cart + delivery
+            (the purchase panel), specifications, then description. The buy box
+            still sits above the specs, so the Stage 1 fix is preserved.
+            Desktop pins each block to an explicit grid cell, so the composition
+            is unchanged: media on the left, identity + sticky purchase column
+            on the right.
           */}
-          <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_400px]">
-            <div className="lg:col-start-1 lg:row-start-1">
-              <div className="surface-card product-detail-visual grid aspect-square place-items-center p-6 sm:p-10">
+          <div className="product-detail-layout mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-12">
+            <div className="lg:col-start-2 lg:row-start-1">
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--color-red)]">
+                {tyre.brand}
+              </p>
+              <h1 className="display mt-1 text-[clamp(36px,5vw,56px)]">
+                {tyreFullName(tyre)}
+              </h1>
+              <p className="mt-2 text-[15px] font-semibold text-[var(--color-text-muted)]">
+                {APPLICATION_LABELS[tyre.application]}
+              </p>
+            </div>
+
+            <div className="lg:col-start-1 lg:row-start-1 lg:row-end-3">
+              <div className="product-detail-media surface-card">
                 <TyreImage
                   src={tyre.image}
                   alt={`${tyreFullName(tyre)} commercial tyre`}
                   size={460}
                   priority
-                  sizes="(max-width: 639px) calc(100vw - 80px), (max-width: 1023px) 460px, (max-width: 1279px) 40vw, 460px"
-                  className="h-auto w-full max-w-[460px]"
+                  sizes="(max-width: 639px) calc(100vw - 64px), (max-width: 1023px) 460px, 46vw"
+                  className="h-auto w-full max-w-[500px]"
                 />
               </div>
             </div>
 
-            <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-[160px] lg:self-start">
-              <span className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-red)]">
-                {tyre.brand}
-              </span>
-              <h1 className="display mt-1 text-[clamp(34px,5vw,48px)]">{tyre.size}</h1>
-              <p className="text-[16px] font-semibold text-[var(--color-text-muted)]">
-                Pattern {tyre.pattern} · {APPLICATION_LABELS[tyre.application]}
-              </p>
-              <div className="mt-5">
-                <ProductPurchasePanel tyre={tyre} />
-              </div>
+            <div className="lg:col-start-2 lg:row-start-2 lg:row-end-5 lg:sticky lg:top-[160px] lg:self-start">
+              <ProductPurchasePanel tyre={tyre} />
             </div>
 
-            <div className="lg:col-start-1 lg:row-start-2">
-              <h2 className="display text-[24px]">Specifications</h2>
-              <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                {specs
-                  .filter(([, v]) => v)
-                  .map(([k, v]) => (
-                    <div key={k} className="flex justify-between border-b border-[var(--color-border)] py-2">
-                      <dt className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                        {k}
-                      </dt>
-                      <dd className="text-[14px] font-semibold capitalize">{v}</dd>
-                    </div>
-                  ))}
-              </dl>
+            <div className="lg:col-start-1 lg:row-start-3">
+              <section aria-label="Tyre specifications">
+                <h2 className="display text-[24px]">Specifications</h2>
+                <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                  {specs
+                    .filter(([, value]) => value)
+                    .map(([key, value]) => (
+                      <div key={key} className="flex justify-between border-b border-[var(--color-border)] py-2">
+                        <dt className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
+                          {key}
+                        </dt>
+                        <dd className="text-[14px] font-semibold capitalize">{value}</dd>
+                      </div>
+                    ))}
+                </dl>
+              </section>
               {!tyre.loadIndex && (
                 <p className="mt-3 text-[13px] text-[var(--color-text-muted)]">
                   Full load index, speed rating and construction details are confirmed
@@ -135,7 +142,7 @@ export default async function TyreDetailPage({ params }: Params) {
               )}
             </div>
 
-            <div className="lg:col-start-1 lg:row-start-3">
+            <div className="lg:col-start-1 lg:row-start-4">
               <h2 className="display text-[24px]">About this tyre</h2>
               <p className="mt-3 max-w-2xl text-[15px] text-[var(--color-text-muted)]">
                 {tyre.description}

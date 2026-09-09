@@ -859,3 +859,28 @@ footer a {
     transform: none !important;
   }
 }
+
+/* Stage 2 product detail: industrial media bay and single-column-first layout. */
+.product-detail-media {
+  display: grid;
+  min-height: min(620px, 72vw);
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 56px);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(70, 155, 122, 0.18), transparent 45%),
+    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
+}
+
+.product-detail-layout {
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 48px;
+    align-items: start;
+  }
+}

@@ -97,3 +97,37 @@ test("Stage 2 mobile catalogue opens filters without losing URL state", async ({
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("article").first()).toContainText("Ralson");
 });
+
+test("Stage 2 product detail leads with verified product identity and purchase controls", async ({ page }) => {
+  await page.goto("/tyres/ralson-rmr61-295-80r22-5");
+
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Ralson RMR61 295/80R22.5",
+    }),
+  ).toBeVisible();
+
+  const panel = page.getByTestId("purchase-panel");
+  await expect(panel).toBeVisible();
+  await expect(
+    panel.getByRole("spinbutton", {
+      name: "Quantity for Ralson RMR61 295/80R22.5",
+    }),
+  ).toHaveValue("1");
+  await expect(
+    panel.getByRole("progressbar", {
+      name: "Tyres towards free Adelaide-wide delivery",
+    }),
+  ).toBeVisible();
+});
+
+test("Stage 2 product detail does not fabricate optional tyre specifications", async ({ page }) => {
+  await page.goto("/tyres/greforce-gr881w-11r22-5");
+
+  const specs = page.getByRole("region", { name: "Tyre specifications" });
+  await expect(specs).toBeVisible();
+  await expect(specs.getByText("Load index", { exact: true })).toHaveCount(0);
+  await expect(specs.getByText("Speed rating", { exact: true })).toHaveCount(0);
+  await expect(specs.getByText("Construction", { exact: true })).toHaveCount(0);
+});

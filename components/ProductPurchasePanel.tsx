@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { order } from "@/lib/config";
-import { formatCurrency, pluralTyres } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
 import { tyreFullName } from "@/lib/tyre";
+import { DeliveryStatus } from "./DeliveryStatus";
 import { QuantitySelector } from "./QuantitySelector";
 import { PriceDisplay } from "./primitives";
 
@@ -20,6 +21,9 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
   useEffect(() => () => {
     if (addedTimer.current) clearTimeout(addedTimer.current);
   }, []);
+  // Derived from lib/config.ts, never a literal: the fee beside this range
+  // was already config-driven, the range itself was not.
+  const paidDeliveryRange = `1–${order.delivery.freeQualifyingTyres - 1}`;
   const remainingStock = Math.max(0, tyre.stock - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
   const soldOut = tyre.stock <= 0;
   const atStockLimit = remainingStock === 0;
@@ -95,31 +99,19 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
       <div className="mt-5 border-y border-[var(--color-border)] py-4 text-[13px]">
         <p className="font-bold text-[var(--color-green)]">NO MINIMUM ORDER</p>
         <dl className="mt-2 flex flex-col gap-1.5">
-          <div className="flex justify-between gap-3"><dt>1–7 tyres</dt><dd className="font-semibold">{formatCurrency(order.delivery.feeAud)} delivery</dd></div>
+          <div className="flex justify-between gap-3"><dt>{paidDeliveryRange} tyres</dt><dd className="font-semibold">{formatCurrency(order.delivery.feeAud)} delivery</dd></div>
           <div className="flex justify-between gap-3"><dt>{order.delivery.freeQualifyingTyres}+ tyres</dt><dd className="font-semibold text-[var(--color-green)]">FREE delivery</dd></div>
           <div className="flex justify-between gap-3"><dt>Warehouse pickup</dt><dd className="font-semibold text-[var(--color-green)]">FREE</dd></div>
         </dl>
         <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">Adelaide-wide delivery</p>
       </div>
 
-      <div className="mt-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] p-4 text-[13px]">
-        {qualifiesForFreeDelivery ? (
-          <p className="font-semibold text-[var(--color-green)]">
-            ✓ {pluralTyres(totalTyres)} in cart · free Adelaide-wide delivery
-          </p>
-        ) : totalTyres > 0 ? (
-          <p className="text-[var(--color-text-muted)]">
-            {pluralTyres(totalTyres)} in cart · {formatCurrency(deliveryFee)} Adelaide-wide
-            delivery. Add {order.delivery.freeQualifyingTyres - totalTyres} more to make delivery
-            free.
-          </p>
-        ) : (
-          <p className="text-[var(--color-text-muted)]">
-            No minimum order. {formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under{" "}
-            {order.delivery.freeQualifyingTyres} tyres, free from {order.delivery.freeQualifyingTyres}{" "}
-            tyres up.
-          </p>
-        )}
+      <div className="mt-4">
+        <DeliveryStatus
+          totalTyres={totalTyres}
+          qualifiesForFreeDelivery={qualifiesForFreeDelivery}
+          deliveryFee={deliveryFee}
+        />
       </div>
 
       <Link
