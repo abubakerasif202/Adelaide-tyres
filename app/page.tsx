@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Hero } from "@/components/Hero";
 import { Benefits } from "@/components/Benefits";
 import { ProductCard } from "@/components/ProductCard";
+import { CommercialTeaser } from "@/components/CommercialTeaser";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { SectionHeading } from "@/components/primitives";
 import { getTyreBySlug, catalogueStats } from "@/lib/catalogue";
@@ -58,6 +59,8 @@ export default function HomePage() {
           </Reveal>
         </div>
       </section>
+
+      <CommercialTeaser />
 
       <FreeDeliveryCTA />
     </>
