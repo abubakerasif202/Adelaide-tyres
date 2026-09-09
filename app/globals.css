@@ -500,7 +500,6 @@ img {
 .hero__visual {
   animation: hero-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.hero__kicker { animation-delay: 0.12s; }
 .hero__copy { animation-delay: 0.28s; }
 .hero__actions { animation-delay: 0.4s; }
 .hero__meta { animation-delay: 0.48s; }
@@ -509,19 +508,26 @@ img {
   animation-delay: 0.24s;
   animation-duration: 0.74s;
 }
-.hero__title {
-  animation: hero-title-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
-}
+
+/*
+ * Hero typography. These two selectors are declared ONCE each, here, and are
+ * deliberately UNLAYERED: `.display` lives in `@layer components`, so any
+ * unlayered rule outranks it regardless of source order. That is what lets
+ * `.hero__title`'s `line-height: 0.96` win over `.display`'s `0.98`. Do not
+ * move these inside `@layer components` — the override would silently flip.
+ * Both blocks come after the shared `.hero__* { animation: ... }` group above,
+ * so the `animation-delay` here is not reset by that shorthand.
+ *
+ * `.hero__kicker` composes the `.eyebrow` utility in markup (see Hero.tsx) and
+ * only adds what is genuinely hero-specific: the on-dark mint colour.
+ */
 .hero__kicker {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  animation-delay: 0.12s;
   color: #bfe8d8;
 }
 
 .hero__title {
+  animation: hero-title-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
   margin-top: 18px;
   max-width: 760px;
   font-size: clamp(48px, 6.8vw, 84px);
@@ -608,7 +614,13 @@ footer a {
 
 @media (max-width: 639px) {
   .hero__title {
-    font-size: clamp(44px, 14vw, 56px);
+    /* Floor lowered from 44px so the vw term actually governs below ~366px.
+       At the old 44px floor, 320px rendered a cramped four-line headline
+       (measured line boxes 193/113/265/207 in a 288px box). At 12vw the 320px
+       size is 38.4px and the composition holds at three lines (269/228/178),
+       every line inside the 288px `.container-x` box. The hard <br> is kept at
+       every width: removing it made the 320px wrap worse, not better. */
+    font-size: clamp(32px, 12vw, 56px);
     line-height: 0.98;
   }
   .announcement-copy {
@@ -625,6 +637,16 @@ footer a {
   .hero__visual {
     animation-duration: 0.42s;
   }
+}
+
+/* Dark -> light -> dark step into the final conversion block. Without this the
+   dark CommercialTeaser and the dark `.delivery-cta` read as one mass. */
+.delivery-band {
+  background: var(--color-surface-muted);
+  padding-top: clamp(36px, 5vw, 64px);
+}
+.delivery-band > .delivery-cta {
+  border-top: 3px solid var(--color-red);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { business } from "@/lib/config";
+import { deliveryRuleSummary } from "@/lib/format";
 import { Logo } from "./Logo";
 import { Reveal } from "./Reveal";
 
@@ -75,7 +76,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col gap-1 py-6 text-[12px] text-white/55 sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} {business.name}</span>
-          <span>No minimum order · $50 delivery for 1–7 tyres · Free delivery from 8 tyres</span>
+          <span>No minimum order · {deliveryRuleSummary("long")}</span>
         </div>
       </div>
     </footer>

@@ -30,7 +30,8 @@ export default function HomePage() {
       <Hero />
       <Benefits />
 
-      <section id="stock" className="bg-[var(--color-surface-muted)] pb-[72px]">
+      {/* Owns its own top rhythm — Benefits no longer supplies the seam padding. */}
+      <section id="stock" className="bg-[var(--color-surface-muted)] pt-14 pb-[72px] md:pt-[88px] md:pb-24">
         <div className="container-x">
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
@@ -44,9 +45,17 @@ export default function HomePage() {
             </span>
           </Reveal>
 
-          <div className="mt-8 grid grid-cols-[repeat(auto-fill,minmax(min(100%,340px),1fr))] items-stretch gap-5">
+          {/* Editorial weighting: the lead product spans two columns on wide viewports
+              so the preview is not eight identical tiles. 8 cards tile exactly at
+              every breakpoint (1 col; 2 cols x 4 rows; 3 cols x 3 rows with the
+              2-wide lead). */}
+          <div className="mt-10 grid items-stretch gap-5 sm:grid-cols-2 md:mt-12 lg:grid-cols-3 lg:gap-6">
             {preview.map((tyre, i) => (
-              <Reveal key={tyre.id} delay={(i % 3) * 70} className="h-full">
+              <Reveal
+                key={tyre.id}
+                delay={(i % 3) * 70}
+                className={`h-full ${i === 0 ? "lg:col-span-2" : ""}`}
+              >
                 <ProductCard tyre={tyre} variant="feature" priority={i === 0} />
               </Reveal>
             ))}
@@ -62,7 +71,12 @@ export default function HomePage() {
 
       <CommercialTeaser />
 
-      <FreeDeliveryCTA />
+      {/* Spec: "a strong dark/light contrast transition into the existing
+          free-delivery CTA". The light band breaks the dark CommercialTeaser ->
+          dark CTA mass so the conversion block reads as a distinct arrival. */}
+      <div className="delivery-band">
+        <FreeDeliveryCTA />
+      </div>
     </>
   );
 }

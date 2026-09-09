@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { business, order } from "@/lib/config";
-import { formatCurrency } from "@/lib/format";
+import { deliveryRuleSummary, formatCurrency } from "@/lib/format";
 import { Reveal } from "./Reveal";
 
 export function FreeDeliveryCTA() {
@@ -9,7 +9,7 @@ export function FreeDeliveryCTA() {
       <Reveal className="container-x grid gap-8 py-16 md:grid-cols-[1.3fr_1fr] md:items-center">
         <div>
           <h2 className="display text-[clamp(30px,5vw,52px)]">
-            Free delivery on 8+ tyres.
+            {deliveryRuleSummary("headline")}
             <br />
             Adelaide wide.
           </h2>

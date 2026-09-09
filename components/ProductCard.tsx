@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { order } from "@/lib/config";
+import { deliveryRuleSummary } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
 import { QuantitySelector } from "./QuantitySelector";
 import { TyreImage } from "./TyreImage";
@@ -91,7 +92,7 @@ export function ProductCard({
           <button type="button" className="btn btn--red w-full" data-added={added} aria-live="polite" onClick={handleAdd} disabled={soldOut || atStockLimit}>
             {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
           </button>
-          <p className="mt-auto text-[12px] font-medium text-[var(--color-text-muted)]">{order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8</p>
+          <p className="mt-auto text-[12px] font-medium text-[var(--color-text-muted)]">{deliveryRuleSummary("card")}</p>
         </div>
       </article>
     );
@@ -160,7 +161,7 @@ export function ProductCard({
         </button>
 
         <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
-          {order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8
+          {deliveryRuleSummary("card")}
         </p>
       </div>
     </article>

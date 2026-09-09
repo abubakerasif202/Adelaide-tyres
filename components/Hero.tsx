@@ -16,7 +16,7 @@ export function Hero() {
       />
       <div className="container-x relative grid gap-12 pb-28 pt-14 md:pb-32 md:pt-22 lg:min-h-[650px] lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
         <div className="relative z-10">
-          <p className="hero__kicker">Adelaide Wholesale Tyres</p>
+          <p className="hero__kicker eyebrow">Adelaide Wholesale Tyres</p>
           <h1 className="hero__title display">
             Wholesale tyres.
             <br />
