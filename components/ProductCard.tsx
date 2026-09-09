@@ -8,7 +8,7 @@ import { order } from "@/lib/config";
 import type { Tyre } from "@/lib/catalogue";
 import { QuantitySelector } from "./QuantitySelector";
 import { TyreImage } from "./TyreImage";
-import { BadgePill, PriceDisplay, StockBadge, tyreTitle } from "./primitives";
+import { PriceDisplay, StockBadge, tyreTitle } from "./primitives";
 
 export function ProductCard({
   tyre,
@@ -97,63 +97,72 @@ export function ProductCard({
     );
   }
 
-  return (
-    <article className="surface-card product-card flex flex-col gap-3.5 p-[18px]">
-      <div className="flex h-7 items-start justify-between">
-        {tyre.badge ? <BadgePill label={tyre.badge} /> : <span />}
-        <StockBadge stock={tyre.stock} />
-      </div>
+  const compactTitle = tyreTitle(tyre);
 
-      <Link
-        href={`/tyres/${tyre.slug}`}
-        className="flex items-center gap-[18px] rounded-[10px] focus-visible:outline-offset-4"
-      >
-        <TyreImage src={tyre.image} alt={tyreTitle(tyre)} size={124} priority={priority} className="product-card__image" />
-        <div className="min-w-0 flex flex-col gap-0.5">
-          <span className="text-[13px] font-bold uppercase tracking-wide text-[var(--color-red)]">
+  return (
+    <article className="surface-card product-card flex flex-col gap-3.5 p-0">
+      <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
+        {tyre.image ? (
+          <Image
+            src={tyre.image}
+            alt={compactTitle}
+            fill
+            priority={priority}
+            sizes="(max-width: 639px) calc(100vw - 32px), (max-width: 1024px) 45vw, 300px"
+            className="product-card__media-contain"
+          />
+        ) : (
+          <TyreImage src={null} alt={compactTitle} size={124} className="product-card__placeholder" />
+        )}
+        <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+      </Link>
+
+      <div className="flex flex-1 flex-col gap-3.5 px-[18px] pb-[18px]">
+        <Link href={`/tyres/${tyre.slug}`} className="flex flex-col gap-0.5 rounded-[8px]">
+          <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--color-red)]">
             {tyre.brand}
           </span>
           <span className="display text-[clamp(25px,2.3vw,30px)] text-[var(--color-ink)]">{tyre.size}</span>
-          <span className="text-[15px] font-semibold text-[var(--color-text-muted)]">
+          <span className="text-[14px] font-semibold text-[var(--color-text-muted)]">
             Pattern {tyre.pattern}
           </span>
-        </div>
-      </Link>
+        </Link>
 
-      <div className="h-px w-full bg-[var(--color-border)]" />
+        <div className="h-px w-full bg-[var(--color-border)]" />
 
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-            Wholesale price
-          </span>
-          <PriceDisplay price={tyre.price} />
+        <div className="flex flex-wrap items-end justify-between gap-3.5">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+              Wholesale price
+            </span>
+            <PriceDisplay price={tyre.price} />
+          </div>
+          <QuantitySelector
+            value={selectedQty}
+            onChange={setQty}
+            min={1}
+            max={Math.max(1, remainingStock)}
+            disabled={atStockLimit}
+            label={`Quantity for ${compactTitle}`}
+            size="sm"
+          />
         </div>
-        <QuantitySelector
-          value={selectedQty}
-          onChange={setQty}
-          min={1}
-          max={Math.max(1, remainingStock)}
-          disabled={atStockLimit}
-          label={`Quantity for ${tyreTitle(tyre)}`}
-          size="sm"
-        />
+
+        <button
+          type="button"
+          className="btn btn--red w-full"
+          data-added={added}
+          aria-live="polite"
+          onClick={handleAdd}
+          disabled={soldOut || atStockLimit}
+        >
+          {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
+        </button>
+
+        <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
+          {order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8
+        </p>
       </div>
-
-      <button
-        type="button"
-        className="btn btn--red w-full"
-        data-added={added}
-        aria-live="polite"
-        onClick={handleAdd}
-        disabled={soldOut || atStockLimit}
-      >
-        {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
-      </button>
-
-      <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
-        {order.delivery.freeQualifyingTyres}+ tyres ship free Adelaide-wide · $50 under 8
-      </p>
     </article>
   );
 }
