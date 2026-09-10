@@ -6,6 +6,40 @@ import { HeroArtwork } from "./HeroArtwork";
 /** The one product the hero studio bay features. A real, verified catalogue SKU. */
 const HERO_TYRE_SLUG = "ralson-rmr61-295-80r22-5";
 
+const ICONS = {
+  truck: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M2 6h11v10H2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M13 10h4l4 3v3h-8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="6.5" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="17" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  ),
+  warehouse: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M3 10 12 4l9 6v9H3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M9 19v-6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  ),
+  verified: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 3l2.4 1.7 2.9-.2.9 2.8 2.3 1.8-1.3 2.6 1.3 2.6-2.3 1.8-.9 2.8-2.9-.2L12 21l-2.4-1.7-2.9.2-.9-2.8-2.3-1.8L4.8 12 3.5 9.4l2.3-1.8.9-2.8 2.9.2z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+} as const;
+
+const META = [
+  { icon: "truck", value: `Free ${order.delivery.freeQualifyingTyres}+`, label: "Adelaide delivery" },
+  { icon: "warehouse", value: "Direct", label: "Regency Park depot" },
+  { icon: "verified", value: "Trade ABN", label: "Transparent pricing" },
+] as const satisfies readonly { icon: keyof typeof ICONS; value: string; label: string }[];
+
 export function Hero() {
   const tyre = getTyreBySlug(HERO_TYRE_SLUG);
 
@@ -41,18 +75,15 @@ export function Hero() {
           </div>
 
           <div className="hero__meta grid w-full grid-cols-2 gap-4 border-t border-white/12 sm:grid-cols-3">
-            <span className="hero__meta-item">
-              <span className="hero__meta-value">Free {order.delivery.freeQualifyingTyres}+</span>
-              <span className="hero__meta-label">Adelaide delivery</span>
-            </span>
-            <span className="hero__meta-item">
-              <span className="hero__meta-value">Direct</span>
-              <span className="hero__meta-label">Regency Park depot</span>
-            </span>
-            <span className="hero__meta-item">
-              <span className="hero__meta-value">Trade ABN</span>
-              <span className="hero__meta-label">Transparent pricing</span>
-            </span>
+            {META.map((item) => (
+              <span key={item.value} className="hero__meta-item">
+                <span className="hero__meta-icon" aria-hidden>{ICONS[item.icon]}</span>
+                <span className="hero__meta-text">
+                  <span className="hero__meta-value">{item.value}</span>
+                  <span className="hero__meta-label">{item.label}</span>
+                </span>
+              </span>
+            ))}
           </div>
         </div>
 
