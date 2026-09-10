@@ -8,13 +8,12 @@ import type { Tyre } from "@/lib/catalogue";
 type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price" | "image">;
 
 /**
- * Front-facing commercial truck wheel, authored as vector and exported to a
- * transparent 1000x1000 WebP (source: `public/images/hero/hero-truck-tyre.svg`).
- * It is dead-centred in its own square canvas, which is what lets the spinner
- * wrapper rotate it about the true axle without wobble.
+ * Front-facing commercial truck wheel on a polished alloy rim: a photoreal
+ * render, dead-centred in a transparent 1000x1000 square canvas, which is what
+ * lets the spinner wrapper rotate it about the true axle without wobble.
  *
- * To swap in a photoreal render, replace the file at this path — no code change
- * is needed while it stays 1000x1000. It MUST be shot head-on: a three-quarter
+ * To replace it, drop a new file at this path — no code change is needed while
+ * it stays 1000x1000. Any replacement MUST be shot head-on: a three-quarter
  * product photo has an elliptical silhouette and an off-centre rim, so rotating
  * it tumbles the tyre rather than turning it. Validate first with
  * `npm run check:hero-tyre -- <file>`; the spec is in

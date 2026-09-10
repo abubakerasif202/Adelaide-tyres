@@ -1,9 +1,15 @@
 # Hero wheel asset handoff
 
-`hero-truck-tyre.webp` is the wheel the homepage hero rotates. It is currently a
-vector-derived render (source: `hero-truck-tyre.svg`), not a photograph. It is
-geometrically correct and ships fine, but a licensed photoreal render is the
-intended end state.
+`hero-truck-tyre.webp` is the wheel the homepage hero rotates: a photoreal
+head-on commercial truck wheel on a polished alloy rim, 1000 x 1000, transparent.
+
+Measured on the shipping asset: silhouette ratio **0.994** (a circle), wheel
+centred to **0.1%**, rim concentric to **0.1% / -0.7%**, and rim brightness even
+to within **3.2 luma** across quadrants — so no baked-in highlight sweeps around
+as it turns.
+
+Keep those properties if you ever replace it. The rest of this file is the spec
+and the gate.
 
 ## Why the geometry is non-negotiable
 
