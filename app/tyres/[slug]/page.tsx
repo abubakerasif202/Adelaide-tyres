@@ -88,7 +88,7 @@ export default async function TyreDetailPage({ params }: Params) {
             is unchanged: media on the left, identity + sticky purchase column
             on the right.
           */}
-          <div className="product-detail-layout mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-12">
+          <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-12">
             <div className="lg:col-start-2 lg:row-start-1">
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--color-red)]">
                 {tyre.brand}
@@ -154,7 +154,7 @@ export default async function TyreDetailPage({ params }: Params) {
             <div className="mt-16">
               <div className="flex items-center justify-between">
                 <h2 className="display text-[28px]">Related tyres</h2>
-                <Link href="/tyres" className="link-underline text-[13px] font-bold uppercase tracking-wide">
+                <Link href="/tyres" className="link-underline inline-flex min-h-[44px] items-center text-[13px] font-bold uppercase tracking-wide">
                   All stock
                 </Link>
               </div>

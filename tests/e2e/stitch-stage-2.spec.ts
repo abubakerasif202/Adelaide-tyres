@@ -202,3 +202,10 @@ test("Stage 2 product detail does not fabricate optional tyre specifications", a
   await expect(specs.getByText("Speed rating", { exact: true })).toHaveCount(0);
   await expect(specs.getByText("Construction", { exact: true })).toHaveCount(0);
 });
+
+for (const route of ["/", "/tyres", "/tyres/ralson-rmr61-295-80r22-5"]) {
+  test(`Stage 2 keeps fabricated Stitch content off ${route}`, async ({ page }) => {
+    await page.goto(route);
+    await expect(page.locator("body")).not.toContainText(fabricated);
+  });
+}

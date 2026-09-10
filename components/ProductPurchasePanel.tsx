@@ -116,7 +116,7 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
 
       <Link
         href="/contact?type=quote"
-        className="mt-4 block text-center text-[13px] font-bold uppercase tracking-wide link-underline"
+        className="mt-4 flex min-h-[44px] items-center justify-center text-center text-[13px] font-bold uppercase tracking-wide link-underline"
       >
         Need volume pricing? Request a wholesale quote
       </Link>

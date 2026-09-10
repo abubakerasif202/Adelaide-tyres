@@ -923,15 +923,3 @@ footer a {
     linear-gradient(160deg, #1b2321, #0a0d0d 72%);
 }
 
-.product-detail-layout {
-  display: grid;
-  gap: 32px;
-}
-
-@media (min-width: 1024px) {
-  .product-detail-layout {
-    grid-template-columns: minmax(0, 1fr) 400px;
-    gap: 48px;
-    align-items: start;
-  }
-}
