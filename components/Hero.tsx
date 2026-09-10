@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { order } from "@/lib/config";
-import { catalogueStats, getTyreBySlug } from "@/lib/catalogue";
-import { formatCurrency } from "@/lib/format";
+import { getTyreBySlug } from "@/lib/catalogue";
 import { HeroArtwork } from "./HeroArtwork";
 
 /** The one product the hero studio bay features. A real, verified catalogue SKU. */
@@ -27,10 +26,9 @@ export function Hero() {
           </h1>
 
           <p className="hero__copy">
-            No minimum order. {formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery
-            for 1–{order.delivery.freeQualifyingTyres - 1} tyres. Free Adelaide-wide delivery
-            from {order.delivery.freeQualifyingTyres} tyres. Commercial and truck tyres for
-            Adelaide workshops, fleets and transport operators.
+            Direct wholesale supply for workshops, transport operators, fleet managers and trade
+            buyers across Adelaide. Heavy-duty commercial, truck, 4WD and passenger tyres at
+            transparent trade rates.
           </p>
 
           <div className="hero__actions flex flex-col gap-4 sm:flex-row">
@@ -44,27 +42,21 @@ export function Hero() {
 
           <div className="hero__meta grid w-full grid-cols-2 gap-4 border-t border-white/12 sm:grid-cols-3">
             <span className="hero__meta-item">
-              <span className="hero__meta-value">No minimum</span>
-              <span className="hero__meta-label">Order from one tyre</span>
-            </span>
-            <span className="hero__meta-item">
-              <span className="hero__meta-value">{order.delivery.freeQualifyingTyres}+ free</span>
-              <span className="hero__meta-label">Adelaide-wide delivery</span>
+              <span className="hero__meta-value">Free {order.delivery.freeQualifyingTyres}+</span>
+              <span className="hero__meta-label">Adelaide delivery</span>
             </span>
             <span className="hero__meta-item">
               <span className="hero__meta-value">Direct</span>
-              <span className="hero__meta-label">Regency Park pickup</span>
+              <span className="hero__meta-label">Regency Park depot</span>
+            </span>
+            <span className="hero__meta-item">
+              <span className="hero__meta-value">Trade ABN</span>
+              <span className="hero__meta-label">Transparent pricing</span>
             </span>
           </div>
         </div>
 
-        {tyre && (
-          <HeroArtwork
-            tyre={tyre}
-            units={catalogueStats.unitsListed}
-            skuLines={catalogueStats.skuLines}
-          />
-        )}
+        {tyre && <HeroArtwork tyre={tyre} />}
       </div>
     </section>
   );

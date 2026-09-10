@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { CommercialTeaser } from "@/components/CommercialTeaser";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { SectionHeading } from "@/components/primitives";
-import { catalogue, catalogueStats, getFeaturedTyres, uniqueSizes } from "@/lib/catalogue";
+import { catalogue, getFeaturedTyres, uniqueSizes } from "@/lib/catalogue";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { Reveal } from "@/components/Reveal";
 
@@ -33,16 +33,11 @@ export default function HomePage() {
 
       <section id="stock" className="homepage-stock">
         <div className="homepage-container">
-          <Reveal className="flex flex-wrap items-end justify-between gap-4">
+          <Reveal>
             <SectionHeading
               eyebrow="Regency Park warehouse inventory"
               title="In-demand wholesale stock"
-              intro="Wholesale pricing per tyre. No minimum order — mix any products, any quantity."
             />
-            <span className="pill pill--muted">
-              <span className="size-[7px] rounded-full bg-[var(--color-green)]" aria-hidden />
-              Listed Adelaide stock · {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units
-            </span>
           </Reveal>
 
           <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">

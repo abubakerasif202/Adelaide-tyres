@@ -1,0 +1,110 @@
+{
+  "header": {
+    "width": 1440,
+    "height": 117,
+    "top": 0,
+    "bottom": 117
+  },
+  "headerNav": {
+    "width": 432,
+    "height": 36,
+    "top": 58,
+    "bottom": 94
+  },
+  "hero": {
+    "width": 1440,
+    "height": 773,
+    "top": 117,
+    "bottom": 890
+  },
+  "finderSection": {
+    "width": 1440,
+    "height": 264,
+    "top": 858,
+    "bottom": 1122
+  },
+  "finderPanel": {
+    "width": 1232,
+    "height": 264,
+    "top": 858,
+    "bottom": 1122
+  },
+  "benefitsSection": {
+    "width": 1440,
+    "height": 549,
+    "top": 1122,
+    "bottom": 1671
+  },
+  "benefitCard": {
+    "width": 290,
+    "height": 220
+  },
+  "stockSection": {
+    "width": 1440,
+    "height": 731,
+    "top": 1671,
+    "bottom": 2402
+  },
+  "productCard": {
+    "width": 290,
+    "height": 419
+  },
+  "commercialSection": {
+    "width": 1440,
+    "height": 576,
+    "top": 2402,
+    "bottom": 2978
+  },
+  "deliverySection": {
+    "width": 1440,
+    "height": 620,
+    "top": 2978,
+    "bottom": 3598
+  },
+  "finderOverlap": 32,
+  "scrollHeight": 4095,
+  "allSections": [
+    {
+      "id": "",
+      "className": "hero on-dark relative isolate overflow-hidden bg-[var(--colo",
+      "height": 773,
+      "top": 117
+    },
+    {
+      "id": "finder",
+      "className": "homepage-finder relative z-20",
+      "height": 264,
+      "top": 858
+    },
+    {
+      "id": "",
+      "className": "homepage-benefits",
+      "height": 549,
+      "top": 1122
+    },
+    {
+      "id": "stock",
+      "className": "homepage-stock",
+      "height": 731,
+      "top": 1671
+    },
+    {
+      "id": "commercial",
+      "className": "commercial-band on-dark relative overflow-hidden text-white",
+      "height": 576,
+      "top": 2402
+    },
+    {
+      "id": "delivery",
+      "className": "homepage-delivery",
+      "height": 620,
+      "top": 2978
+    },
+    {
+      "id": "",
+      "className": "homepage-final-cta on-dark",
+      "height": 170,
+      "top": 3598
+    }
+  ]
+}

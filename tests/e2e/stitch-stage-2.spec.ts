@@ -26,7 +26,8 @@ test("Stage 2 homepage uses the approved Stitch hierarchy with verified content"
   ).toHaveAttribute("href", "/contact?type=quote");
 
   await expect(page.locator("body")).toContainText("No minimum order");
-  await expect(page.locator("body")).toContainText("Free Adelaide-wide delivery");
+  await expect(page.locator("body")).toContainText(`Free ${order.delivery.freeQualifyingTyres}+`);
+  await expect(page.locator("body")).toContainText("Adelaide delivery");
 
   // Config-derived, not a literal: this fails if config and the rendered
   // copy drift apart (e.g. `order.delivery.freeQualifyingTyres` changes
@@ -37,9 +38,8 @@ test("Stage 2 homepage uses the approved Stitch hierarchy with verified content"
   await expect(
     page.getByRole("heading", { level: 2, name: `Free delivery on ${order.delivery.freeQualifyingTyres}+ tyres.` }),
   ).toBeVisible();
-  await expect(page.locator("body")).toContainText(
-    `${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery`,
-  );
+  await expect(page.locator("body")).toContainText("Adelaide-wide delivery");
+  await expect(page.locator("body")).toContainText(formatCurrency(order.delivery.feeAud));
 
   await expect(page.locator("body")).not.toContainText(fabricated);
 });
