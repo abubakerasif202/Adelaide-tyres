@@ -24,3 +24,6 @@ next-env.d.ts
 /lh-*.json
 /codex-session-*.md
 *.zip
+
+# Local Stitch design reference export — not part of the shipped project.
+/stitch_adelaide_tyres_design_system
