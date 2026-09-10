@@ -1,10 +1,11 @@
 import { Hero } from "@/components/Hero";
+import Link from "next/link";
 import { Benefits } from "@/components/Benefits";
-import { HomeStockShowcase } from "@/components/HomeStockShowcase";
+import { ProductCard } from "@/components/ProductCard";
 import { CommercialTeaser } from "@/components/CommercialTeaser";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { SectionHeading } from "@/components/primitives";
-import { catalogueStats, getFeaturedTyres, getTyreBySlug } from "@/lib/catalogue";
+import { catalogue, catalogueStats, getFeaturedTyres, uniqueSizes } from "@/lib/catalogue";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { Reveal } from "@/components/Reveal";
 
@@ -18,7 +19,7 @@ export default function HomePage() {
   const featured = getFeaturedTyres()
     .filter((tyre) => tyre.slug !== HERO_TYRE_SLUG)
     .sort((a, b) => b.stock - a.stock);
-  const [lead, ...supporting] = featured.length > 0 ? featured : [getTyreBySlug(HERO_TYRE_SLUG)!];
+  const previewTyres = [...featured, ...catalogue.filter((tyre) => !featured.some((item) => item.id === tyre.id))].slice(0, 4);
 
   return (
     <>
@@ -27,6 +28,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd()) }}
       />
       <Hero />
+      <HomepageFinder />
       <Benefits />
 
       <section id="stock" className="bg-[var(--color-surface-muted)] pb-20 pt-12 md:pb-28 md:pt-16">
@@ -43,7 +45,15 @@ export default function HomePage() {
             </span>
           </Reveal>
 
-          <HomeStockShowcase lead={lead} supporting={supporting.slice(0, 3)} />
+          <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">
+            {previewTyres.map((tyre, index) => (
+              <ProductCard key={tyre.id} tyre={tyre} priority={index < 2} />
+            ))}
+          </div>
+          <div className="mt-9 text-center">
+            <Link href="/tyres" className="btn btn--green">View full catalogue <span aria-hidden>→</span></Link>
+            <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">Live listed stock from the Regency Park warehouse.</p>
+          </div>
         </div>
       </section>
 
@@ -56,5 +66,31 @@ export default function HomePage() {
         <FreeDeliveryCTA />
       </div>
     </>
+  );
+}
+
+function HomepageFinder() {
+  const sizes = uniqueSizes();
+  return (
+    <section id="finder" className="homepage-finder relative z-20 -mt-7">
+      <div className="container-x">
+        <form action="/tyres" className="surface-card homepage-finder__panel p-5 md:p-7">
+          <div className="flex items-center gap-2 overflow-x-auto border-b border-[var(--color-border)] pb-4">
+            <span className="homepage-finder__tab">All tyres</span>
+            <Link href="/tyres?application=commercial" className="homepage-finder__tab homepage-finder__tab--muted">Truck &amp; commercial</Link>
+            <Link href="/tyres?application=truck" className="homepage-finder__tab homepage-finder__tab--muted">Truck fitments</Link>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+            <label><span className="field-label">Tyre width</span><select name="size" defaultValue="" className="field-input"><option value="">Any width</option>{sizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+            <label><span className="field-label">Application</span><select name="application" defaultValue="" className="field-input"><option value="">All applications</option><option value="truck">Truck</option><option value="commercial">Commercial</option></select></label>
+            <label><span className="field-label">Availability</span><select name="inStockOnly" defaultValue="true" className="field-input"><option value="true">In stock now</option><option value="false">All listed stock</option></select></label>
+            <button className="btn btn--red self-end" type="submit">Find tyres <span aria-hidden>→</span></button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+            <span>Popular sizes:</span>{sizes.slice(0, 6).map((size) => <Link className="homepage-finder__chip" href={`/tyres?size=${encodeURIComponent(size)}`} key={size}>{size}</Link>)}
+          </div>
+        </form>
+      </div>
+    </section>
   );
 }

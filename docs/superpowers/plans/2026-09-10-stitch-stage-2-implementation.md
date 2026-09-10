@@ -15,7 +15,7 @@
 - Work only on `redesign/stitch-stage-2`; do not merge or push to `master` without owner approval.
 - Read `AGENTS.md` first and follow its Next.js 16.3.3 documentation requirement before editing Next.js code.
 - Stitch controls layout and visual treatment; repository code/config/catalogue controls facts and behaviour.
-- Preserve: no minimum order; $50 Adelaide-wide delivery for 1–7 tyres; free Adelaide-wide delivery for 8+ tyres; free warehouse pickup; `6 Birralee Rd, Regency Park SA 5010`.
+- Preserve: no minimum order; $50 Adelaide-wide delivery for 1–7 tyres; free Adelaide-wide delivery for 8+ tyres; free warehouse pickup; `4 Birralee Rd, Regency Park SA 5010`.
 - Products, prices, stock, application, optional technical fields and image paths remain sourced from `lib/catalogue.ts`.
 - Public phone/email affordances remain environment-backed; never hardcode Stitch demo contact details.
 - Do not introduce Stitch demo products or unsupported market-leading, freight, depot, fitting, award, rating or 30-day-credit claims.

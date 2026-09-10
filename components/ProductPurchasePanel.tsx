@@ -89,7 +89,9 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
           disabled={soldOut || atStockLimit}
           onClick={() => {
             addToCart();
-            router.push("/cart");
+            // Let the cart context commit before navigation so the destination
+            // never races the just-added line (especially on mobile WebKit).
+            window.setTimeout(() => router.push("/cart"), 0);
           }}
         >
           Add & go to cart

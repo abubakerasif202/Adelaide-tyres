@@ -16,7 +16,7 @@ export function Hero() {
       <div className="hero__texture pointer-events-none absolute inset-0 -z-10" aria-hidden />
       <div className="hero__glow pointer-events-none absolute -z-10" aria-hidden />
 
-      <div className="container-x relative grid gap-14 pb-32 pt-16 md:pb-36 md:pt-24 lg:min-h-[740px] lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div className="container-x relative grid gap-10 pb-24 pt-12 md:pb-28 md:pt-16 lg:min-h-[610px] lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:gap-12">
         <div className="relative z-10">
           <span className="hero__badge">
             <span className="hero__badge-dot" aria-hidden />
@@ -24,9 +24,8 @@ export function Hero() {
           </span>
 
           <h1 className="hero__title display">
-            Wholesale tyres.
-            <br />
-            <span>Ready for your next order.</span>
+            Wholesale tyres.<br />
+            <span>Ready for your next<br className="hidden sm:inline" /> order.</span>
           </h1>
 
           <p className="hero__copy">

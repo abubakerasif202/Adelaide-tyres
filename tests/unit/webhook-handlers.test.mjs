@@ -14,7 +14,7 @@ function makeOrderInput(sessionId, overrides = {}) {
     customerName: "Test business",
     customerPhone: "0400000000",
     deliveryMethod: "pickup",
-    deliveryAddress: "6 Birralee Rd, Regency Park SA 5010",
+    deliveryAddress: "4 Birralee Rd, Regency Park SA 5010",
     notes: "",
     lines: [{ id: "t1", brand: "Ralson", pattern: "RMR61", size: "295/80R22.5", quantity: 2, price: 450 }],
     ...overrides,

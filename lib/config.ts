@@ -9,13 +9,13 @@ export const business = {
   domain: "adelaidewholesaletyres.com.au",
   tagline: "Wholesale tyre supply for Adelaide workshops, fleets and transport operators.",
   address: {
-    street: "6 Birralee Rd",
+    street: "4 Birralee Rd",
     suburb: "Regency Park",
     state: "SA",
     postcode: "5010",
     country: "Australia",
     /** One-line form used in headers, footers and structured data. */
-    oneLine: "6 Birralee Rd, Regency Park SA 5010",
+    oneLine: "4 Birralee Rd, Regency Park SA 5010",
   },
   serviceArea: {
     label: "Adelaide-wide",
@@ -43,7 +43,7 @@ export const order = {
   },
   pickup: {
     label: "Warehouse pickup",
-    address: "6 Birralee Rd, Regency Park SA 5010",
+    address: "4 Birralee Rd, Regency Park SA 5010",
   },
   /** Real, business-supplied wholesale pricing. */
   pricingIsPlaceholder: false,

@@ -34,7 +34,7 @@ export function HeroArtwork({
     <div ref={visualRef} className="hero__visual relative mx-auto w-full max-w-[560px]" data-active="true">
       <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4">
         <div className="hero__bay-tags">
-          <span className="hero__bay-tag">Regency Park warehouse</span>
+          <span className="hero__bay-tag">Immediate Regency Park dispatch</span>
           <span className="hero__bay-tag hero__bay-tag--muted">
             {units} units · {skuLines} SKU lines
           </span>
