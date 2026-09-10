@@ -33,11 +33,18 @@ export default function HomePage() {
 
       <section id="stock" className="homepage-stock">
         <div className="homepage-container">
-          <Reveal>
+          <Reveal className="homepage-stock-head flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="Regency Park warehouse inventory"
               title="In-demand wholesale stock"
             />
+            {/* Stitch shows a category pill row here. These map to the real
+                catalogue application filters rather than decorative tabs. */}
+            <div className="homepage-stock-pills">
+              <span className="homepage-stock-pill is-active">All stock</span>
+              <Link href="/tyres?application=truck" className="homepage-stock-pill">Truck</Link>
+              <Link href="/tyres?application=commercial" className="homepage-stock-pill">Commercial</Link>
+            </div>
           </Reveal>
 
           <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">
@@ -77,7 +84,7 @@ function HomepageFinder() {
             <label><span className="field-label">Availability</span><select name="stock" defaultValue="in" className="field-input"><option value="in">In stock now</option><option value="">All listed stock</option></select></label>
             <button className="btn btn--red self-end" type="submit">Find tyres <span aria-hidden>→</span></button>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+          <div className="homepage-finder__shortcuts mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-4 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
             <span>Popular sizes:</span>{sizes.slice(0, 6).map((size) => <Link className="homepage-finder__chip" href={`/tyres?size=${encodeURIComponent(size)}`} key={size}>{size}</Link>)}
           </div>
         </form>
