@@ -439,71 +439,56 @@ img {
   animation: cart-pulse 0.32s ease-out;
 }
 
-.hero::after {
-  position: absolute;
-  inset: auto -10% -45% 35%;
-  z-index: -1;
-  height: 500px;
-  content: "";
-  background: radial-gradient(circle, rgba(243, 18, 23, 0.11), transparent 66%);
-  pointer-events: none;
-}
-.hero__studio {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+/* ---------------------------------------------------------------
+   Homepage rebuild — hero: dimensional dark bay with an ambient dot-grid
+   texture, a directional gradient wash and a studio product bay that reads
+   as one integrated environment rather than text + a rounded photo card.
+   --------------------------------------------------------------- */
+.hero__wash {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.085), rgba(5, 25, 20, 0.42));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 6px rgba(4, 33, 26, 0.32),
-    0 38px 80px -38px rgba(0, 0, 0, 0.78);
+    radial-gradient(1200px 640px at 82% 8%, rgba(127, 209, 179, 0.14), transparent 58%),
+    radial-gradient(900px 500px at 8% 92%, rgba(4, 33, 26, 0.6), transparent 62%),
+    linear-gradient(165deg, #063b2c 0%, #052a20 58%, #04211a 100%);
 }
-.hero__tyre {
-  position: absolute;
-  inset: -4% !important;
-  width: 108% !important;
-  height: 108% !important;
-  filter: saturate(0.2) brightness(0.92) contrast(1.06);
-  animation: tyre-idle 24s ease-in-out infinite;
+.hero__texture {
+  opacity: 0.14;
+  background-image: radial-gradient(rgba(127, 209, 179, 0.55) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(180deg, black, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
 }
-.hero__visual[data-active="false"] .hero__tyre {
-  animation-play-state: paused;
-}
-.hero__image-shade,
-.hero__image-colour,
-.hero__image-vignette {
-  position: absolute;
-  inset: 0;
+.hero__glow {
+  inset: auto -14% -50% 30%;
+  height: 560px;
+  background: radial-gradient(circle, rgba(223, 16, 21, 0.16), transparent 68%);
   pointer-events: none;
 }
-.hero__image-shade {
-  background: radial-gradient(circle at 50% 46%, rgba(70, 155, 122, 0.34), rgba(4, 33, 26, 0.15) 44%, rgba(4, 26, 20, 0.86) 88%);
-  mix-blend-mode: multiply;
-}
-.hero__image-colour {
-  background: radial-gradient(circle at 22% 22%, rgba(191, 232, 216, 0.22), transparent 46%), radial-gradient(circle at 86% 76%, rgba(243, 18, 23, 0.2), transparent 40%);
-}
-.hero__image-vignette {
-  border-radius: 28px;
-  box-shadow: inset 0 0 90px 24px rgba(3, 18, 14, 0.68);
-}
-.hero__product-label {
-  position: absolute;
-  top: 20px;
-  left: 22px;
+
+.hero__badge {
+  position: relative;
   display: inline-flex;
-  padding: 6px 12px;
-  border: 1px solid rgba(127, 209, 179, 0.35);
+  align-items: center;
+  gap: 9px;
+  padding: 8px 16px 8px 13px;
+  border: 1px solid rgba(127, 209, 179, 0.3);
   border-radius: 999px;
-  background: rgba(6, 59, 44, 0.72);
-  color: #d9f2e7;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  background: rgba(4, 33, 26, 0.55);
   backdrop-filter: blur(6px);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bfe8d8;
+  animation: hero-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
 }
-.hero__kicker,
+.hero__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #7fd1b3;
+  box-shadow: 0 0 0 3px rgba(127, 209, 179, 0.22);
+}
+
 .hero__copy,
 .hero__actions,
 .hero__meta,
@@ -520,27 +505,16 @@ img {
 }
 
 /*
- * Hero typography. These two selectors are declared ONCE each, here, and are
- * deliberately UNLAYERED: `.display` lives in `@layer components`, so any
- * unlayered rule outranks it regardless of source order. That is what lets
- * `.hero__title`'s `line-height: 0.96` win over `.display`'s `0.98`. Do not
- * move these inside `@layer components` — the override would silently flip.
- * Both blocks come after the shared `.hero__* { animation: ... }` group above,
- * so the `animation-delay` here is not reset by that shorthand.
- *
- * `.hero__kicker` composes the `.eyebrow` utility in markup (see Hero.tsx) and
- * only adds what is genuinely hero-specific: the on-dark mint colour.
+ * Hero typography. Declared once, here, and deliberately UNLAYERED: `.display`
+ * lives in `@layer components`, so any unlayered rule outranks it regardless
+ * of source order. That is what lets `.hero__title`'s `line-height: 0.96` win
+ * over `.display`'s `0.98`. Do not move this inside `@layer components`.
  */
-.hero__kicker {
-  animation-delay: 0.12s;
-  color: #bfe8d8;
-}
-
 .hero__title {
   animation: hero-title-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
-  margin-top: 18px;
-  max-width: 760px;
-  font-size: clamp(48px, 6.8vw, 84px);
+  margin-top: 22px;
+  max-width: 780px;
+  font-size: clamp(48px, 6.8vw, 88px);
   line-height: 0.96;
 }
 
@@ -549,19 +523,231 @@ img {
 }
 
 .hero__copy {
-  margin-top: 20px;
+  margin-top: 22px;
   max-width: 620px;
   font-size: clamp(16px, 1.4vw, 18px);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.82);
 }
-.benefit-card {
-  box-shadow: 0 10px 30px -24px rgba(9, 12, 12, 0.42);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+.hero__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.benefit-card--highlight {
-  background: linear-gradient(150deg, var(--color-green), var(--color-green-deep));
-  box-shadow: 0 14px 34px -22px rgba(6, 59, 44, 0.75);
+.hero__meta-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: #7fd1b3;
+}
+.hero__meta-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* Studio bay: the tyre and its identity live inside one gradient-bordered
+   panel, rather than a plain rounded photo with a floating stat card
+   overlapping its edge. */
+.hero__bay {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(155deg, #2c3233 0%, #0e1615 46%, #04211a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 42px 90px -34px rgba(0, 0, 0, 0.82);
+  padding: 20px 20px 0;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hero__bay:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 50px 100px -32px rgba(0, 0, 0, 0.86);
+}
+.hero__bay-tags {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hero__bay-tag {
+  display: inline-flex;
+  padding: 6px 12px;
+  border: 1px solid rgba(127, 209, 179, 0.32);
+  border-radius: 999px;
+  background: rgba(6, 59, 44, 0.68);
+  color: #d9f2e7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+.hero__bay-tag--muted {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(9, 12, 12, 0.4);
+  color: rgba(255, 255, 255, 0.72);
+}
+.hero__bay-image {
+  aspect-ratio: 4 / 3;
+  margin-top: 18px;
+}
+.hero__bay-tyre {
+  filter: saturate(0.32) brightness(1.02) contrast(1.05)
+    drop-shadow(0 26px 30px rgba(0, 0, 0, 0.65));
+  animation: tyre-idle 24s ease-in-out infinite;
+}
+.hero__visual[data-active="false"] .hero__bay-tyre {
+  animation-play-state: paused;
+}
+.hero__bay-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 16px 2px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.hero__bay-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.hero__bay-name {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+}
+.hero__bay-price {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+}
+.hero__bay-price-note {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ---------------------------------------------------------------
+   Homepage rebuild — ordering benefits as one continuous horizontal
+   specification bar (not four separate floating boxes overlapping the
+   hero). It sits fully in the light section below the hero, with the
+   free-delivery tier visually raised out of the row.
+   --------------------------------------------------------------- */
+.spec-bar {
+  display: grid;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+}
+@media (min-width: 640px) {
+  .spec-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .spec-bar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.spec-bar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 26px;
+  border-bottom: 1px solid var(--color-border);
+}
+.spec-bar__item:last-child {
+  border-bottom: 0;
+}
+@media (min-width: 640px) {
+  .spec-bar__item:nth-child(odd) {
+    border-right: 1px solid var(--color-border);
+  }
+  .spec-bar__item:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+@media (min-width: 1024px) {
+  .spec-bar__item {
+    border-right: 1px solid var(--color-border);
+    border-bottom: 0;
+  }
+  .spec-bar__item:nth-child(odd) {
+    border-right: 1px solid var(--color-border);
+  }
+  .spec-bar__item:last-child {
+    border-right: 0;
+  }
+}
+.spec-bar__item--highlight {
+  background: linear-gradient(155deg, var(--color-green), var(--color-green-deep));
+  border-radius: inherit;
+  color: #fff;
+}
+.spec-bar__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-green);
+}
+.spec-bar__item--highlight .spec-bar__icon {
+  background: rgba(255, 255, 255, 0.14);
+  color: #7fd1b3;
+}
+.spec-bar__value {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+}
+.spec-bar__copy {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.spec-bar__item--highlight .spec-bar__copy {
+  color: rgba(255, 255, 255, 0.78);
+}
+.spec-bar__tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-red);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
 }
 footer a {
   transition: color 0.16s ease;
@@ -577,6 +763,213 @@ footer a {
   content: "";
   background: radial-gradient(circle, rgba(127, 209, 179, 0.1), transparent 62%);
   pointer-events: none;
+}
+
+/* Delivery conversion hierarchy: three scannable tier statements above the
+   headline, the free tier visually raised out of the row. */
+.delivery-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+.delivery-tier--primary {
+  border-color: rgba(127, 209, 179, 0.4);
+  background: rgba(127, 209, 179, 0.1);
+}
+.delivery-tier__value {
+  font-size: 28px;
+  line-height: 1;
+  color: #fff;
+}
+.delivery-tier--primary .delivery-tier__value {
+  color: #7fd1b3;
+}
+.delivery-tier__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+/* ---------------------------------------------------------------
+   Homepage rebuild — commercial/fleet band. A distinct gunmetal/charcoal
+   tone (not the hero's green) with a large real-data stat panel instead of
+   a lead-capture form, so it reads as its own visual moment rather than a
+   repeat of the hero's colour family.
+   --------------------------------------------------------------- */
+.commercial-band {
+  background: linear-gradient(165deg, var(--color-gunmetal) 0%, #17191a 55%, var(--color-ink) 100%);
+}
+.commercial-band__texture {
+  opacity: 0.5;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 64px 100%,
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 100% 64px;
+  mask-image: radial-gradient(1200px 600px at 20% 30%, black, transparent 75%);
+}
+.commercial-point {
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+.commercial-stat-panel {
+  position: relative;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.18));
+  box-shadow: 0 40px 80px -36px rgba(0, 0, 0, 0.7);
+}
+.commercial-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.2s ease;
+}
+.commercial-stat__value {
+  font-size: clamp(30px, 3.4vw, 42px);
+  line-height: 1;
+  color: #7fd1b3;
+}
+.commercial-stat__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* ---------------------------------------------------------------
+   Homepage rebuild — editorial stock showcase: one large featured tyre in
+   a dark studio panel, a compact supporting list beside it, and a strong
+   catalogue CTA. Deliberately not a uniform card grid.
+   --------------------------------------------------------------- */
+.stock-showcase__lead {
+  display: flex;
+  flex-direction: column;
+}
+.stock-showcase__lead-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(127, 209, 179, 0.22), transparent 48%),
+    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
+}
+.stock-showcase__lead-image {
+  object-fit: contain;
+  inset: 8% !important;
+  width: 84% !important;
+  height: 84% !important;
+  filter: saturate(0.18) brightness(1.02) contrast(1.05) drop-shadow(0 20px 22px rgba(0, 0, 0, 0.55));
+  transition: transform 0.3s ease;
+}
+.stock-showcase__lead:hover .stock-showcase__lead-image {
+  transform: scale(1.03);
+}
+.stock-showcase__lead-pill {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+}
+.stock-showcase__lead-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-red);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.stock-showcase__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stock-showcase__row-media {
+  position: relative;
+  display: block;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(127, 209, 179, 0.2), transparent 52%),
+    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
+}
+.stock-showcase__row-image {
+  object-fit: contain;
+  inset: 10% !important;
+  width: 80% !important;
+  height: 80% !important;
+  filter: saturate(0.15) brightness(1.02) contrast(1.04);
+}
+.stock-showcase__row-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
+  background: var(--color-white);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.stock-showcase__row-add:not(:disabled):hover {
+  border-color: var(--color-red);
+  color: var(--color-red-deep);
+}
+.stock-showcase__row-add[data-added="true"] {
+  border-color: var(--color-green);
+  color: var(--color-green);
+}
+.stock-showcase__row-add:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stock-showcase__catalogue-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: auto;
+  padding: 20px 22px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(150deg, var(--color-green), var(--color-green-deep));
+  color: #fff;
+  box-shadow: 0 18px 40px -22px rgba(6, 59, 44, 0.65);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stock-showcase__catalogue-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 46px -20px rgba(6, 59, 44, 0.72);
+}
+.stock-showcase__catalogue-arrow {
+  font-size: 22px;
+  transition: transform 0.2s ease;
+}
+.stock-showcase__catalogue-cta:hover .stock-showcase__catalogue-arrow {
+  transform: translateX(4px);
 }
 
 @keyframes hero-enter {
@@ -616,9 +1009,14 @@ footer a {
   .product-card--feature:hover .product-card__media svg {
     transform: scale(1.025);
   }
-  .benefit-card:hover {
-    box-shadow: 0 18px 34px -26px rgba(9, 12, 12, 0.5);
-    transform: translateY(-2px);
+  .hero__bay:hover {
+    transform: translateY(-4px);
+  }
+  .spec-bar__item:hover {
+    background: var(--color-surface-muted);
+  }
+  .spec-bar__item--highlight:hover {
+    background: linear-gradient(155deg, var(--color-green), var(--color-green-deep));
   }
 }
 
@@ -640,7 +1038,7 @@ footer a {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .hero__kicker,
+  .hero__badge,
   .hero__copy,
   .hero__actions,
   .hero__meta,
@@ -890,8 +1288,8 @@ footer a {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .hero__tyre,
-  .hero__kicker,
+  .hero__bay-tyre,
+  .hero__badge,
   .hero__title,
   .hero__copy,
   .hero__actions,
@@ -903,7 +1301,11 @@ footer a {
   }
   .product-card:hover,
   .product-card:hover .product-card__image,
-  .benefit-card:hover,
+  .hero__bay:hover,
+  .spec-bar__item:hover,
+  .stock-showcase__lead:hover,
+  .stock-showcase__row:hover,
+  .commercial-stat:hover,
   .btn:not(:disabled):active,
   .quantity-selector button:not(:disabled):active,
   .header-logo:hover {

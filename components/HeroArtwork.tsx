@@ -1,9 +1,22 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { formatCurrency } from "@/lib/format";
+import type { Tyre } from "@/lib/catalogue";
 
-export function HeroArtwork({ units, skuLines }: { units: number; skuLines: number }) {
+type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price" | "image">;
+
+export function HeroArtwork({
+  tyre,
+  units,
+  skuLines,
+}: {
+  tyre: HeroTyre;
+  units: number;
+  skuLines: number;
+}) {
   const visualRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,27 +31,43 @@ export function HeroArtwork({ units, skuLines }: { units: number; skuLines: numb
   }, []);
 
   return (
-    <div ref={visualRef} className="hero__visual relative mx-auto w-full max-w-[520px]" data-active="true">
-      <div className="hero__studio aspect-square overflow-hidden rounded-[28px]">
-        <Image
-          src="/images/tyres/ralson-rmr61-295-80r22-5.webp"
-          alt="Ralson RMR61 295/80R22.5 tyre from current Adelaide stock"
-          fill
-          priority
-          sizes="(max-width: 1023px) min(100vw - 32px, 520px), 42vw"
-          className="hero__tyre object-cover"
-        />
-        <div className="hero__image-shade" aria-hidden />
-        <div className="hero__image-colour" aria-hidden />
-        <div className="hero__image-vignette" aria-hidden />
-        <span className="hero__product-label">Ralson RMR61 · 295/80R22.5</span>
-      </div>
-      <div className="surface-card absolute -bottom-[30px] left-1/2 min-w-[240px] -translate-x-1/2 rounded-2xl px-7 py-4 text-center text-[var(--color-ink)]">
-        <span className="display block text-[30px] leading-none">{units}</span>
-        <span className="mt-1 block text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
-          units across {skuLines} SKU lines
-        </span>
-      </div>
+    <div ref={visualRef} className="hero__visual relative mx-auto w-full max-w-[560px]" data-active="true">
+      <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4">
+        <div className="hero__bay-tags">
+          <span className="hero__bay-tag">Regency Park warehouse</span>
+          <span className="hero__bay-tag hero__bay-tag--muted">
+            {units} units · {skuLines} SKU lines
+          </span>
+        </div>
+
+        <div className="hero__bay-image relative">
+          {tyre.image && (
+            <Image
+              src={tyre.image}
+              alt={`${tyre.brand} ${tyre.pattern} ${tyre.size} from current Adelaide stock`}
+              fill
+              priority
+              sizes="(max-width: 1023px) min(100vw - 32px, 560px), 46vw"
+              className="hero__bay-tyre object-contain"
+            />
+          )}
+        </div>
+
+        <div className="hero__bay-footer">
+          <div>
+            <span className="hero__bay-eyebrow">Featured wholesale stock</span>
+            <span className="hero__bay-name">
+              {tyre.brand} {tyre.pattern} · {tyre.size}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="hero__bay-eyebrow">Wholesale price</span>
+            <span className="hero__bay-price">
+              {formatCurrency(tyre.price)} <span className="hero__bay-price-note">ea</span>
+            </span>
+          </div>
+        </div>
+      </Link>
     </div>
   );
 }
