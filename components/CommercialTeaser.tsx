@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Reveal } from "./Reveal";
-import { catalogueStats } from "@/lib/catalogue";
 
 /**
  * Homepage teaser for wholesale/fleet supply. Copy is the same verified set
@@ -51,10 +50,9 @@ export function CommercialTeaser() {
         <div className="commercial-quote-card lg:col-span-5">
           <p className="eyebrow text-[var(--color-green)]">Wholesale pricing / fleet quote</p>
           <h3 className="display mt-2 text-[28px] text-[var(--color-green-deep)]">Tell us what your operation needs</h3>
-          <p className="mt-3 text-[14px] text-[var(--color-text-muted)]">Send your required sizes and quantities through the existing wholesale enquiry workflow. Current catalogue stock includes {catalogueStats.skuLines} listed SKU lines and {catalogueStats.unitsListed} units.</p>
+          <p className="mt-3 text-[14px] text-[var(--color-text-muted)]">Fast-track verification for Australian registered businesses. Send your required sizes and quantities through the wholesale enquiry workflow.</p>
           <div className="commercial-quote-card__lines" aria-hidden><span/><span/><span/></div>
           <Link href="/contact?type=quote" className="btn btn--green mt-6 w-full">Request wholesale pricing</Link>
-          <p className="mt-3 text-center text-[12px] text-[var(--color-text-muted)]">No credit terms or response time is implied.</p>
         </div>
       </Reveal>
     </section>

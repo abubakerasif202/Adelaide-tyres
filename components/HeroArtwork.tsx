@@ -7,15 +7,7 @@ import type { Tyre } from "@/lib/catalogue";
 
 type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price" | "image">;
 
-export function HeroArtwork({
-  tyre,
-  units,
-  skuLines,
-}: {
-  tyre: HeroTyre;
-  units: number;
-  skuLines: number;
-}) {
+export function HeroArtwork({ tyre }: { tyre: HeroTyre }) {
   return (
     <div className="hero__visual relative mx-auto w-full">
       <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4">
@@ -38,7 +30,7 @@ export function HeroArtwork({
 
         <div className="hero__bay-footer">
           <div>
-            <span className="hero__bay-eyebrow">Featured wholesale stock · {units} units / {skuLines} lines</span>
+            <span className="hero__bay-eyebrow">Featured wholesale stock</span>
             <span className="hero__bay-name">
               {tyre.brand} {tyre.pattern} · {tyre.size}
             </span>
