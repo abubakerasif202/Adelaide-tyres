@@ -65,11 +65,13 @@ export function CommercialTeaser() {
           </div>
 
           <div className="mt-9 flex flex-wrap gap-3">
-            <Link href="/commercial" className="btn btn--red">
-              Request wholesale pricing
+            <Link href="/commercial" className="btn btn--red group">
+              <span>Request wholesale pricing</span>
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </Link>
-            <Link href="/commercial" className="btn btn--outline-light">
-              View commercial supply
+            <Link href="/commercial" className="btn btn--outline-light group">
+              <span>View commercial supply</span>
+              <span className="inline-block text-white/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-white" aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

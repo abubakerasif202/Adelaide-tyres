@@ -85,7 +85,7 @@ function HomepageFinder() {
             <label><span className="field-label">2. Tyre size</span><select name="size" defaultValue="" className="field-input"><option value="">Any size</option>{sizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
             <label><span className="field-label">Application</span><select name="application" defaultValue="" className="field-input"><option value="">All applications</option><option value="truck">Truck</option><option value="commercial">Commercial</option></select></label>
             <label><span className="field-label">Availability</span><select name="stock" defaultValue="in" className="field-input"><option value="in">In stock now</option><option value="">All listed stock</option></select></label>
-            <button className="btn btn--red self-end" type="submit">Find tyres <span aria-hidden>→</span></button>
+            <button className="btn btn--red self-end group" type="submit"><span>Find tyres</span> <span className="inline-block transition-transform duration-200 group-hover:translate-x-1" aria-hidden>→</span></button>
           </div>
           <div className="homepage-finder__shortcuts mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-4 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
             <span>Popular sizes:</span>{sizes.slice(0, 6).map((size) => <Link className="homepage-finder__chip" href={`/tyres?size=${encodeURIComponent(size)}`} key={size}>{size}</Link>)}

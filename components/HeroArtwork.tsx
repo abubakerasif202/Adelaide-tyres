@@ -10,9 +10,12 @@ type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price" | "im
 export function HeroArtwork({ tyre }: { tyre: HeroTyre }) {
   return (
     <div className="hero__visual relative mx-auto w-full">
-      <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4">
+      <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4 group">
         <div className="hero__bay-tags">
           <span className="hero__bay-tag">Regency Park warehouse</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#7fd1b3] opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 hidden sm:inline-flex items-center gap-1">
+            View tyre <span aria-hidden>→</span>
+          </span>
         </div>
 
         <div className="hero__bay-image relative">

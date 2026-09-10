@@ -39,11 +39,13 @@ export function FreeDeliveryCTA() {
             <p className="mt-1 text-[14px] text-white/70">Order from verified catalogue stock or request a wholesale quote.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/tyres" className="btn btn--red">
-              Start bulk order
+            <Link href="/tyres" className="btn btn--red group">
+              <span>Start bulk order</span>
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </Link>
-            <Link href="/contact" className="btn btn--outline-light">
-              Contact wholesale team
+            <Link href="/contact" className="btn btn--outline-light group">
+              <span>Contact wholesale team</span>
+              <span className="inline-block text-white/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-white" aria-hidden="true">→</span>
             </Link>
           </div>
       </div>

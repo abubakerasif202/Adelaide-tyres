@@ -64,7 +64,7 @@ export function ProductCard({
       <article
         className={`surface-card product-card product-card--feature flex h-full flex-col overflow-hidden ${lead ? "is-lead" : ""}`}
       >
-        <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
+        <Link href={`/tyres/${tyre.slug}`} className={`product-card__media focus-visible:outline-offset-[-3px] ${isRalsonHeroPhoto ? "product-card__media--dark-bay" : ""}`}>
           {tyre.image ? (
             <Image
               src={tyre.image}

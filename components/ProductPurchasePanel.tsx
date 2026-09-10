@@ -56,8 +56,14 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
         <PriceDisplay price={tyre.price} />
       </div>
 
-      <p className="mt-1 text-[13px] font-semibold text-[var(--color-green)]">
-        {soldOut ? "Currently out of stock" : `${tyre.stock} in stock now`}
+      <p className="mt-1 flex items-center gap-2 text-[13px] font-semibold text-[var(--color-green)]">
+        {!soldOut && (
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-green)] opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-green)]" />
+          </span>
+        )}
+        <span>{soldOut ? "Currently out of stock" : `${tyre.stock} in stock now`}</span>
       </p>
 
       <div className="mt-5 flex items-center gap-3">

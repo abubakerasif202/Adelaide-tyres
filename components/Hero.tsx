@@ -66,11 +66,13 @@ export function Hero() {
           </p>
 
           <div className="hero__actions flex flex-col gap-4 sm:flex-row">
-            <Link href="/tyres" className="btn btn--red">
-              Shop available stock
+            <Link href="/tyres" className="btn btn--red group">
+              <span>Shop available stock</span>
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </Link>
-            <Link href="/contact?type=quote" className="btn btn--outline-light">
-              Get a wholesale quote
+            <Link href="/contact?type=quote" className="btn btn--outline-light group">
+              <span>Get a wholesale quote</span>
+              <span className="inline-block text-white/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-white" aria-hidden="true">→</span>
             </Link>
           </div>
 

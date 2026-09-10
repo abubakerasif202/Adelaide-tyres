@@ -27,3 +27,4 @@ next-env.d.ts
 
 # Local Stitch design reference export — not part of the shipped project.
 /stitch_adelaide_tyres_design_system
+.claude/

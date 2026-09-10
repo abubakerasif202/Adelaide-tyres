@@ -57,8 +57,8 @@ export function Footer() {
             <h3 className="eyebrow text-[#7fd1b3]">{col.heading}</h3>
             <ul className="mt-4 flex flex-col gap-2.5 text-[14px]">
               {col.links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="hover:text-white">
+                <li key={`${link.href}-${link.label}`}>
+                  <Link href={link.href} className="inline-block transition-all duration-200 hover:text-white hover:translate-x-1">
                     {link.label}
                   </Link>
                 </li>
