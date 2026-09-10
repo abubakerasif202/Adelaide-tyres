@@ -5,8 +5,12 @@ import { CartProvider } from "@/lib/cart-context";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileCartBar } from "@/components/MobileCartBar";
-import { business, siteUrl } from "@/lib/config";
+import { business, order, siteUrl } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+
+const freeQualifyingTyres = order.delivery.freeQualifyingTyres;
+const deliveryFee = formatCurrency(order.delivery.feeAud);
 
 const barlow = Barlow({
   subsets: ["latin"],
@@ -30,7 +34,7 @@ export const metadata: Metadata = {
     template: "%s | Adelaide Wholesale Tyres",
   },
   description:
-    "Buy wholesale truck and commercial tyres in Adelaide with no minimum order. $50 Adelaide-wide delivery under 8 tyres, free from 8 tyres up, from Regency Park.",
+    `Buy wholesale truck and commercial tyres in Adelaide with no minimum order. ${deliveryFee} Adelaide-wide delivery under ${freeQualifyingTyres} tyres, free from ${freeQualifyingTyres} tyres up, from Regency Park.`,
   applicationName: business.name,
   alternates: { canonical: "/" },
   openGraph: {
@@ -40,13 +44,13 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: "Wholesale Tyres Adelaide | Bulk Tyres & Free Delivery",
     description:
-      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, $50 Adelaide-wide delivery under 8 tyres, free for 8+.",
+      `Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, ${deliveryFee} Adelaide-wide delivery under ${freeQualifyingTyres} tyres, free for ${freeQualifyingTyres}+.`,
   },
   twitter: {
     card: "summary_large_image",
     title: "Wholesale Tyres Adelaide | Adelaide Wholesale Tyres",
     description:
-      "Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, $50 Adelaide-wide delivery under 8 tyres, free for 8+.",
+      `Bulk tyre supply for Adelaide workshops, fleets and transport operators. No minimum order, ${deliveryFee} Adelaide-wide delivery under ${freeQualifyingTyres} tyres, free for ${freeQualifyingTyres}+.`,
   },
   robots: { index: true, follow: true },
 };

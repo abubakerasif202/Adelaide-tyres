@@ -56,7 +56,7 @@ export default function HomePage() {
                 delay={(i % 3) * 70}
                 className={`h-full ${i === 0 ? "lg:col-span-2" : ""}`}
               >
-                <ProductCard tyre={tyre} variant="feature" priority={i === 0} />
+                <ProductCard tyre={tyre} variant="feature" priority={i === 0} lead={i === 0} />
               </Reveal>
             ))}
           </div>

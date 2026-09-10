@@ -91,7 +91,7 @@ export function Header() {
     <header className="site-header sticky top-0 z-50" data-compact={compact || undefined}>
       <div className="bg-[var(--color-ink)] text-white">
         <div className="container-x flex h-[38px] items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em]">
-          <span className="announcement-copy"><span className="sm:hidden">No minimum · {deliveryRuleSummary("short")}</span><span className="hidden sm:inline">{announcement.message}</span></span>
+          <span className="announcement-copy"><span className="sm:hidden">No minimum · {deliveryRuleSummary("short")}</span><span className="hidden sm:inline">{deliveryRuleSummary("announcement")}</span></span>
           <span className="hidden md:block text-white/70">{announcement.address}</span>
         </div>
       </div>

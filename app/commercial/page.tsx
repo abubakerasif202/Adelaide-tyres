@@ -4,12 +4,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { EnquiryForm } from "@/components/EnquiryForm";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { SectionHeading } from "@/components/primitives";
+import { order } from "@/lib/config";
+import { formatCurrency } from "@/lib/format";
 import { breadcrumbJsonLd } from "@/lib/seo";
+
+const freeQualifyingTyres = order.delivery.freeQualifyingTyres;
+const paidDeliveryRange = `1–${freeQualifyingTyres - 1}`;
+const deliveryFee = formatCurrency(order.delivery.feeAud);
 
 export const metadata: Metadata = {
   title: "Commercial & Fleet Tyre Supply Adelaide | Wholesale Truck Tyres",
   description:
-    "Wholesale truck and commercial tyre supply for Adelaide transport companies, workshops, mechanics and fleet operators. No minimum order. $50 Adelaide-wide delivery for 1–7 tyres, free from 8 tyres. Regency Park warehouse pickup is free.",
+    `Wholesale truck and commercial tyre supply for Adelaide transport companies, workshops, mechanics and fleet operators. No minimum order. ${deliveryFee} Adelaide-wide delivery for ${paidDeliveryRange} tyres, free from ${freeQualifyingTyres} tyres. Regency Park warehouse pickup is free.`,
   alternates: { canonical: "/commercial" },
 };
 
@@ -19,7 +25,7 @@ const blocks = [
   { title: "Fleet purchasing", copy: "Mix products and quantities from current Adelaide stock for your business." },
   { title: "Bulk stock", copy: "Order to your run rate — quantities aren't capped at a single set." },
   { title: "Recurring supply", copy: "Contact the wholesale team to discuss your sizes, quantities and supply needs." },
-  { title: "Free Adelaide delivery", copy: "Free Adelaide-wide delivery for 8+ tyres. 1–7 tyres: $50 delivery. Warehouse pickup is free." },
+  { title: "Free Adelaide delivery", copy: `Free Adelaide-wide delivery for ${freeQualifyingTyres}+ tyres. ${paidDeliveryRange} tyres: ${deliveryFee} delivery. Warehouse pickup is free.` },
 ];
 
 export default function CommercialPage() {

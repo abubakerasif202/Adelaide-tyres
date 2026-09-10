@@ -26,13 +26,13 @@ export function pluralTyres(n: number): string {
  * header, footer, product cards and the free-delivery CTA. Every variant is
  * derived from `order.delivery` so the numbers cannot drift between surfaces.
  *
- * - `long`     — footer / full sentence
- * - `short`    — narrow mobile announcement bar
- * - `card`     — product-card footnote
- * - `headline` — free-delivery CTA H2 lead line
+ * - `long`         — footer / full sentence
+ * - `short`        — narrow mobile announcement bar
+ * - `card`         — product-card footnote
+ * - `announcement` — wide desktop announcement bar (uppercase)
  */
 export function deliveryRuleSummary(
-  variant: "long" | "short" | "card" | "headline" = "long",
+  variant: "long" | "short" | "card" | "announcement" = "long",
 ): string {
   const fee = formatCurrency(order.delivery.feeAud);
   const free = order.delivery.freeQualifyingTyres;
@@ -43,8 +43,8 @@ export function deliveryRuleSummary(
       return `${fee} delivery ${paidRange} · Free ${free}+`;
     case "card":
       return `${free}+ tyres ship free Adelaide-wide · ${fee} under ${free}`;
-    case "headline":
-      return `Free delivery on ${free}+ tyres.`;
+    case "announcement":
+      return `NO MINIMUM ORDER · ${fee} DELIVERY (${paidRange} TYRES) · FREE DELIVERY ${free}+ TYRES`;
     default:
       return `${fee} delivery for ${paidRange} tyres · Free delivery from ${free} tyres`;
   }

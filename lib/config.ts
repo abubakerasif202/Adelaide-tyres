@@ -76,7 +76,11 @@ export const nav = [
   { label: "Contact", href: "/contact" },
 ] as const;
 
+/**
+ * The desktop announcement-bar message text lives in `lib/format.ts`
+ * (`deliveryRuleSummary("announcement")`) so it derives from the same
+ * `order.delivery` numbers as the mobile half — it cannot drift here.
+ */
 export const announcement = {
-  message: "NO MINIMUM ORDER · $50 DELIVERY (1–7 TYRES) · FREE DELIVERY 8+ TYRES",
   address: business.address.oneLine,
 } as const;

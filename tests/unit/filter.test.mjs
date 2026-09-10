@@ -91,3 +91,30 @@ test("activeFilterCount ignores sort", () => {
   assert.equal(activeFilterCount({ ...DEFAULT_FILTERS, sort: "price-asc" }), 0);
   assert.equal(activeFilterCount({ ...DEFAULT_FILTERS, brand: "Ralson", inStockOnly: true }), 2);
 });
+
+test("multi-word query round-trips through URL params with interior space intact", () => {
+  const filters = { ...DEFAULT_FILTERS, query: "Ralson RDR" };
+  const params = paramsFromFilters(filters);
+  assert.equal(params.get("q"), "Ralson RDR");
+  const restored = filtersFromParams(new URLSearchParams(params.toString()));
+  assert.equal(restored.query, "Ralson RDR");
+});
+
+test("trailing space in query survives the URL round-trip", () => {
+  const filters = { ...DEFAULT_FILTERS, query: "295/80R22.5 Ralson " };
+  const params = paramsFromFilters(filters);
+  const restored = filtersFromParams(new URLSearchParams(params.toString()));
+  assert.equal(restored.query, "295/80R22.5 Ralson ");
+});
+
+test("an all-whitespace query omits the q param entirely", () => {
+  const params = paramsFromFilters({ ...DEFAULT_FILTERS, query: "   " });
+  assert.equal(params.has("q"), false);
+  assert.equal(params.toString(), "");
+});
+
+test("filterTyres matches a genuine two-token query", () => {
+  const out = filterTyres(data, { ...DEFAULT_FILTERS, query: "Ralson RMR61" });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].id, "b");
+});

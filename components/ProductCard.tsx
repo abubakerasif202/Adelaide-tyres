@@ -15,10 +15,13 @@ export function ProductCard({
   tyre,
   priority = false,
   variant = "compact",
+  lead = false,
 }: {
   tyre: Tyre;
   priority?: boolean;
   variant?: "compact" | "feature";
+  /** The wide, editorially-weighted lead card (spans 2 grid columns on desktop). */
+  lead?: boolean;
 }) {
   const { add, cart } = useCart();
   const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
@@ -58,7 +61,9 @@ export function ProductCard({
     const isRalsonHeroPhoto = tyre.id === "ralson-rmr61-29580r225";
 
     return (
-      <article className="surface-card product-card product-card--feature flex h-full flex-col overflow-hidden">
+      <article
+        className={`surface-card product-card product-card--feature flex h-full flex-col overflow-hidden ${lead ? "is-lead" : ""}`}
+      >
         <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
           {tyre.image ? (
             <Image
@@ -66,7 +71,11 @@ export function ProductCard({
               alt={title}
               fill
               priority={priority}
-              sizes="(max-width: 639px) calc(100vw - 32px), 340px"
+              sizes={
+                lead
+                  ? "(max-width: 639px) calc(100vw - 32px), (max-width: 1023px) 50vw, 800px"
+                  : "(max-width: 639px) calc(100vw - 32px), (max-width: 1023px) 50vw, 400px"
+              }
               className={isRalsonHeroPhoto ? "product-card__media-cover" : "product-card__media-contain"}
             />
           ) : (

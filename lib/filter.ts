@@ -79,7 +79,7 @@ export function filtersFromParams(params: URLSearchParams): TyreFilters {
 
 export function paramsFromFilters(filters: TyreFilters): URLSearchParams {
   const params = new URLSearchParams();
-  if (filters.query.trim()) params.set("q", filters.query.trim());
+  if (filters.query.trim()) params.set("q", filters.query);
   if (filters.size) params.set("size", filters.size);
   if (filters.brand) params.set("brand", filters.brand);
   if (filters.application) params.set("application", filters.application);

@@ -274,6 +274,16 @@ img {
     overflow: hidden;
     background: linear-gradient(160deg, #1b2321, #0a0d0d 70%);
   }
+  /* The lead card spans 2 grid columns on lg+, so at 16:9 its media row would
+     out-run its single row-mate and pool as dead space above the delivery
+     note (mt-auto). At lg:col-span-2, the lead's width is ~2x its row-mate's,
+     so matching the row-mate's 16:9 media height requires roughly
+     leadWidth / (2 * rowMateWidth * 9/16) ≈ 16/9 * 2 ≈ 3.56 — verified
+     against measured column widths at 1024/1280/1440 (residual gap in
+     button-to-note distance drops from ~195-239px to ~14-20px). */
+  .product-card--feature.is-lead .product-card__media {
+    aspect-ratio: 11 / 3;
+  }
   .product-card__media::after {
     position: absolute;
     inset: 0;
@@ -668,11 +678,32 @@ footer a {
   margin-bottom: 14px;
 }
 
+.catalogue-search__icon {
+  position: absolute;
+  top: 50%;
+  left: 18px;
+  width: 19px;
+  height: 19px;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
 .catalogue-search .field-input {
   min-height: 56px;
-  border-color: var(--color-border-strong);
+  border: 2px solid var(--color-ink);
   font-size: 16px;
   font-weight: 600;
+}
+
+.catalogue-search__input {
+  padding-left: 46px;
+}
+
+.catalogue-search .field-input::placeholder {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .catalogue-mobile-toolbar {
@@ -688,6 +719,13 @@ footer a {
 
 .catalogue-results-clear {
   margin-top: 10px;
+}
+
+.catalogue-results-clear__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
 }
 
 .filter-rail {
@@ -781,20 +819,20 @@ footer a {
   accent-color: var(--color-green);
 }
 
-.catalogue-filter-sheet {
+.mobile-sheet {
   position: fixed;
   inset: 0;
   z-index: 70;
 }
 
-.catalogue-filter-backdrop {
+.mobile-sheet__backdrop {
   position: absolute;
   inset: 0;
   border: 0;
   background: rgba(9, 12, 12, 0.58);
 }
 
-.catalogue-filter-dialog {
+.mobile-sheet__dialog {
   position: absolute;
   inset: auto 0 0;
   max-height: min(82vh, 720px);
@@ -805,13 +843,26 @@ footer a {
   box-shadow: 0 -18px 44px rgba(9, 12, 12, 0.2);
 }
 
-.catalogue-filter-dialog:focus {
+/* `position: sticky` (not `fixed`) so it participates in the dialog's own
+   scroll container and keeps a normal offsetParent — a `fixed` footer would
+   report `offsetParent === null` and be silently excluded from the focus
+   trap's visibility check. */
+.mobile-sheet__footer {
+  position: sticky;
+  bottom: -20px;
+  margin: 16px -16px calc(-1 * max(20px, env(safe-area-inset-bottom)));
+  padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+  background: var(--color-white);
+  border-top: 1px solid var(--color-border);
+}
+
+.mobile-sheet__dialog:focus {
   outline: none;
 }
 
 /* Touch-sized controls inside the sheet; the desktop rail is pointer-driven. */
-.catalogue-filter-dialog .filter-rail__chip,
-.catalogue-filter-dialog .field-input {
+.mobile-sheet__dialog .filter-rail__chip,
+.mobile-sheet__dialog .field-input {
   min-height: 44px;
 }
 
@@ -828,7 +879,7 @@ footer a {
   }
 
   .catalogue-mobile-toolbar .catalogue-filter-trigger,
-  .catalogue-filter-sheet {
+  .mobile-sheet {
     display: none;
   }
 }

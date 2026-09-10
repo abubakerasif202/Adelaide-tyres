@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Tyre } from "@/lib/catalogue";
 import { APPLICATION_LABELS } from "@/lib/catalogue";
@@ -11,6 +11,7 @@ import {
   paramsFromFilters,
   type TyreFilters,
 } from "@/lib/filter";
+import { MobileSheet } from "./MobileSheet";
 import { ProductCard } from "./ProductCard";
 
 type Props = {
@@ -29,14 +30,12 @@ type FilterControlsProps = {
   onClear: () => void;
 };
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const railRef = useRef<HTMLElement>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const filters = useMemo(
@@ -75,7 +74,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
   return (
     <>
       <div className="catalogue-shell">
-        <aside aria-label="Tyre filters" className="catalogue-filter-rail surface-card">
+        <aside ref={railRef} aria-label="Tyre filters" tabIndex={-1} className="catalogue-filter-rail surface-card">
           <FilterControls
             filters={filters}
             sizes={sizes}
@@ -90,11 +89,21 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
           {/* One search field for every viewport. Rendering a second copy inside
               the rail/sheet would put a duplicate "Search tyres" control in the
               accessibility tree and break existing placeholder-based coverage. */}
-          <label className="catalogue-search block">
+          <label className="catalogue-search block relative">
             <span className="sr-only">Search tyres</span>
+            <svg
+              aria-hidden="true"
+              className="catalogue-search__icon"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="9" cy="9" r="6.25" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M18 18L13.6 13.6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
             <input
               type="search"
-              className="field-input"
+              className="field-input catalogue-search__input"
               placeholder="Search tyre size, pattern or brand"
               value={filters.query}
               onChange={(e) => patch({ query: e.target.value })}
@@ -106,6 +115,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
               type="button"
               className="catalogue-filter-trigger btn btn--outline"
               aria-expanded={mobileFiltersOpen}
+              aria-haspopup="dialog"
               onClick={() => setMobileFiltersOpen(true)}
             >
               Filters{activeCount > 0 ? ` (${activeCount})` : ""}
@@ -119,11 +129,15 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
             </p>
           </div>
 
+          {/* The rail's "Reset" (colocated with the active-filter count) already
+              covers this action on lg+, where the rail is visible — render this
+              copy only below lg so there is exactly one clear affordance per
+              viewport (B-4). */}
           {activeCount > 0 && (
-            <div className="catalogue-results-clear">
+            <div className="catalogue-results-clear lg:hidden">
               <button
                 type="button"
-                className="link-underline text-[13px] font-bold uppercase tracking-wide"
+                className="catalogue-results-clear__btn link-underline text-[13px] font-bold uppercase tracking-wide"
                 onClick={clearFilters}
               >
                 Clear filters
@@ -153,7 +167,19 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
       </div>
 
       {mobileFiltersOpen && (
-        <MobileFilterSheet onClose={() => setMobileFiltersOpen(false)}>
+        <MobileSheet
+          label="Tyre filters"
+          title="Filters"
+          closeLabel="Close filters"
+          onClose={() => setMobileFiltersOpen(false)}
+          restoreFocusTo={railRef}
+          describedById="mobile-filter-result-count"
+          footer={
+            <button type="button" className="btn btn--red w-full" onClick={() => setMobileFiltersOpen(false)}>
+              Show {results.length} {results.length === 1 ? "result" : "results"}
+            </button>
+          }
+        >
           <FilterControls
             filters={filters}
             sizes={sizes}
@@ -162,117 +188,12 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
             onPatch={patch}
             onClear={clearFilters}
           />
-        </MobileFilterSheet>
+          <p id="mobile-filter-result-count" className="sr-only" aria-live="polite" aria-atomic="true">
+            {results.length} {results.length === 1 ? "result" : "results"}
+          </p>
+        </MobileSheet>
       )}
     </>
-  );
-}
-
-/**
- * The sheet is a real modal dialog, so it owns focus while it is open:
- * focus moves in on open, Tab is trapped inside it, Escape closes it, and
- * focus returns to the trigger on close. None of this touches filter state —
- * filters stay derived from the URL.
- */
-function MobileFilterSheet({
-  onClose,
-  children,
-}: {
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose);
-  useEffect(() => {
-    closeRef.current = onClose;
-  });
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const { body } = document;
-    const previousOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
-
-    dialog.focus();
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeRef.current();
-        return;
-      }
-      if (event.key !== "Tab" || !dialog) return;
-      const focusable = Array.from(
-        dialog.querySelectorAll<HTMLElement>(FOCUSABLE),
-      ).filter((el) => el.offsetParent !== null || el === dialog);
-      if (focusable.length === 0) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-      if (event.shiftKey && (active === first || active === dialog)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    // A viewport that grows past the desktop breakpoint hides the sheet in CSS;
-    // close it so focus and scroll lock cannot be stranded behind the rail.
-    const desktop = window.matchMedia("(min-width: 1024px)");
-    function onBreakpointChange(event: MediaQueryListEvent) {
-      if (event.matches) closeRef.current();
-    }
-
-    document.addEventListener("keydown", onKeyDown, true);
-    desktop.addEventListener("change", onBreakpointChange);
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
-      desktop.removeEventListener("change", onBreakpointChange);
-      body.style.overflow = previousOverflow;
-      previouslyFocused?.focus?.();
-    };
-  }, []);
-
-  return (
-    <div className="catalogue-filter-sheet lg:hidden">
-      <button
-        type="button"
-        className="catalogue-filter-backdrop"
-        aria-label="Close filters"
-        tabIndex={-1}
-        onClick={onClose}
-      />
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Tyre filters"
-        tabIndex={-1}
-        className="catalogue-filter-dialog"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="display text-[28px]">Filters</h2>
-          <button
-            type="button"
-            className="btn btn--outline min-h-[44px] px-4 py-2"
-            onClick={onClose}
-          >
-            Close filters
-          </button>
-        </div>
-        <div className="mt-5">{children}</div>
-      </div>
-    </div>
   );
 }
 
@@ -285,7 +206,9 @@ function FilterControls({
   onClear,
 }: FilterControlsProps) {
   const activeCount = activeFilterCount(filters);
-  const sizeChips = useMemo(() => sizes.slice(0, 6), [sizes]);
+  const [showAllSizes, setShowAllSizes] = useState(false);
+  const visibleSizes = showAllSizes ? sizes : sizes.slice(0, 6);
+  const hasMoreSizes = sizes.length > 6;
 
   return (
     <div className="filter-rail">
@@ -307,23 +230,20 @@ function FilterControls({
         )}
       </div>
 
-      <div className="filter-rail__group">
-        <span className="field-label">Size</span>
-        <SelectField
-          label="Size"
-          value={filters.size ?? ""}
-          onChange={(v) => onPatch({ size: v || null })}
-          options={sizes}
-          allLabel="All sizes"
-        />
+      {/* Size is a 6-value facet — chips alone are more scannable than a
+          duplicate select doing the same job, and it keeps Sort above the
+          fold in the rail. The group carries the accessible name "Size" so
+          it survives even though there is no <select> here. */}
+      <div className="filter-rail__group" role="group" aria-label="Size">
+        <span className="field-label" aria-hidden="true">Size</span>
         <div className="filter-rail__chips">
           <FilterChip
-            active={!filters.size && !filters.application && !filters.brand}
-            onClick={() => onPatch({ size: null, application: null, brand: null })}
+            active={!filters.size}
+            onClick={() => onPatch({ size: null })}
           >
-            All stock
+            All sizes
           </FilterChip>
-          {sizeChips.map((size) => (
+          {visibleSizes.map((size) => (
             <FilterChip
               key={size}
               active={filters.size === size}
@@ -332,6 +252,11 @@ function FilterControls({
               {size}
             </FilterChip>
           ))}
+          {hasMoreSizes && (
+            <FilterChip active={false} onClick={() => setShowAllSizes((v) => !v)}>
+              {showAllSizes ? "Fewer sizes" : `+${sizes.length - 6} more`}
+            </FilterChip>
+          )}
         </div>
       </div>
 
