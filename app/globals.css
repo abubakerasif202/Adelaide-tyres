@@ -158,6 +158,27 @@ img {
   .btn:not(:disabled):active {
     transform: scale(0.98);
   }
+  .btn--red,
+  .btn--green {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn--red::before,
+  .btn--green::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  .btn--red:not(:disabled):hover::before,
+  .btn--green:not(:disabled):hover::before {
+    animation: btn-shine 0.85s ease;
+  }
   .btn--red {
     background: var(--color-red);
     color: var(--color-white);
@@ -634,8 +655,42 @@ img {
   color: rgba(255, 255, 255, 0.72);
 }
 .hero__bay-image {
+  position: relative;
   aspect-ratio: 4 / 3;
   margin-top: 18px;
+}
+/* Decorative spinning wheel rings. The product photo itself is a real 3/4
+   studio angle (not a top-down circular shot), so rotating the raster image
+   would warp it — these abstract dashed rings sit behind the tyre and read
+   as a spinning wheel instead, visible through the oval mask's faded edges. */
+.hero__bay-wheel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.hero__bay-wheel-ring {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+.hero__bay-wheel-ring--outer {
+  width: 64%;
+  border: 1.5px dashed rgba(127, 209, 179, 0.38);
+  animation: wheel-spin 9s linear infinite;
+}
+.hero__bay-wheel-ring--inner {
+  width: 46%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  animation: wheel-spin-reverse 6s linear infinite;
+}
+.hero__bay:hover .hero__bay-wheel-ring--outer {
+  animation-duration: 2.6s;
+}
+.hero__bay:hover .hero__bay-wheel-ring--inner {
+  animation-duration: 1.8s;
 }
 /* The verified product shots are white-background studio photographs. On the
    dark bay their square white field reads as a bright rectangle, so the edges
@@ -862,6 +917,7 @@ footer a {
   border: 1px solid rgba(214, 218, 215, 0.18);
   border-radius: var(--radius-md);
   background: rgba(6, 59, 44, 0.85);
+  transition: transform 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
 }
 .commercial-point__icon {
   display: grid;
@@ -870,6 +926,7 @@ footer a {
   place-items: center;
   margin-bottom: 10px;
   color: #7fd1b3;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .commercial-stat-panel {
   position: relative;
@@ -1047,6 +1104,16 @@ footer a {
   0%, 100% { transform: scale(1.06); }
   50% { transform: scale(1.078); }
 }
+@keyframes wheel-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes wheel-spin-reverse {
+  to { transform: rotate(-360deg); }
+}
+@keyframes btn-shine {
+  from { left: -60%; }
+  to { left: 130%; }
+}
 @keyframes reveal-up {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1080,6 +1147,24 @@ footer a {
   }
   .spec-bar__item--highlight:hover {
     background: linear-gradient(155deg, var(--color-green), var(--color-green-deep));
+  }
+  .benefit-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-raise);
+    border-color: var(--color-border-strong);
+  }
+  .benefit-card:hover .benefit-card__icon {
+    transform: scale(1.12) rotate(-8deg);
+    background: var(--color-green);
+    color: var(--color-white);
+  }
+  .commercial-point:hover {
+    transform: translateY(-3px);
+    border-color: rgba(127, 209, 179, 0.4);
+    background: rgba(6, 59, 44, 0.98);
+  }
+  .commercial-point:hover .commercial-point__icon {
+    transform: scale(1.18) rotate(8deg);
   }
 }
 
@@ -1264,7 +1349,8 @@ footer a {
 .benefit-card--truck { border-top-color: var(--color-text-muted); }
 .benefit-card--bolt { border-top-color: var(--color-red); }
 .benefit-card--warehouse { border-top-color: #7fd1b3; }
-.benefit-card__icon { display:grid; width:48px; height:48px; place-items:center; margin-bottom:16px; border-radius:4px; background:var(--color-surface-muted); color:var(--color-green); }
+.benefit-card { transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+.benefit-card__icon { display:grid; width:48px; height:48px; place-items:center; margin-bottom:16px; border-radius:4px; background:var(--color-surface-muted); color:var(--color-green); transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.28s ease, color 0.28s ease; }
 .benefit-card__title { margin-bottom:8px; font-size:22px; color:var(--color-green-deep); }
 .benefit-card__copy { font-size:14px; line-height:1.45; color:var(--color-text-muted); }
 .delivery-meter { display:flex; align-items:center; gap:16px; margin-top:32px; padding:20px 24px; border:1px solid var(--color-border); border-radius:16px; background:var(--color-surface-muted); }

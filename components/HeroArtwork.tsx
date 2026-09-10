@@ -16,6 +16,10 @@ export function HeroArtwork({ tyre }: { tyre: HeroTyre }) {
         </div>
 
         <div className="hero__bay-image relative">
+          <span className="hero__bay-wheel" aria-hidden>
+            <span className="hero__bay-wheel-ring hero__bay-wheel-ring--outer" />
+            <span className="hero__bay-wheel-ring hero__bay-wheel-ring--inner" />
+          </span>
           {tyre.image && (
             <Image
               src={tyre.image}

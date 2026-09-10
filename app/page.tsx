@@ -49,7 +49,9 @@ export default function HomePage() {
 
           <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">
             {previewTyres.map((tyre, index) => (
-              <ProductCard key={tyre.id} tyre={tyre} priority={index < 2} variant="homepage" />
+              <Reveal key={tyre.id} delay={index * 70}>
+                <ProductCard tyre={tyre} priority={index < 2} variant="homepage" />
+              </Reveal>
             ))}
           </div>
           <div className="mt-9 text-center">
@@ -71,6 +73,7 @@ function HomepageFinder() {
   return (
     <section id="finder" className="homepage-finder relative z-20">
       <div className="homepage-container">
+        <Reveal>
         <form action="/tyres" className="surface-card homepage-finder__panel">
           <div className="flex items-center gap-2 overflow-x-auto border-b border-[var(--color-border)] pb-4">
             <span className="homepage-finder__tab">All tyres</span>
@@ -88,6 +91,7 @@ function HomepageFinder() {
             <span>Popular sizes:</span>{sizes.slice(0, 6).map((size) => <Link className="homepage-finder__chip" href={`/tyres?size=${encodeURIComponent(size)}`} key={size}>{size}</Link>)}
           </div>
         </form>
+        </Reveal>
       </div>
     </section>
   );
