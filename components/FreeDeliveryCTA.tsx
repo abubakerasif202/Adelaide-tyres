@@ -3,11 +3,17 @@ import { business, order } from "@/lib/config";
 import { deliveryRuleSummary, formatCurrency } from "@/lib/format";
 import { Reveal } from "./Reveal";
 
-export function FreeDeliveryCTA() {
+/**
+ * `motion="strong"` opts this shared band into the homepage's bolder entrance
+ * vocabulary. Every other route keeps the default, subtler reveal.
+ */
+export function FreeDeliveryCTA({ motion }: { motion?: "strong" } = {}) {
+  const bandVariant = motion === "strong" ? "rise stagger" : undefined;
+  const ctaVariant = motion === "strong" ? "rise stagger" : undefined;
   return (
     <>
     <section id="delivery" className="homepage-delivery">
-      <Reveal className="homepage-container grid items-stretch gap-8 py-[72px] lg:grid-cols-12">
+      <Reveal variant={bandVariant} className="homepage-container grid items-stretch gap-8 py-[72px] lg:grid-cols-12">
         <div className="delivery-facility-card lg:col-span-5">
           <p className="eyebrow text-[var(--color-green)]">Regency Park distribution</p>
           <h2 className="display mt-1 text-[28px] text-[var(--color-green-deep)]">Regency Park facility</h2>
@@ -32,7 +38,7 @@ export function FreeDeliveryCTA() {
       </Reveal>
     </section>
     <section className="homepage-final-cta on-dark">
-      <div className="homepage-container flex flex-col items-start justify-between gap-6 py-12 md:flex-row md:items-center">
+      <Reveal variant={ctaVariant} className="homepage-container flex flex-col items-start justify-between gap-6 py-12 md:flex-row md:items-center">
           <div>
             <p className="eyebrow text-[#7fd1b3]">Commercial &amp; wholesale supply</p>
             <h2 className="display mt-1 text-[28px]">Find the right tyres for your next order.</h2>
@@ -48,7 +54,7 @@ export function FreeDeliveryCTA() {
               <span className="inline-block text-white/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-white" aria-hidden="true">→</span>
             </Link>
           </div>
-      </div>
+      </Reveal>
     </section>
     </>
   );

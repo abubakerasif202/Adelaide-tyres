@@ -83,7 +83,6 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
           type="button"
           className="btn btn--red w-full"
           data-added={added}
-          aria-live="polite"
           onClick={addToCart}
           disabled={soldOut || atStockLimit}
         >
@@ -91,7 +90,7 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
         </button>
         <button
           type="button"
-          className="btn btn--green w-full"
+          className="link-underline inline-flex min-h-[44px] items-center justify-center self-center text-[13px] font-bold uppercase tracking-wide disabled:opacity-50"
           disabled={soldOut || atStockLimit}
           onClick={() => {
             addToCart();
@@ -100,8 +99,11 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
             window.setTimeout(() => router.push("/cart"), 0);
           }}
         >
-          Add & go to cart
+          Add &amp; go to cart
         </button>
+        <span role="status" className="sr-only">
+          {added ? `Added — ${cart.lines.find((line) => line.id === tyre.id)?.quantity ?? selectedQty} in cart` : ""}
+        </span>
       </div>
 
       <div className="mt-5 border-y border-[var(--color-border)] py-4 text-[13px]">

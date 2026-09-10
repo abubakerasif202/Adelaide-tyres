@@ -108,7 +108,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            <aside className="lg:sticky lg:top-[160px] lg:self-start">
+            <aside className="lg:sticky lg:top-[calc(var(--header-total)+44px)] lg:self-start">
               <div className="surface-card p-6">
                 <h2 className="display text-[24px]">Order summary</h2>
                 <dl className="mt-4 flex flex-col gap-3 text-[14px]">

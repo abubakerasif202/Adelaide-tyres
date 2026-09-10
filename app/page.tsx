@@ -33,7 +33,7 @@ export default function HomePage() {
 
       <section id="stock" className="homepage-stock">
         <div className="homepage-container">
-          <Reveal className="homepage-stock-head flex flex-wrap items-end justify-between gap-4">
+          <Reveal variant="rise stagger" className="homepage-stock-head flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
               eyebrow="Regency Park warehouse inventory"
               title="In-demand wholesale stock"
@@ -41,7 +41,7 @@ export default function HomePage() {
             {/* Stitch shows a category pill row here. These map to the real
                 catalogue application filters rather than decorative tabs. */}
             <div className="homepage-stock-pills">
-              <span className="homepage-stock-pill is-active">All stock</span>
+              <Link href="/tyres" className="homepage-stock-pill is-active">All stock</Link>
               <Link href="/tyres?application=truck" className="homepage-stock-pill">Truck</Link>
               <Link href="/tyres?application=commercial" className="homepage-stock-pill">Commercial</Link>
             </div>
@@ -49,21 +49,21 @@ export default function HomePage() {
 
           <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">
             {previewTyres.map((tyre, index) => (
-              <Reveal key={tyre.id} delay={index * 70}>
+              <Reveal key={tyre.id} variant="card" delay={index * 110}>
                 <ProductCard tyre={tyre} priority={index < 2} variant="homepage" />
               </Reveal>
             ))}
           </div>
-          <div className="mt-9 text-center">
+          <Reveal variant="rise" className="mt-9 text-center">
             <Link href="/tyres" className="btn btn--green">View full catalogue <span aria-hidden>→</span></Link>
             <p className="mt-2 text-[12px] text-[var(--color-text-muted)]">Live listed stock from the Regency Park warehouse.</p>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       <CommercialTeaser />
 
-      <FreeDeliveryCTA />
+      <FreeDeliveryCTA motion="strong" />
     </>
   );
 }
@@ -73,7 +73,7 @@ function HomepageFinder() {
   return (
     <section id="finder" className="homepage-finder relative z-20">
       <div className="homepage-container">
-        <Reveal>
+        <Reveal variant="lift">
         <form action="/tyres" className="surface-card homepage-finder__panel">
           <div className="flex items-center gap-2 overflow-x-auto border-b border-[var(--color-border)] pb-4">
             <span className="homepage-finder__tab">All tyres</span>

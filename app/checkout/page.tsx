@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { getDeliveryFee, getLineSubtotal, qualifiesForFreeDelivery } from "@/lib/cart";
 import { business, order } from "@/lib/config";
@@ -37,6 +37,11 @@ function CheckoutPageInner() {
   const [details, setDetails] = useState<CheckoutDetails>(EMPTY_CHECKOUT_DETAILS);
   const [errors, setErrors] = useState<CheckoutErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  // Kept separate from `submitting`: once the Stripe URL is handed to the
+  // browser the button must stay disabled through the navigation, but a failed
+  // request has to re-enable it (C-1).
+  const [redirecting, setRedirecting] = useState(false);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ reference: string; mode: string; notified: boolean } | null>(null);
   const [startedAt] = useState(() => Date.now());
@@ -62,6 +67,39 @@ function CheckoutPageInner() {
   useEffect(() => {
     if (hasErrors(errors)) document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [errors]);
+
+  // A bare setStep leaves the viewport mid-page and strands keyboard/SR focus
+  // on the button that just unmounted (H-5).
+  const isFirstStepRender = useRef(true);
+  const submitErrorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (isFirstStepRender.current) {
+      isFirstStepRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    stepHeadingRef.current?.focus();
+  }, [step]);
+
+  // Three failure branches (payByCard catch, placeOrder catch, and the
+  // `notified !== true` branch) set submitError WITHOUT changing step, so the
+  // [step] effect never runs and the banner — hoisted above the step heading —
+  // renders offscreen while the user is still at the bottom of the payment
+  // step. Driving scroll+focus from the error itself covers every path.
+  //
+  // Declared AFTER the [step] effect on purpose: on the server-validation path
+  // (setErrors + setStep(1) + setSubmitError in one batch) both effects run in
+  // the same commit, and the later one wins — so the banner keeps focus rather
+  // than the step heading, which is the desired outcome.
+  useEffect(() => {
+    if (!submitError) return;
+    const banner = submitErrorRef.current;
+    if (!banner) return;
+    // preventScroll avoids the browser's instant focus-scroll fighting the
+    // smooth scrollIntoView below.
+    banner.focus({ preventScroll: true });
+    banner.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [submitError]);
 
   const destination = { method: details.deliveryMethod };
   const freeDelivery = qualifiesForFreeDelivery(cart, destination);
@@ -95,6 +133,14 @@ function CheckoutPageInner() {
     );
   }
 
+  // Back is user-initiated, not failure-initiated: a stale banner would
+  // otherwise re-render and steal focus from the step the user asked for,
+  // announcing an already-resolved error as new.
+  function goBack(target: CheckoutStepIndex) {
+    setSubmitError(null);
+    setStep(target);
+  }
+
   function goToDelivery() {
     setStep(1);
   }
@@ -126,9 +172,11 @@ function CheckoutPageInner() {
         if (data.errors) setStep(1);
         return;
       }
+      setRedirecting(true);
       window.location.href = data.url;
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -178,6 +226,11 @@ function CheckoutPageInner() {
 
   return (
     <Shell step={step}>
+      {submitError && step < 3 && (
+        <p ref={submitErrorRef} tabIndex={-1} role="alert" className="field-error surface-card mb-6 p-4 text-[14px] focus:outline-none">
+          {submitError}
+        </p>
+      )}
       {cancelled && step < 3 && (
         <p className="surface-card mb-6 p-4 text-[14px]" role="status">
           Payment was cancelled — your cart is unchanged. You can try again or submit for invoice.
@@ -187,7 +240,7 @@ function CheckoutPageInner() {
         <div>
           {step === 0 && (
             <section aria-labelledby="cart-step">
-              <h1 id="cart-step" className="display text-[clamp(28px,4vw,40px)]">
+              <h1 ref={stepHeadingRef} tabIndex={-1} id="cart-step" className="display text-[clamp(28px,4vw,40px)] focus:outline-none">
                 Your bulk order
               </h1>
               <div className="mt-4">
@@ -243,7 +296,7 @@ function CheckoutPageInner() {
 
           {step === 1 && (
             <section aria-labelledby="delivery-step">
-              <h1 id="delivery-step" className="display text-[clamp(28px,4vw,40px)]">
+              <h1 ref={stepHeadingRef} tabIndex={-1} id="delivery-step" className="display text-[clamp(28px,4vw,40px)] focus:outline-none">
                 Delivery details
               </h1>
               <p className="mt-2 text-[var(--color-text-muted)]">
@@ -296,7 +349,7 @@ function CheckoutPageInner() {
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <button type="button" className="btn btn--outline" onClick={() => setStep(0)}>
+                <button type="button" className="btn btn--outline" onClick={() => goBack(0)}>
                   Back
                 </button>
                 <button type="button" className="btn btn--red" onClick={goToPayment}>
@@ -308,7 +361,7 @@ function CheckoutPageInner() {
 
           {step === 2 && (
             <section aria-labelledby="payment-step">
-              <h1 id="payment-step" className="display text-[clamp(28px,4vw,40px)]">
+              <h1 ref={stepHeadingRef} tabIndex={-1} id="payment-step" className="display text-[clamp(28px,4vw,40px)] focus:outline-none">
                 Payment
               </h1>
 
@@ -321,12 +374,23 @@ function CheckoutPageInner() {
                   </p>
                   <button
                     type="button"
-                    className="btn btn--green mt-4"
+                    className="btn btn--red mt-4"
                     onClick={payByCard}
-                    disabled={submitting}
+                    disabled={submitting || redirecting}
                   >
-                    {submitting ? "Redirecting to secure checkout…" : `Pay ${formatCurrency(subtotal + deliveryFee)} by card`}
+                    {submitting || redirecting
+                      ? "Redirecting to secure checkout…"
+                      : `Pay ${formatCurrency(subtotal + deliveryFee)} by card`}
                   </button>
+                  <p className="checkout-trust mt-3">
+                    <span aria-hidden>🔒</span>
+                    <span>Secured by Stripe</span>
+                    <span className="checkout-trust__sep" aria-hidden />
+                    <span>Visa</span>
+                    <span>Mastercard</span>
+                    <span>Amex</span>
+                    <span>Apple&nbsp;Pay</span>
+                  </p>
                   <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
                     By paying you agree to our{" "}
                     <Link href="/terms" className="underline">
@@ -364,20 +428,20 @@ function CheckoutPageInner() {
                   <li>✓ No card data stored by this website</li>
                 </ul>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>
+                  <button type="button" className="btn btn--outline" onClick={() => goBack(1)}>
                     Back
                   </button>
-                  <button type="button" className="btn btn--red" onClick={placeOrder} disabled={submitting}>
+                  <button
+                    type="button"
+                    className={stripeEnabled ? "btn btn--outline" : "btn btn--red"}
+                    onClick={placeOrder}
+                    disabled={submitting || redirecting}
+                  >
                     {submitting ? "Placing order…" : "Place bulk order"}
                   </button>
                 </div>
               </div>
 
-              {submitError && (
-                <p className="field-error mt-4" role="alert">
-                  {submitError}
-                </p>
-              )}
             </section>
           )}
 
@@ -385,7 +449,7 @@ function CheckoutPageInner() {
             <section aria-labelledby="confirm-step">
               <div className="surface-card p-8 text-center">
                 <span className="pill pill--green">Order received</span>
-                <h1 id="confirm-step" className="display mt-4 text-[32px]">
+                <h1 ref={stepHeadingRef} tabIndex={-1} id="confirm-step" className="display mt-4 text-[32px] focus:outline-none">
                   Thanks — your order is in
                 </h1>
                 <p className="mt-2 text-[var(--color-text-muted)]">
@@ -418,7 +482,7 @@ function CheckoutPageInner() {
         </div>
 
         {step < 3 && (
-          <aside className="lg:sticky lg:top-[180px] lg:self-start">
+          <aside className="lg:sticky lg:top-[calc(var(--header-total)+64px)] lg:self-start">
             <div className="surface-card p-6">
               <h2 className="display text-[22px]">Order summary</h2>
               <dl className="mt-4 flex flex-col gap-3 text-[14px]">

@@ -55,7 +55,7 @@ export function Benefits() {
   return (
     <section className="homepage-benefits">
       <div className="homepage-container">
-        <Reveal className="homepage-section-heading text-center">
+        <Reveal variant="rise stagger" className="homepage-section-heading text-center">
           <p className="eyebrow">Transparent trade logistics</p>
           <h2 className="display">Built specifically for South Australian workshops &amp; fleets</h2>
         </Reveal>
@@ -63,8 +63,9 @@ export function Benefits() {
           {specs.map((s, index) => (
             <Reveal
               key={s.value}
+              variant="card"
               className={`benefit-card benefit-card--${s.icon}`}
-              delay={index * 60}
+              delay={index * 100}
             >
               {s.tag && <span className="spec-bar__tag">{s.tag}</span>}
               <span className="benefit-card__icon">{ICONS[s.icon]}</span>
@@ -73,7 +74,7 @@ export function Benefits() {
             </Reveal>
           ))}
         </div>
-        <Reveal className="delivery-meter">
+        <Reveal variant="lift" className="delivery-meter">
           <span className="delivery-meter__icon">{ICONS.truck}</span>
           <div>
             <h3 className="display">Wholesale delivery tiers</h3>

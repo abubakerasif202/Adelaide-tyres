@@ -43,7 +43,7 @@ export function CommercialTeaser() {
   return (
     <section id="commercial" className="commercial-band on-dark relative overflow-hidden text-white">
       <div className="commercial-band__texture pointer-events-none absolute inset-0" aria-hidden />
-      <Reveal className="homepage-container commercial-band__grid relative grid items-center gap-8 py-[72px] lg:grid-cols-12">
+      <Reveal variant="rise stagger" className="homepage-container commercial-band__grid relative grid items-center gap-8 py-[72px] lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="eyebrow text-[#7fd1b3]">Wholesale supply</p>
           <h2 className="display mt-2 text-[clamp(32px,4.6vw,50px)]">

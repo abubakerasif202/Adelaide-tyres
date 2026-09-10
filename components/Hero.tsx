@@ -55,8 +55,12 @@ export function Hero() {
           </span>
 
           <h1 className="hero__title display">
-            Wholesale tyres.<br />
-            <span>Ready for your next order.</span>
+            <span className="hero__title-line">
+              <span className="hero__title-phrase">Wholesale tyres.</span>
+            </span>
+            <span className="hero__title-line">
+              <span className="hero__title-phrase hero__title-accent">Ready for your next order.</span>
+            </span>
           </h1>
 
           <p className="hero__copy">

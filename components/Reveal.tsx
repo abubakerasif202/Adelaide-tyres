@@ -6,6 +6,13 @@ type RevealProps = {
   children: ReactNode;
   className?: string;
   delay?: number;
+  /**
+   * Space-separated motion variant tokens (e.g. `"rise stagger"`), mapped to
+   * `.reveal--<token>` classes in globals.css. Variants only change WHICH
+   * keyframes run once `.reveal--ready` lands — the base `.reveal` state stays
+   * visible, so a missing/slow observer or reduced motion still shows content.
+   */
+  variant?: string;
 };
 
 /**
@@ -13,7 +20,7 @@ type RevealProps = {
  * scroll-observer opacity gates leave blank regions for slow scripts, crawlers
  * and full-page captures.
  */
-export function Reveal({ children, className = "", delay = 0 }: RevealProps) {
+export function Reveal({ children, className = "", delay = 0, variant }: RevealProps) {
   const revealRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,10 +57,18 @@ export function Reveal({ children, className = "", delay = 0 }: RevealProps) {
     return () => observer.disconnect();
   }, []);
 
+  const variantClasses = variant
+    ? variant
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((token) => `reveal--${token}`)
+        .join(" ")
+    : "";
+
   return (
     <div
       ref={revealRef}
-      className={`reveal ${className}`.trim()}
+      className={`reveal ${variantClasses} ${className}`.replace(/\s+/g, " ").trim()}
       style={{ "--reveal-delay": `${delay}ms` } as CSSProperties}
     >
       {children}

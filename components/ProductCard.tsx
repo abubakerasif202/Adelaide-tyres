@@ -30,7 +30,11 @@ export function ProductCard({
   useEffect(() => () => {
     if (addedTimer.current) clearTimeout(addedTimer.current);
   }, []);
-  const remainingStock = Math.max(0, tyre.stock - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
+  const inCart = cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0;
+  const remainingStock = Math.max(0, tyre.stock - inCart);
+  // One status region per card: the buttons must not carry aria-live, or the
+  // changing button label is announced twice and competes with this message.
+  const cartStatus = added ? `Added — ${inCart} in cart` : "";
   const soldOut = tyre.stock <= 0;
   const atStockLimit = remainingStock === 0;
   const selectedQty = Math.min(qty, Math.max(1, remainingStock));
@@ -98,9 +102,10 @@ export function ProductCard({
             </div>
             <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${title}`} size="sm" />
           </div>
-          <button type="button" className="btn btn--red w-full" data-added={added} aria-live="polite" onClick={handleAdd} disabled={soldOut || atStockLimit}>
+          <button type="button" className="btn btn--red w-full" data-added={added} onClick={handleAdd} disabled={soldOut || atStockLimit}>
             {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
           </button>
+          <span role="status" className="sr-only">{cartStatus}</span>
           <p className="mt-auto text-[12px] font-medium text-[var(--color-text-muted)]">{deliveryRuleSummary("card")}</p>
         </div>
       </article>
@@ -126,9 +131,10 @@ export function ProductCard({
             <PriceDisplay price={tyre.price} />
             <div className="homepage-product-card__actions">
               <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${compactTitle}`} size="sm" />
-              <button type="button" className="btn btn--red" data-added={added} aria-live="polite" onClick={handleAdd} disabled={soldOut || atStockLimit}>{soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : "Add to order"}</button>
+              <button type="button" className="btn btn--red" data-added={added} onClick={handleAdd} disabled={soldOut || atStockLimit}>{soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : "Add to order"}</button>
             </div>
           </div>
+          <span role="status" className="sr-only">{cartStatus}</span>
         </div>
       </article>
     );
@@ -187,12 +193,12 @@ export function ProductCard({
           type="button"
           className="btn btn--red w-full"
           data-added={added}
-          aria-live="polite"
           onClick={handleAdd}
           disabled={soldOut || atStockLimit}
         >
           {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
         </button>
+        <span role="status" className="sr-only">{cartStatus}</span>
 
         <p className="text-[12px] font-medium text-[var(--color-text-muted)]">
           {deliveryRuleSummary("card")}

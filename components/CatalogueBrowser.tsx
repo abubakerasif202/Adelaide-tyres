@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Tyre } from "@/lib/catalogue";
 import { APPLICATION_LABELS } from "@/lib/catalogue";
@@ -13,6 +13,9 @@ import {
 } from "@/lib/filter";
 import { MobileSheet } from "./MobileSheet";
 import { ProductCard } from "./ProductCard";
+
+/** Pause after the last keystroke before the URL (and results) update. */
+const SEARCH_DEBOUNCE_MS = 250;
 
 type Props = {
   tyres: Tyre[];
@@ -57,7 +60,28 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
     [filters, setFilters],
   );
 
+  // The search box drives a router.replace. Navigating on every keystroke
+  // drops characters on mid-range Android, so the input is locally controlled
+  // and the URL catches up after the user pauses.
+  const [queryDraft, setQueryDraft] = useState(filters.query);
+  const querySyncedFromUrl = useRef(filters.query);
+  useEffect(() => {
+    if (filters.query !== querySyncedFromUrl.current) {
+      querySyncedFromUrl.current = filters.query;
+      setQueryDraft(filters.query);
+    }
+  }, [filters.query]);
+  useEffect(() => {
+    if (queryDraft === filters.query) return;
+    const timer = setTimeout(() => {
+      querySyncedFromUrl.current = queryDraft;
+      patch({ query: queryDraft });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [queryDraft, filters.query, patch]);
+
   const clearFilters = useCallback(() => {
+    setQueryDraft("");
     setFilters({
       query: "",
       size: null,
@@ -67,6 +91,11 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
       sort: filters.sort,
     });
   }, [filters.sort, setFilters]);
+
+  // True across the debounce window, i.e. while the visible results are known
+  // to be stale relative to what has been typed. Drives a dim on the results
+  // grid so the pause reads as "working", not as "the search is ignoring me".
+  const searchPending = queryDraft !== filters.query;
 
   const results = useMemo(() => filterTyres(tyres, filters), [tyres, filters]);
   const activeCount = activeFilterCount(filters);
@@ -105,8 +134,8 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
               type="search"
               className="field-input catalogue-search__input"
               placeholder="Search tyre size, pattern or brand"
-              value={filters.query}
-              onChange={(e) => patch({ query: e.target.value })}
+              value={queryDraft}
+              onChange={(e) => setQueryDraft(e.target.value)}
             />
           </label>
 
@@ -157,7 +186,10 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
               </a>
             </div>
           ) : (
-            <div className="catalogue-results mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div
+              className="catalogue-results mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+              data-pending={searchPending ? "true" : undefined}
+            >
               {results.map((tyre) => (
                 <ProductCard key={tyre.id} tyre={tyre} />
               ))}

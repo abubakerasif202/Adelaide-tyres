@@ -43,7 +43,8 @@
 
   /* Layout */
   --container-max: 1280px;
-  --header-height: 132px;
+  /* Real sticky header: 36px announcement + 80px main bar. */
+  --header-total: 116px;
 }
 
 @layer base {
@@ -108,12 +109,38 @@ img {
 }
 }
 
+@layer base {
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-green);
+  }
+}
+
 @layer components {
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-muted);
+    cursor: pointer;
+  }
+  .consent-row input {
+    margin-top: 2px;
+    flex: 0 0 auto;
+  }
+
   .container-x {
     width: 100%;
     max-width: var(--container-max);
     margin-inline: auto;
-    padding-inline: clamp(16px, 4vw, 64px);
+    padding-inline: 24px;
   }
 
   .display {
@@ -261,7 +288,7 @@ img {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .field-input::placeholder {
-    color: #9aa39e;
+    color: var(--color-text-muted);
   }
   .field-input:focus {
     outline: none;
@@ -303,7 +330,7 @@ img {
     aspect-ratio: 16 / 9;
     place-items: center;
     overflow: hidden;
-    background: linear-gradient(175deg, #ffffff 0%, #f4f6f4 100%);
+    background: #ffffff;
     border-bottom: 1px solid var(--color-border);
   }
   .product-card__media--dark-bay {
@@ -339,7 +366,6 @@ img {
     inset: 6% 0 !important;
     object-fit: contain;
     filter: saturate(0.96) contrast(1.04);
-    mix-blend-mode: multiply;
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .product-card__media--dark-bay .product-card__media-contain {
@@ -475,7 +501,7 @@ img {
   transform: translateY(-1px);
 }
 .mobile-menu {
-  top: calc(38px + var(--header-main-height));
+  top: var(--header-total);
   animation: menu-enter 0.24s ease-out both;
 }
 .cart-count {
@@ -574,17 +600,17 @@ img {
  * over `.display`'s `0.98`. Do not move this inside `@layer components`.
  */
 .hero__title {
-  animation: hero-title-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
   margin-top: 22px;
   max-width: 780px;
   font-size: clamp(48px, 6.8vw, 88px);
   line-height: 0.96;
 }
 
-.hero__title span {
+.hero__title-accent {
   color: #7fd1b3;
   background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 40%, #6ee7b7 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1006,144 +1032,9 @@ footer a {
   color: rgba(255, 255, 255, 0.62);
 }
 
-/* ---------------------------------------------------------------
-   Homepage rebuild — editorial stock showcase: one large featured tyre in
-   a dark studio panel, a compact supporting list beside it, and a strong
-   catalogue CTA. Deliberately not a uniform card grid.
-   --------------------------------------------------------------- */
-.stock-showcase__lead {
-  display: flex;
-  flex-direction: column;
-}
-.stock-showcase__lead-media {
-  position: relative;
-  display: block;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 28% 22%, rgba(127, 209, 179, 0.22), transparent 48%),
-    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
-}
-.stock-showcase__lead-image {
-  object-fit: contain;
-  inset: 8% !important;
-  width: 84% !important;
-  height: 84% !important;
-  filter: saturate(0.18) brightness(1.02) contrast(1.05) drop-shadow(0 20px 22px rgba(0, 0, 0, 0.55));
-  transition: transform 0.3s ease;
-}
-.stock-showcase__lead:hover .stock-showcase__lead-image {
-  transform: scale(1.03);
-}
-.stock-showcase__lead-pill {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 1;
-}
-.stock-showcase__lead-tag {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--color-red);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.stock-showcase__row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.stock-showcase__row-media {
-  position: relative;
-  display: block;
-  width: 88px;
-  height: 88px;
-  flex-shrink: 0;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(127, 209, 179, 0.2), transparent 52%),
-    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
-}
-.stock-showcase__row-image {
-  object-fit: contain;
-  inset: 10% !important;
-  width: 80% !important;
-  height: 80% !important;
-  filter: saturate(0.15) brightness(1.02) contrast(1.04);
-}
-.stock-showcase__row-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 6px 16px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-ink);
-  background: var(--color-white);
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.stock-showcase__row-add:not(:disabled):hover {
-  border-color: var(--color-red);
-  color: var(--color-red-deep);
-}
-.stock-showcase__row-add[data-added="true"] {
-  border-color: var(--color-green);
-  color: var(--color-green);
-}
-.stock-showcase__row-add:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.stock-showcase__catalogue-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: auto;
-  padding: 20px 22px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(150deg, var(--color-green), var(--color-green-deep));
-  color: #fff;
-  box-shadow: 0 18px 40px -22px rgba(6, 59, 44, 0.65);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.stock-showcase__catalogue-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 22px 46px -20px rgba(6, 59, 44, 0.72);
-}
-.stock-showcase__catalogue-arrow {
-  font-size: 22px;
-  transition: transform 0.2s ease;
-}
-.stock-showcase__catalogue-cta:hover .stock-showcase__catalogue-arrow {
-  transform: translateX(4px);
-}
-
 @keyframes hero-enter {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
-}
-@keyframes hero-title-enter {
-  from { transform: translateY(12px); }
-  to { transform: translateY(0); }
 }
 @keyframes hero-visual-enter {
   from { opacity: 0; transform: translateY(10px) scale(0.96); }
@@ -1222,16 +1113,12 @@ footer a {
 }
 
 @media (max-width: 639px) {
-  .hero__title {
-    /* Floor lowered from 44px so the vw term actually governs below ~366px.
-       At the old 44px floor, 320px rendered a cramped four-line headline
-       (measured line boxes 193/113/265/207 in a 288px box). At 12vw the 320px
-       size is 38.4px and the composition holds at three lines (269/228/178),
-       every line inside the 288px `.container-x` box. The hard <br> is kept at
-       every width: removing it made the 320px wrap worse, not better. */
-    font-size: clamp(32px, 12vw, 56px);
-    line-height: 0.98;
-  }
+  /* NOTE: the <640px `.hero__title` / `.hero__copy` sizing does NOT live here.
+     The unlayered "exact-v2" block near the end of this file re-declares
+     `.hero__title` at 84px with identical specificity (0,1,0); a media query
+     adds no specificity, so source order decides and anything declared here
+     would lose. The mobile hero typography is declared in the <640px block
+     that follows those rules. Do not move it back up here. */
   .announcement-copy {
     width: 100%;
     overflow: hidden;
@@ -1293,7 +1180,14 @@ footer a {
   padding: 5px 10px;
   color: var(--color-text);
   background: var(--color-surface-muted);
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Explicit property list, not `all`: `all` also animates the layout-bound
+     properties (padding, border-width) this chip inherits, which risks a
+     reflow mid-hover. */
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   cursor: pointer;
 }
 .homepage-finder__chip:hover {
@@ -1342,7 +1236,15 @@ footer a {
 .header-main { min-height: 80px; padding: 0; }
 .site-header[data-compact="true"] { --header-main-height: 80px; }
 .site-header[data-compact="true"] .header-main { min-height: 80px; }
-.header-search { flex: 1; max-width: 320px; margin-inline: 16px; }
+.header-search {
+  flex: 1;
+  /* 260px, not 320px: the `xl` breakpoint that reveals this search is 1280px,
+     which is also --container-max. At exactly 1280 the inner width is 1232px
+     and logo + search + nav + cart + gaps left under 80px of slack at 320px.
+     260px restores ~140px of headroom for a longer nav label. */
+  max-width: 260px;
+  margin-inline: 16px;
+}
 .header-search input {
   width: 100%; height: 42px; padding: 8px 14px 8px 38px;
   border: 1px solid var(--color-field-border); border-radius: 4px;
@@ -1353,7 +1255,7 @@ footer a {
 .header-nav-link::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; content: ""; background: var(--color-red); transform: scaleX(0); transition: transform .18s ease; }
 .header-nav-link:hover::after,
 .header-nav-link.is-active::after { transform: scaleX(1); }
-.mobile-menu { top: 116px; }
+.mobile-menu { top: var(--header-total); }
 
 .hero__grid > :first-child { grid-column: span 7 / span 7; }
 .hero__grid > .hero__visual { grid-column: span 5 / span 5; }
@@ -1387,23 +1289,33 @@ footer a {
 }
 
 @media (max-width: 639px) {
+  .container-x,
   .homepage-container,
   .header-container { padding-inline: 16px; }
   .homepage-finder { margin-top: -32px; }
   .homepage-finder__panel { padding: 16px; }
   .homepage-finder__panel .field-input { min-height: 48px; }
   .homepage-stock-grid { grid-template-columns: 1fr; }
-  .homepage-stock-grid .product-card { display: grid; grid-template-columns: 38% 1fr; }
-  .homepage-stock-grid .product-card__media { aspect-ratio: 1 / 1; }
-  .homepage-stock-grid .product-card > div { padding: 14px; gap: 10px; }
-  .homepage-stock-grid .product-card > div > p { display: none; }
+  .homepage-stock-grid .homepage-product-card { display: grid; grid-template-columns: 38% 1fr; }
+  .homepage-stock-grid .homepage-product-card .product-card__media { aspect-ratio: 1 / 1; padding: 8px; }
+  .homepage-stock-grid .homepage-product-card > .homepage-product-card__body { padding: 14px; gap: 10px; }
   .hero__bay { padding: 14px 14px 0; }
+  /* Declared AFTER the exact-v2 `.hero__title { font-size: 84px }` above so it
+     actually wins on source order (identical 0,1,0 specificity).
+     Floor 32px / 12vw: at 320px that is 38.4px and the headline holds three
+     lines (269/228/178) inside the 288px `.container-x` box. At the old 44px
+     floor it wrapped to four cramped lines; at 84px it overflowed entirely. */
+  .hero__title { font-size: clamp(32px, 12vw, 56px); line-height: 0.98; }
+  .hero__copy { margin-bottom: 24px; font-size: 16px; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hero__title { font-size: 48px; line-height: 1; }
 }
 
 @media (max-width: 1023px) {
   .hero__grid > :first-child,
   .hero__grid > .hero__visual { grid-column: auto; }
-  .hero__title { font-size: 48px; line-height: 1; }
 }
 
 .homepage-benefits { padding-block: 48px; background: var(--color-surface); }
@@ -1434,7 +1346,10 @@ footer a {
 .homepage-stock-pill { display:inline-flex; align-items:center; min-height:36px; padding:8px 16px; border:1px solid var(--color-border); border-radius:999px; background:#fff; font-size:13px; font-weight:600; color:var(--color-text); white-space:nowrap; transition:background-color .18s ease, border-color .18s ease; }
 a.homepage-stock-pill:hover { border-color:var(--color-border-strong); background:var(--color-surface-muted); }
 .homepage-stock-pill.is-active { border-color:var(--color-green); background:var(--color-green); color:#fff; font-weight:700; }
-.homepage-product-card { display:flex; min-width:0; flex-direction:column; overflow:hidden; border:1px solid var(--color-border); border-radius:16px; background:#fff; transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+/* No `display:flex` on the reveal wrapper: grid items stretch by default, so
+   the card already fills the cell height. Making it a flex container turned the
+   card into a shrink-to-fit flex item and cost it its full-cell width. */
+.homepage-product-card { height:100%; display:flex; min-width:0; flex-direction:column; overflow:hidden; border:1px solid var(--color-border); border-radius:16px; background:#fff; transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
 .homepage-product-card .product-card__media { aspect-ratio:16/10; padding:16px; }
 .homepage-product-card__body { display:flex; flex:1; flex-direction:column; justify-content:space-between; padding:20px; }
 .homepage-product-card__brand { display:block; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--color-text-muted); }
@@ -1543,7 +1458,6 @@ footer.on-dark { background:var(--color-green-dark); }
 .catalogue-search .field-input::placeholder {
   font-family: var(--font-sans);
   font-weight: 600;
-  color: var(--color-text-muted);
 }
 
 .catalogue-mobile-toolbar {
@@ -1715,7 +1629,7 @@ footer.on-dark { background:var(--color-green-dark); }
   .catalogue-filter-rail {
     display: block;
     position: sticky;
-    top: 112px;
+    top: calc(var(--header-total) + 12px);
   }
 
   .catalogue-mobile-toolbar .catalogue-filter-trigger,
@@ -1756,8 +1670,6 @@ footer.on-dark { background:var(--color-green-dark); }
   .hero__bay:hover,
   .homepage-finder__chip:hover,
   .spec-bar__item:hover,
-  .stock-showcase__lead:hover,
-  .stock-showcase__row:hover,
   .commercial-stat:hover,
   .btn:not(:disabled):active,
   .quantity-selector button:not(:disabled):active,
@@ -1916,4 +1828,530 @@ footer.on-dark { background:var(--color-green-dark); }
     transform: none;
   }
   .skeleton::after { opacity: 0; }
+}
+
+/* H-2: the fixed mobile cart bar overlays the last ~70px of the page; the
+   bar toggles this class on <body> while it is mounted. */
+@media (max-width: 1023px) {
+  body.has-cart-bar {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+}
+
+/* H-4: trust marks under the primary card-payment action. */
+.checkout-trust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.checkout-trust__sep {
+  width: 1px;
+  height: 12px;
+  background: var(--color-border);
+}
+
+/* ---------------------------------------------------------------
+   Polish pass: overlay entrances, deferred-result feedback and
+   validation entrances. Every rule below animates transform/opacity
+   only — nothing here can move layout — and each is switched off in
+   the reduced-motion block that closes this section.
+   --------------------------------------------------------------- */
+
+/* Mobile filter sheet. It previously appeared with no transition at all:
+   backdrop and dialog both snapped in, which reads as a glitch rather than
+   a surface arriving. The dialog is `position: absolute` inside a fixed
+   parent, so translating it cannot shift page layout. */
+.mobile-sheet__backdrop {
+  animation: sheet-backdrop-in 0.22s ease-out both;
+}
+/* `backwards`, not `both`, for the same reason `.route-transition` uses it:
+   a retained transform (even translateY(0)) would make the dialog a
+   containing block for any `position: fixed` descendant. `backwards` drops
+   the transform once the entrance finishes. */
+.mobile-sheet__dialog {
+  animation: sheet-dialog-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes sheet-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-dialog-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile cart bar. `MobileCartBar` returns null until the cart is non-empty,
+   so the declared `transition` on `.mobile-cart-bar` could never fire — a
+   mount has no previous value to interpolate from. An entrance keyframe is
+   what this actually needed: the bar rises into place the first time a tyre
+   is added. */
+.mobile-cart-bar {
+  animation: cart-bar-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes cart-bar-in {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Catalogue results: the search box debounces for SEARCH_DEBOUNCE_MS, so
+   between the last keystroke and the new results there is a window where
+   the grid shows stale matches with no indication that it is stale. The
+   browser sets `data-pending` across that window. Opacity only — the grid
+   keeps its exact box, so nothing reflows and CLS stays at zero. */
+.catalogue-results[data-pending="true"] {
+  opacity: 0.55;
+}
+
+/* Form validation. The error summary and per-field errors are inserted into
+   the DOM on submit; fading them up makes the insertion legible instead of
+   a flash of new text. Content is present and readable from frame one —
+   the animation starts at opacity 0 only for the length of one short
+   entrance, and is fully removed under reduced motion. */
+.field-error[role="alert"] {
+  animation: error-in 0.2s ease-out backwards;
+}
+@keyframes error-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-sheet__backdrop,
+  .mobile-sheet__dialog,
+  .mobile-cart-bar,
+  .field-error[role="alert"] {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  /* The pending dim is a state change, not motion: it stays, but snaps
+     rather than crossfading (the global reduce block already collapses
+     transition-duration). */
+}
+
+/* ===============================================================
+   HOMEPAGE CINEMATIC MOTION (bold pass)
+   ---------------------------------------------------------------
+   One vocabulary, three layers:
+     1. Hero load choreography  - staged beats, `backwards` fill only.
+     2. Section entrances       - `Reveal` variants (rise / lift / card /
+                                  stagger), IntersectionObserver-driven.
+     3. Depth                   - scroll-linked parallax behind
+                                  `@supports (animation-timeline: ...)`.
+
+   Invariants respected here:
+   - Only `transform` / `opacity` are animated. Nothing that participates in
+     layout, so CLS stays 0.
+   - Every animated element's BASE state is the finished state (opacity 1, no
+     transform). Fill is `backwards` - never `forwards`/`both` - so a retained
+     transform can never turn an element into a containing block for a
+     `position: fixed` descendant, and `animation: none` (the global
+     reduced-motion `*` reset earlier in this file) always lands on a visible
+     element.
+   - `.hero__title` is the LCP element: it animates transform ONLY. It is
+     painted at full opacity on the very first frame and is never gated on JS.
+   - No font-size / spacing is re-declared here, so the <640px hero typography
+     block keeps winning on source order.
+   =============================================================== */
+
+:root {
+  /* Decisive, weighted, no overshoot - expo-out. */
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ---- Shared keyframes -------------------------------------------------- */
+@keyframes home-rise {
+  from { opacity: 0; transform: translate3d(0, 46px, 0); }
+}
+@keyframes home-rise-soft {
+  from { opacity: 0; transform: translate3d(0, 26px, 0); }
+}
+@keyframes home-lift {
+  from { opacity: 0; transform: translate3d(0, 56px, 0) scale(0.965); }
+}
+@keyframes home-card-in {
+  from { opacity: 0; transform: translate3d(0, 44px, 0) scale(0.955); }
+}
+@keyframes home-wash-in {
+  from { opacity: 0; transform: scale(1.09); }
+}
+@keyframes home-fade-in {
+  from { opacity: 0; }
+}
+@keyframes home-title-line-in {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: translate3d(0, 40px, 0) scale(0.965);
+  }
+  76% {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, -2px, 0) scale(1.006);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes home-title-metallic-sweep {
+  from { background-position: 115% 50%; }
+  to { background-position: -15% 50%; }
+}
+@keyframes home-title-line-in-sm {
+  0% {
+    clip-path: inset(100% 0 0 0);
+    transform: translate3d(0, 24px, 0) scale(0.98);
+  }
+  78% {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, -1px, 0) scale(1.003);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes home-visual-in {
+  from { opacity: 0; transform: translate3d(0, 54px, 0) scale(0.9); }
+}
+@keyframes home-sheen {
+  from { transform: translate3d(-130%, 0, 0) skewX(-18deg); opacity: 0; }
+  22%  { opacity: 1; }
+  to   { transform: translate3d(230%, 0, 0) skewX(-18deg); opacity: 0; }
+}
+@keyframes home-parallax-up {
+  to { transform: translate3d(0, -34px, 0); }
+}
+@keyframes home-parallax-down {
+  to { transform: translate3d(0, 60px, 0); }
+}
+
+/* ===== 1. HERO LOAD CHOREOGRAPHY ======================================== */
+
+/* Beat 0 - the environment resolves first (both layers are aria-hidden). */
+.hero__wash {
+  animation: home-wash-in 1500ms var(--motion-ease-soft) backwards;
+}
+.hero__texture {
+  animation: home-fade-in 1400ms ease-out 260ms backwards;
+}
+
+/* Beat 1 - badge. */
+.hero__badge {
+  animation: home-rise-soft 720ms var(--motion-ease) 80ms backwards;
+}
+
+/* Beat 2 - headline. The H1 itself remains at full opacity and final geometry;
+   each logical phrase reveals through its own fixed line box, so the LCP text
+   is server-rendered and no animation can change wrapping or layout. */
+.hero__title {
+  animation: none;
+}
+.hero__title-line {
+  display: block;
+}
+.hero__title-phrase {
+  display: inline-block;
+  transform-origin: 18% 100%;
+  animation: home-title-line-in 900ms var(--motion-ease) 130ms backwards;
+}
+.hero__title-line:nth-child(2) .hero__title-accent {
+  background-image: linear-gradient(
+    105deg,
+    #73c9aa 0%,
+    #a7f3d0 34%,
+    #eefcf6 46%,
+    #ffffff 50%,
+    #b8f5dd 55%,
+    #7fd1b3 68%,
+    #61b997 100%
+  );
+  background-size: 240% 100%;
+  background-position: -15% 50%;
+  animation:
+    home-title-line-in 960ms var(--motion-ease) 270ms backwards,
+    home-title-metallic-sweep 820ms var(--motion-ease-soft) 760ms backwards;
+}
+
+/* Beat 3 - supporting copy. */
+.hero__copy {
+  animation: home-rise 820ms var(--motion-ease) 320ms backwards;
+}
+
+/* Beat 4 - CTAs enter individually, not as one slab. */
+.hero__actions {
+  animation: none;
+}
+.hero__actions > * {
+  animation: home-rise 760ms var(--motion-ease) backwards;
+}
+.hero__actions > :nth-child(1) { animation-delay: 460ms; }
+.hero__actions > :nth-child(2) { animation-delay: 560ms; }
+
+/* Beat 5 - trust strip: the rule fades in, the items step over the top. */
+.hero__meta {
+  animation: home-fade-in 700ms ease-out 540ms backwards;
+}
+.hero__meta-item {
+  animation: home-rise-soft 700ms var(--motion-ease) backwards;
+}
+.hero__meta-item:nth-child(1) { animation-delay: 600ms; }
+.hero__meta-item:nth-child(2) { animation-delay: 690ms; }
+.hero__meta-item:nth-child(3) { animation-delay: 780ms; }
+
+/* Beat 6 - the studio bay arrives with mass: further, slower, from depth. */
+.hero__visual {
+  animation: home-visual-in 1100ms var(--motion-ease) 220ms backwards;
+}
+
+/* Beat 7 - a single key-light sweep across the bay once it has landed.
+   Decorative, one-shot (never a loop), and click-transparent. */
+.hero__bay::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(214, 245, 232, 0.16) 45%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent
+  );
+  pointer-events: none;
+  animation: home-sheen 1250ms var(--motion-ease-soft) 1150ms backwards;
+}
+
+/* ===== 2. SECTION ENTRANCE VOCABULARY (Reveal variants) ================= */
+/* `.reveal` base stays opacity:1 / transform:none - declared near the top of
+   this file. These only take effect once the observer adds `--ready`. */
+
+/* Base reveal switched from `both` to `backwards`: visually identical (the end
+   state IS the base state) but it stops retaining a transform, which would
+   otherwise make the wrapper a containing block for fixed descendants. */
+.reveal--ready {
+  animation: reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay) backwards;
+}
+
+.reveal--rise.reveal--ready {
+  animation: home-rise 780ms var(--motion-ease) var(--reveal-delay) backwards;
+}
+.reveal--lift.reveal--ready {
+  animation: home-lift 900ms var(--motion-ease) var(--reveal-delay) backwards;
+}
+.reveal--card.reveal--ready {
+  animation: home-card-in 820ms var(--motion-ease) var(--reveal-delay) backwards;
+}
+
+/* Stagger: direct children step in behind the wrapper's own entrance. */
+.reveal--stagger.reveal--ready > * {
+  animation: home-rise-soft 700ms var(--motion-ease) backwards;
+}
+.reveal--stagger.reveal--ready > :nth-child(1) { animation-delay: calc(var(--reveal-delay) + 110ms); }
+.reveal--stagger.reveal--ready > :nth-child(2) { animation-delay: calc(var(--reveal-delay) + 210ms); }
+.reveal--stagger.reveal--ready > :nth-child(3) { animation-delay: calc(var(--reveal-delay) + 310ms); }
+.reveal--stagger.reveal--ready > :nth-child(4) { animation-delay: calc(var(--reveal-delay) + 410ms); }
+.reveal--stagger.reveal--ready > :nth-child(n + 5) { animation-delay: calc(var(--reveal-delay) + 500ms); }
+
+/* Finder panel: the fields sweep in behind the docking panel. */
+.reveal--ready .homepage-finder__fields > * {
+  animation: home-rise-soft 640ms var(--motion-ease) backwards;
+}
+.reveal--ready .homepage-finder__fields > :nth-child(1) { animation-delay: 260ms; }
+.reveal--ready .homepage-finder__fields > :nth-child(2) { animation-delay: 330ms; }
+.reveal--ready .homepage-finder__fields > :nth-child(3) { animation-delay: 400ms; }
+.reveal--ready .homepage-finder__fields > :nth-child(4) { animation-delay: 470ms; }
+.reveal--ready .homepage-finder__fields > :nth-child(5) { animation-delay: 540ms; }
+.reveal--ready .homepage-finder__shortcuts > * {
+  animation: home-fade-in 520ms ease-out 640ms backwards;
+}
+
+/* Stock section: the filter pills tick in after the heading. */
+.reveal--ready .homepage-stock-pills > * {
+  animation: home-rise-soft 560ms var(--motion-ease) backwards;
+}
+.reveal--ready .homepage-stock-pills > :nth-child(1) { animation-delay: 300ms; }
+.reveal--ready .homepage-stock-pills > :nth-child(2) { animation-delay: 370ms; }
+.reveal--ready .homepage-stock-pills > :nth-child(3) { animation-delay: 440ms; }
+
+/* Commercial band: the three supply points step in under the headline. */
+.reveal--ready .commercial-point {
+  animation: home-rise-soft 680ms var(--motion-ease) backwards;
+}
+.reveal--ready .commercial-point:nth-child(1) { animation-delay: 380ms; }
+.reveal--ready .commercial-point:nth-child(2) { animation-delay: 470ms; }
+.reveal--ready .commercial-point:nth-child(3) { animation-delay: 560ms; }
+
+/* Delivery band: the facts ledger fills line by line. */
+.reveal--stagger.reveal--ready .delivery-facts > * {
+  animation: home-rise-soft 560ms var(--motion-ease) backwards;
+}
+.reveal--stagger.reveal--ready .delivery-facts > :nth-child(1) { animation-delay: 300ms; }
+.reveal--stagger.reveal--ready .delivery-facts > :nth-child(2) { animation-delay: 370ms; }
+.reveal--stagger.reveal--ready .delivery-facts > :nth-child(3) { animation-delay: 440ms; }
+.reveal--stagger.reveal--ready .delivery-facts > :nth-child(4) { animation-delay: 510ms; }
+
+/* ===== 3. DEPTH - scroll-linked parallax ================================ */
+/* CSS scroll-driven animations only: no scroll listener, no rAF loop, no new
+   dependency. Browsers without support simply get no parallax. Desktop and
+   tablet only - the effect is not worth the paint cost on small screens. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+    /* Dot grid drifts down as the page scrolls up: the hero gains depth. */
+    .hero__texture {
+      animation: home-parallax-down linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 100vh;
+    }
+    /* The tyre floats against its bay frame. The bay is overflow:hidden, so
+       the image moves inside it and nothing reflows. */
+    .hero__bay-image {
+      animation: home-parallax-up linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 110vh;
+    }
+    /* The commercial band's texture layer counter-drifts as it passes. */
+    .commercial-band__texture {
+      animation: home-parallax-up linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+/* ===== 4. INTERACTION PHYSICALITY (homepage-scoped) ==================== */
+@media (hover: hover) and (pointer: fine) {
+  .homepage-stock-grid .homepage-product-card:hover {
+    transform: translate3d(0, -10px, 0) scale(1.012);
+    border-color: var(--color-border-strong);
+    box-shadow: 0 30px 56px -26px rgba(9, 12, 12, 0.42);
+  }
+  .homepage-stock-grid .homepage-product-card:hover .product-card__media-contain {
+    transform: scale(1.075);
+  }
+  .homepage-stock-pill {
+    transition: background-color 0.18s ease, border-color 0.18s ease,
+      transform 0.22s var(--motion-ease), box-shadow 0.22s ease;
+  }
+  a.homepage-stock-pill:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 10px 20px -12px rgba(9, 12, 12, 0.5);
+  }
+  .homepage-stock .btn--green:not(:disabled):hover,
+  .homepage-finder__panel .btn--red:not(:disabled):hover {
+    transform: translate3d(0, -3px, 0);
+    box-shadow: 0 16px 30px -10px rgba(9, 12, 12, 0.4);
+  }
+}
+.homepage-stock .btn--green:not(:disabled):active,
+.homepage-finder__panel .btn--red:not(:disabled):active {
+  transform: scale(0.975);
+}
+
+/* ===== 5. MOBILE - lighter, but still noticeably alive ================= */
+@media (max-width: 639px) {
+  .hero__badge,
+  .hero__copy,
+  .hero__meta,
+  .hero__meta-item,
+  .hero__actions > * {
+    animation-duration: 560ms;
+  }
+  .hero__title-phrase {
+    animation-name: home-title-line-in-sm;
+    animation-duration: 700ms;
+  }
+  .hero__title-line:nth-child(2) .hero__title-accent {
+    animation-name: home-title-line-in-sm, home-title-metallic-sweep;
+    animation-duration: 740ms, 680ms;
+    animation-delay: 220ms, 650ms;
+  }
+  .hero__visual { animation-duration: 700ms; }
+  .hero__wash,
+  .hero__texture { animation-duration: 900ms; }
+  /* The one-shot bay sheen is a large gradient pass - skip it on phones. */
+  .hero__bay::after { animation: none; opacity: 0; }
+  .reveal--rise.reveal--ready,
+  .reveal--card.reveal--ready,
+  .reveal--lift.reveal--ready { animation-duration: 620ms; }
+}
+/* Shorter travel on phones, declared outside the media query because
+   `@keyframes` cannot be conditionally overridden by one. */
+@media (max-width: 639px) {
+  .reveal--rise.reveal--ready { animation-name: home-rise-soft; }
+  .reveal--lift.reveal--ready { animation-name: home-lift-sm; }
+  .reveal--card.reveal--ready { animation-name: home-card-in-sm; }
+}
+@keyframes home-lift-sm {
+  from { opacity: 0; transform: translate3d(0, 34px, 0) scale(0.975); }
+}
+@keyframes home-card-in-sm {
+  from { opacity: 0; transform: translate3d(0, 28px, 0) scale(0.97); }
+}
+
+/* ===== 6. REDUCED MOTION - explicit pins ==============================
+   The global `*, *::before, *::after { animation: none !important }` block
+   earlier in this file already disables every animation above (an `!important`
+   declaration wins regardless of source order). These pins are belt-and-braces
+   for the elements whose START keyframe is invisible or offset, so there is no
+   path on which any of them can be stranded. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__wash,
+  .hero__texture,
+  .hero__badge,
+  .hero__title,
+  .hero__title-phrase,
+  .hero__title-accent,
+  .hero__copy,
+  .hero__actions,
+  .hero__actions > *,
+  .hero__meta,
+  .hero__meta-item,
+  .hero__visual,
+  .hero__bay-image,
+  .commercial-band__texture,
+  .reveal,
+  .reveal--ready,
+  .reveal--rise.reveal--ready,
+  .reveal--lift.reveal--ready,
+  .reveal--card.reveal--ready,
+  .reveal--stagger.reveal--ready > *,
+  .reveal--ready .homepage-finder__fields > *,
+  .reveal--ready .homepage-finder__shortcuts > *,
+  .reveal--ready .homepage-stock-pills > *,
+  .reveal--ready .commercial-point,
+  .reveal--stagger.reveal--ready .delivery-facts > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .hero__title-phrase,
+  .hero__title-accent {
+    clip-path: none !important;
+    background-position: -15% 50% !important;
+  }
+  /* Purely decorative sheen: stays hidden rather than flashing on. */
+  .hero__bay::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .homepage-stock-grid .homepage-product-card:hover,
+  .homepage-stock-grid .homepage-product-card:hover .product-card__media-contain,
+  a.homepage-stock-pill:hover,
+  .homepage-stock .btn--green:not(:disabled):hover,
+  .homepage-finder__panel .btn--red:not(:disabled):hover,
+  .homepage-stock .btn--green:not(:disabled):active,
+  .homepage-finder__panel .btn--red:not(:disabled):active {
+    transform: none !important;
+  }
 }

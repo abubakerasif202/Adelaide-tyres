@@ -34,6 +34,14 @@ const columns = [
 ];
 
 export function Footer() {
+  const companyColumns = business.phone
+    ? columns.map((col) =>
+        col.heading === "Company & legal"
+          ? { ...col, links: [{ label: `Call ${business.phone}`, href: `tel:${business.phone.replace(/\s/g, "")}` }, ...col.links] }
+          : col,
+      )
+    : columns;
+
   return (
     <footer className="on-dark bg-[var(--color-ink)] text-white/80">
       <div className="homepage-container grid gap-6 py-12 md:grid-cols-4">
@@ -51,7 +59,7 @@ export function Footer() {
           </p>
         </div>
         </Reveal>
-        {columns.map((col, index) => (
+        {companyColumns.map((col, index) => (
           <Reveal key={col.heading} delay={index * 60}>
           <div>
             <h3 className="eyebrow text-[#7fd1b3]">{col.heading}</h3>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { announcement, nav } from "@/lib/config";
+import { announcement, business, nav } from "@/lib/config";
 import { deliveryRuleSummary } from "@/lib/format";
 import { useCart } from "@/lib/cart-context";
 import { Logo } from "./Logo";
@@ -59,7 +59,15 @@ export function Header() {
 
   useEffect(() => {
     document.body.classList.toggle("no-scroll", open);
-    const pageRegions = [document.querySelector("main#main"), document.querySelector("footer")];
+    // The cart bar is a sibling of <main> and <footer>, not a descendant, so it
+    // needs inerting explicitly: it is fixed to the bottom of the viewport and
+    // overlaps the open menu, which would otherwise leave "Checkout" tappable
+    // through the modal overlay.
+    const pageRegions = [
+      document.querySelector("main#main"),
+      document.querySelector("footer"),
+      document.querySelector(".mobile-cart-bar"),
+    ];
     for (const region of pageRegions) {
       if (region instanceof HTMLElement) region.inert = open;
     }
@@ -113,7 +121,17 @@ export function Header() {
       <div className="bg-[var(--color-ink)] text-white">
         <div className="header-container flex h-9 items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em]">
           <span className="announcement-copy"><span className="sm:hidden">No minimum · {deliveryRuleSummary("short")}</span><span className="hidden sm:inline">{deliveryRuleSummary("announcement")}</span></span>
-          <span className="hidden md:block text-white/70">{announcement.address}</span>
+          <span className="hidden items-center gap-4 md:flex">
+            {business.phone && (
+              <a
+                href={`tel:${business.phone.replace(/\s/g, "")}`}
+                className="announcement-call text-white underline-offset-2 hover:underline"
+              >
+                Call {business.phone}
+              </a>
+            )}
+            <span className="text-white/70">{announcement.address}</span>
+          </span>
         </div>
       </div>
 
@@ -123,7 +141,7 @@ export function Header() {
             <Logo tone="dark" />
           </Link>
 
-          <form action="/tyres" className="header-search hidden lg:block">
+          <form action="/tyres" className="header-search hidden xl:block">
             <label className="relative block">
               <span className="sr-only">Search stock from header</span>
               <span className="header-search__icon" aria-hidden>
@@ -136,7 +154,7 @@ export function Header() {
             </label>
           </form>
 
-          <nav aria-label="Main" className="hidden xl:flex items-center gap-6">
+          <nav aria-label="Main" className="hidden lg:flex items-center gap-6">
             {nav.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -162,7 +180,7 @@ export function Header() {
             <button
               ref={menuButtonRef}
               type="button"
-              className="btn btn--outline min-h-[44px] px-3.5 py-2 xl:hidden flex items-center gap-2"
+              className="btn btn--outline min-h-[44px] px-3.5 py-2 lg:hidden flex items-center gap-2"
               aria-expanded={open}
               aria-controls="mobile-nav"
               onClick={() => setOpen((v) => !v)}
@@ -181,7 +199,7 @@ export function Header() {
         <div
           ref={menuRef}
           id="mobile-nav"
-          className="mobile-menu xl:hidden fixed inset-x-0 bottom-0 top-[calc(36px+80px)] z-40 overflow-y-auto bg-white/98 backdrop-blur-lg border-t border-[var(--color-border)] shadow-2xl"
+          className="mobile-menu lg:hidden fixed inset-x-0 bottom-0 z-50 overflow-y-auto bg-white/98 backdrop-blur-lg border-t border-[var(--color-border)] shadow-2xl"
         >
           <nav aria-label="Mobile" className="header-container flex flex-col py-6">
             {nav.map((item) => (
@@ -196,6 +214,15 @@ export function Header() {
               </Link>
             ))}
             <div className="mt-8 flex flex-col gap-3">
+              {business.phone && (
+                <a
+                  href={`tel:${business.phone.replace(/\s/g, "")}`}
+                  onClick={() => setOpen(false)}
+                  className="btn btn--green w-full"
+                >
+                  Call now {business.phone}
+                </a>
+              )}
               <Link
                 href="/contact?type=quote"
                 onClick={() => setOpen(false)}

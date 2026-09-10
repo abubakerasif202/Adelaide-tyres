@@ -118,7 +118,7 @@ export default async function TyreDetailPage({ params }: Params) {
               </div>
             </div>
 
-            <div className="lg:col-start-2 lg:row-start-2 lg:row-end-5 lg:sticky lg:top-[160px] lg:self-start">
+            <div className="lg:col-start-2 lg:row-start-2 lg:row-end-5 lg:sticky lg:top-[calc(var(--header-total)+44px)] lg:self-start">
               <ProductPurchasePanel tyre={tyre} />
             </div>
 
