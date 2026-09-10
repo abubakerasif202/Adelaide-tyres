@@ -1,42 +1,17 @@
 import Link from "next/link";
-import { business, order } from "@/lib/config";
-import { deliveryRuleSummary, formatCurrency } from "@/lib/format";
+
 import { Reveal } from "./Reveal";
+import { WarehouseLocation } from "./WarehouseLocation";
 
 /**
  * `motion="strong"` opts this shared band into the homepage's bolder entrance
  * vocabulary. Every other route keeps the default, subtler reveal.
  */
 export function FreeDeliveryCTA({ motion }: { motion?: "strong" } = {}) {
-  const bandVariant = motion === "strong" ? "rise stagger" : undefined;
   const ctaVariant = motion === "strong" ? "rise stagger" : undefined;
   return (
     <>
-    <section id="delivery" className="homepage-delivery">
-      <Reveal variant={bandVariant} className="homepage-container grid items-stretch gap-8 py-[72px] lg:grid-cols-12">
-        <div className="delivery-facility-card lg:col-span-5">
-          <p className="eyebrow text-[var(--color-green)]">Regency Park distribution</p>
-          <h2 className="display mt-1 text-[28px] text-[var(--color-green-deep)]">Regency Park facility</h2>
-          <p className="mt-2 text-[13px] font-semibold text-[var(--color-text-muted)]">{deliveryRuleSummary("card")}</p>
-          <dl className="delivery-facts">
-            <div><dt>Physical warehouse</dt><dd>{business.address.oneLine}, {business.address.country}</dd></div>
-            <div><dt>Adelaide-wide delivery</dt><dd>1–{order.delivery.freeQualifyingTyres - 1} tyres: {formatCurrency(order.delivery.feeAud)}</dd></div>
-            <div><dt>Wholesale delivery tier</dt><dd>{order.delivery.freeQualifyingTyres}+ tyres: free</dd></div>
-            <div><dt>Warehouse collection</dt><dd>Free pickup</dd></div>
-          </dl>
-          <Link href="/delivery" className="btn btn--green mt-8">View delivery details</Link>
-          <h2 className="sr-only">Free delivery on {order.delivery.freeQualifyingTyres}+ tyres.</h2>
-        </div>
-        <div className="delivery-zone-panel lg:col-span-7">
-          <div className="delivery-zone-panel__head"><span>Regency Park delivery hub</span><span>Adelaide-wide</span></div>
-          <div className="delivery-zone-panel__map" aria-label="Adelaide delivery tiers centred on the Regency Park warehouse">
-            <span className="delivery-zone delivery-zone--outer"/><span className="delivery-zone delivery-zone--middle"/><span className="delivery-zone delivery-zone--inner"/>
-            <div className="delivery-zone-panel__hub"><strong>{business.address.suburb}</strong><span>{business.address.street} · {business.address.state} {business.address.postcode}</span></div>
-          </div>
-          <div className="delivery-zone-panel__tiers"><span>1–{order.delivery.freeQualifyingTyres - 1} tyres<br/><strong>{formatCurrency(order.delivery.feeAud)}</strong></span><span>{order.delivery.freeQualifyingTyres}+ tyres<br/><strong>Free delivery</strong></span><span>Warehouse pickup<br/><strong>Free</strong></span></div>
-        </div>
-      </Reveal>
-    </section>
+    <WarehouseLocation motion={motion} />
     <section className="homepage-final-cta on-dark">
       <Reveal variant={ctaVariant} className="homepage-container flex flex-col items-start justify-between gap-6 py-12 md:flex-row md:items-center">
           <div>

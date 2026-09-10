@@ -4,7 +4,6 @@ import { Benefits } from "@/components/Benefits";
 import { ProductCard } from "@/components/ProductCard";
 import { CommercialTeaser } from "@/components/CommercialTeaser";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
-import { LocationSection } from "@/components/LocationSection";
 import { SectionHeading } from "@/components/primitives";
 import { catalogue, getFeaturedTyres, uniqueSizes } from "@/lib/catalogue";
 import { localBusinessJsonLd } from "@/lib/seo";
@@ -65,8 +64,6 @@ export default function HomePage() {
       <CommercialTeaser />
 
       <FreeDeliveryCTA motion="strong" />
-
-      <LocationSection />
     </>
   );
 }
