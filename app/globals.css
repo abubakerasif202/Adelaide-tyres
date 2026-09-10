@@ -1610,3 +1610,120 @@ footer.on-dark { background:var(--color-green-dark); }
     radial-gradient(circle at 30% 20%, rgba(70, 155, 122, 0.18), transparent 45%),
     linear-gradient(160deg, #1b2321, #0a0d0d 72%);
 }
+
+/* ---------------------------------------------------------------
+   Navigation motion: route entrances, loading skeletons, cart
+   feedback and checkout step progression. Every rule here is
+   opacity/transform only so nothing reflows mid-animation, and the
+   whole block is disabled under prefers-reduced-motion at the end
+   of this file.
+   --------------------------------------------------------------- */
+
+/* Route transition — `app/template.tsx` re-mounts this on each navigation.
+   Fill mode is `backwards`, deliberately not `both`: a retained
+   `transform` (even translateY(0)) makes this element a containing block
+   for `position: fixed` descendants, which would re-parent the catalogue's
+   mobile filter sheet (`.mobile-sheet`, fixed inset-0) away from the
+   viewport. `backwards` drops the transform once the entrance finishes. */
+.route-transition {
+  animation: route-enter 0.26s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes route-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading skeletons. A sweeping highlight reads as "work in progress"
+   more clearly than a straight opacity pulse. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+}
+.skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.35s ease-in-out infinite;
+}
+.skeleton--text { height: 14px; border-radius: 4px; }
+.skeleton--title { height: 30px; border-radius: 6px; }
+.skeleton--card { height: 288px; border-radius: var(--radius-lg); }
+.skeleton--media { aspect-ratio: 16 / 10; border-radius: var(--radius-md); }
+@keyframes skeleton-sweep {
+  to { transform: translateX(100%); }
+}
+
+/* Cart feedback: the badge already re-keys on change; this adds a short
+   bump to the whole control so the change is visible even when the eye is
+   on the product card rather than the header. */
+.header-cart[data-bumped="true"] {
+  animation: cart-bump 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes cart-bump {
+  30% { transform: translateY(-3px) scale(1.05); }
+  60% { transform: translateY(0) scale(0.99); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Checkout progress: steps stagger in and the completed connector fills
+   left-to-right, so moving between steps reads as forward motion. */
+.checkout-step {
+  animation: checkout-step-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.checkout-step__marker {
+  transition: background-color 0.24s ease, color 0.24s ease, transform 0.24s ease;
+}
+.checkout-step[data-state="active"] .checkout-step__marker {
+  animation: checkout-marker-pop 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.checkout-step__line {
+  position: relative;
+  overflow: hidden;
+}
+.checkout-step__line::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.checkout-step[data-state="done"] .checkout-step__line::after {
+  animation: checkout-line-fill 0.42s ease-out both;
+}
+@keyframes checkout-step-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes checkout-marker-pop {
+  0% { transform: scale(0.7); }
+  55% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+@keyframes checkout-line-fill {
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-transition,
+  .checkout-step,
+  .checkout-step[data-state="active"] .checkout-step__marker,
+  .header-cart[data-bumped="true"] {
+    animation: none !important;
+  }
+  .skeleton::after,
+  .checkout-step[data-state="done"] .checkout-step__line::after {
+    animation: none !important;
+    transform: none;
+  }
+  .skeleton::after { opacity: 0; }
+}

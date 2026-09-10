@@ -10,10 +10,31 @@ import { Logo } from "./Logo";
 
 function CartLink({ onNavigate }: { onNavigate?: () => void }) {
   const { totalTyres, hydrated } = useCart();
+  // Bump only when the count actually grows, so the header reacts to an
+  // add-to-cart but stays still on hydration, removals and route changes.
+  const [bumped, setBumped] = useState(false);
+  const previousTotal = useRef(totalTyres);
+
+  useEffect(() => {
+    if (!hydrated) {
+      previousTotal.current = totalTyres;
+      return;
+    }
+    if (totalTyres <= previousTotal.current) {
+      previousTotal.current = totalTyres;
+      return;
+    }
+    previousTotal.current = totalTyres;
+    setBumped(true);
+    const timer = setTimeout(() => setBumped(false), 460);
+    return () => clearTimeout(timer);
+  }, [totalTyres, hydrated]);
+
   return (
     <Link
       href="/cart"
       onClick={onNavigate}
+      data-bumped={bumped || undefined}
       className="header-cart btn btn--green min-h-[44px] px-4 py-2"
       aria-label={`Cart, ${hydrated ? totalTyres : 0} tyres`}
     >
