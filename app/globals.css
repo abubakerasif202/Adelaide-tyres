@@ -402,6 +402,10 @@ img {
   transform: none;
 }
 
+.reveal--ready {
+  animation: reveal-up 520ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay) both;
+}
+
 .site-header {
   --header-main-height: 73px;
 }
@@ -603,7 +607,7 @@ img {
 .hero__bay-tyre {
   filter: saturate(0.32) brightness(1.02) contrast(1.05)
     drop-shadow(0 26px 30px rgba(0, 0, 0, 0.65));
-  animation: tyre-idle 24s ease-in-out infinite;
+  animation: hero-image-breathe 12s ease-in-out infinite;
 }
 .hero__visual[data-active="false"] .hero__bay-tyre {
   animation-play-state: paused;
@@ -988,6 +992,14 @@ footer a {
   0%, 100% { transform: translate3d(0, 0, 0); }
   50% { transform: translate3d(0, -10px, 0); }
 }
+@keyframes hero-image-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.018); }
+}
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes cart-pulse {
   50% { transform: scale(1.12); }
 }
@@ -1055,6 +1067,59 @@ footer a {
 }
 .delivery-band > .delivery-cta {
   border-top: 3px solid var(--color-red);
+}
+
+/* Stitch homepage composition: a shallow finder dock overlaps the hero base,
+   followed by four equal product cards and restrained industrial bands. */
+.homepage-finder__panel {
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(9, 12, 12, 0.12);
+}
+.homepage-finder__tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 38px;
+  align-items: center;
+  border-radius: 6px;
+  background: var(--color-green);
+  color: white;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.homepage-finder__tab--muted {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+.homepage-finder__chip {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+}
+.homepage-finder__chip:hover { border-color: var(--color-green); }
+.homepage-stock-grid .product-card__media { aspect-ratio: 16 / 10; }
+.homepage-stock-grid .product-card { border-radius: 10px; box-shadow: 0 2px 8px rgba(9, 12, 12, 0.04); }
+.homepage-stock-grid .product-card__media-contain { filter: saturate(0.28) brightness(1.02) contrast(1.04) drop-shadow(0 14px 18px rgba(0, 0, 0, 0.55)); }
+
+@media (max-width: 639px) {
+  .homepage-finder { margin-top: -18px; }
+  .homepage-finder__panel { padding: 16px; }
+  .homepage-finder__panel .field-input { min-height: 48px; }
+  .homepage-stock-grid { grid-template-columns: 1fr; }
+  .homepage-stock-grid .product-card { display: grid; grid-template-columns: 38% 1fr; }
+  .homepage-stock-grid .product-card__media { aspect-ratio: 1 / 1; }
+  .homepage-stock-grid .product-card > div { padding: 14px; gap: 10px; }
+  .homepage-stock-grid .product-card > div > p { display: none; }
+  .hero__bay { padding: 14px 14px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal--ready { animation: none !important; }
+  .hero__bay-tyre { animation: none !important; }
 }
 
 /* ---------------------------------------------------------------
@@ -1324,4 +1389,3 @@ footer a {
     radial-gradient(circle at 30% 20%, rgba(70, 155, 122, 0.18), transparent 45%),
     linear-gradient(160deg, #1b2321, #0a0d0d 72%);
 }
-
