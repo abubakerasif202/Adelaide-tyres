@@ -8,9 +8,14 @@ export function CheckoutProgress({ current }: { current: CheckoutStepIndex }) {
         {STEPS.map((label, i) => {
           const state = i < current ? "done" : i === current ? "active" : "todo";
           return (
-            <div key={label} className="flex items-center gap-2">
+            <div
+              key={label}
+              className="checkout-step flex items-center gap-2"
+              data-state={state}
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
               <span
-                className={`grid h-6 w-6 place-items-center rounded-full text-[12px] font-bold ${
+                className={`checkout-step__marker grid h-6 w-6 place-items-center rounded-full text-[12px] font-bold ${
                   state === "active"
                     ? "bg-[var(--color-red)] text-white"
                     : state === "done"
@@ -27,7 +32,9 @@ export function CheckoutProgress({ current }: { current: CheckoutStepIndex }) {
               >
                 {label}
               </span>
-              {i < STEPS.length - 1 && <span className="mx-1 h-px w-8 bg-white/25" aria-hidden />}
+              {i < STEPS.length - 1 && (
+                <span className="checkout-step__line mx-1 h-px w-8 bg-white/25" aria-hidden />
+              )}
             </div>
           );
         })}
