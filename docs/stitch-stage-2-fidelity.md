@@ -357,3 +357,75 @@ production build served on `localhost:3100`; they are not part of the
 committed diff. The only repository file changed by this task is
 `tests/e2e/stitch-stage-2.spec.ts` (Step 1's route-guard loop) plus this
 report.
+
+## Tracked follow-ups (not blocking the owner gate)
+
+Raised by the final whole-branch review. None were fixed on this branch;
+each is recorded here so the decision is the owner's.
+
+**1. Delivery copy is textually duplicated, though the numbers cannot drift.**
+`deliveryRuleSummary()` is called from only three files (`Footer.tsx`,
+`Header.tsx`, `ProductCard.tsx`). Roughly fifteen other rendered surfaces
+build their own sentence around `order.delivery.feeAud` /
+`order.delivery.freeQualifyingTyres` directly — `app/about`, `app/checkout`,
+`app/commercial`, `app/contact`, `app/delivery`, `app/layout`, `app/terms`,
+`app/tyres`, `app/tyres/[slug]`, `Benefits.tsx`, `FreeDeliveryCTA.tsx`,
+`Hero.tsx`, `ProductPurchasePanel.tsx`, `lib/seo.ts`.
+
+Verified: every one of those reads the live config fields, so changing
+`freeQualifyingTyres` or `feeAud` today produces **no numeric drift on any
+surface** — the stated goal of the two fix rounds is met. What remains is
+that the *wording* around the numbers is authored independently in each
+place, so a change to the phrasing or pluralisation of the rule would need
+fifteen manual edits with nothing forcing them into sync. Most of those
+files are outside Stage 2's scope, which is why this was not swept up here.
+
+**2. Design-token drift in Stage 2 files.**
+- `components/ProductCard.tsx:93` uses a raw `bg-[#e2e5e1]` for the lead-card
+  divider while the compact variant at `:141` solves the same seam with
+  `bg-[var(--color-border)]`.
+- `components/ProductCard.tsx:88` uses `rounded-lg` (Tailwind, 8px) while
+  `:131` uses `rounded-[8px]`; identical today, two mechanisms.
+- `components/HeroArtwork.tsx:22,36` use `rounded-[28px]` and `rounded-2xl`,
+  neither on the declared 6/10/14/20 radius scale.
+- Eyebrow and label sizes are arbitrary `text-[Npx]` values (10-13px) across
+  the three surfaces rather than a shared token.
+
+Left alone deliberately: the `HeroArtwork` radii and the `rounded-lg` /
+`rounded-[8px]` pair cannot be moved onto the token scale without changing
+rendered values, which is a design decision rather than a cleanup, and the
+divider colour was not changed because the visual QA evidence in this report
+was captured against the current rendering.
+
+**3. Mobile filter sheet does not mark background content `aria-hidden`.**
+`components/MobileSheet.tsx` has a verified Tab focus trap, Escape handling,
+scroll lock and focus restoration, and sets `aria-modal="true"`, but does not
+apply `aria-hidden`/`inert` to sibling content. A screen-reader user driving a
+virtual cursor rather than Tab could still read into the backdrop. The Task 2
+reviewer assessed `aria-modal` without `inert` as acceptable given the trap
+holds and the background is not Tab-reachable; the final reviewer disagreed.
+Recorded as an open disagreement for the owner.
+
+**4. Pre-existing race in the catalogue search input.**
+`components/CatalogueBrowser.tsx` binds the search input's `value` to
+`filters.query`, which derives from `useSearchParams()`, and commits each
+keystroke through `router.replace`. Because the displayed value follows the
+async URL commit rather than local state, a keystroke landing before the
+previous commit re-renders can be silently dropped. Confirmed byte-identical
+on `origin/master`, so it is **not** introduced by this branch, and it is
+distinct from the multi-word `.trim()` bug fixed here (that one is fixed and
+covered by unit and E2E regression tests).
+
+Unlikely to fire at normal typing speed on a responsive desktop, but it is not
+debounced, it degrades on slower devices and with fast typists, and it fails
+silently. Fixing it properly means debouncing the URL commit or holding local
+input state reconciled against the URL — the latter conflicts with this
+stage's ruling that URL state stays authoritative with no second store, which
+is why it was left. Recommended as a tracked ticket, not waved through.
+
+**5. Dismissed on measurement.** The final review raised the lead card's
+`sizes` hint as possibly under-declared at 1440px (computed box ~845px against
+an `800px` hint). Measured against the production build, the lead media box is
+618px at 1024, 775px at 1280, 767px at 1440 and 758px at 1920 — it shrinks
+above 1280 because the container is capped — with `naturalWidth` 800 and a
+served `w=828` at every width. No upscale at any viewport; the hint is correct.
