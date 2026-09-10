@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { business, order } from "@/lib/config";
+import { order } from "@/lib/config";
 import { catalogueStats, getTyreBySlug } from "@/lib/catalogue";
 import { formatCurrency } from "@/lib/format";
 import { HeroArtwork } from "./HeroArtwork";
@@ -14,9 +14,7 @@ export function Hero() {
     <section className="hero on-dark relative isolate overflow-hidden bg-[var(--color-green)] text-white">
       <div className="hero__wash pointer-events-none absolute inset-0 -z-20" aria-hidden />
       <div className="hero__texture pointer-events-none absolute inset-0 -z-10" aria-hidden />
-      <div className="hero__glow pointer-events-none absolute -z-10" aria-hidden />
-
-      <div className="container-x relative grid gap-10 pb-24 pt-12 md:pb-28 md:pt-16 lg:min-h-[610px] lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:gap-12">
+      <div className="homepage-container hero__grid relative grid items-center gap-8 py-12 md:py-24 lg:grid-cols-12">
         <div className="relative z-10">
           <span className="hero__badge">
             <span className="hero__badge-dot" aria-hidden />
@@ -25,7 +23,7 @@ export function Hero() {
 
           <h1 className="hero__title display">
             Wholesale tyres.<br />
-            <span>Ready for your next<br className="hidden sm:inline" /> order.</span>
+            <span>Ready for your next order.</span>
           </h1>
 
           <p className="hero__copy">
@@ -35,7 +33,7 @@ export function Hero() {
             Adelaide workshops, fleets and transport operators.
           </p>
 
-          <div className="hero__actions mt-9 flex flex-col gap-3 sm:flex-row">
+          <div className="hero__actions flex flex-col gap-4 sm:flex-row">
             <Link href="/tyres" className="btn btn--red">
               Shop available stock
             </Link>
@@ -44,7 +42,7 @@ export function Hero() {
             </Link>
           </div>
 
-          <div className="hero__meta mt-10 flex flex-wrap items-center gap-x-9 gap-y-5 border-t border-white/12 pt-6">
+          <div className="hero__meta grid w-full grid-cols-2 gap-4 border-t border-white/12 sm:grid-cols-3">
             <span className="hero__meta-item">
               <span className="hero__meta-value">No minimum</span>
               <span className="hero__meta-label">Order from one tyre</span>
@@ -54,8 +52,8 @@ export function Hero() {
               <span className="hero__meta-label">Adelaide-wide delivery</span>
             </span>
             <span className="hero__meta-item">
-              <span className="hero__meta-value">Warehouse pickup</span>
-              <span className="hero__meta-label">{business.address.oneLine}</span>
+              <span className="hero__meta-value">Direct</span>
+              <span className="hero__meta-label">Regency Park pickup</span>
             </span>
           </div>
         </div>

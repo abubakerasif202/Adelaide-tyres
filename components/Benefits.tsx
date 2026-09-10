@@ -53,21 +53,36 @@ const specs: readonly SpecItem[] = [
 
 export function Benefits() {
   return (
-    <section className="bg-[var(--color-surface-muted)] pt-10 md:pt-14">
-      <div className="container-x">
-        <Reveal className="spec-bar overflow-hidden">
+    <section className="homepage-benefits">
+      <div className="homepage-container">
+        <Reveal className="homepage-section-heading text-center">
+          <p className="eyebrow">Transparent trade logistics</p>
+          <h2 className="display">Built specifically for South Australian workshops &amp; fleets</h2>
+        </Reveal>
+        <div className="benefit-grid">
           {specs.map((s, index) => (
-            <div
+            <Reveal
               key={s.value}
-              className={`spec-bar__item ${s.highlight ? "spec-bar__item--highlight" : ""}`}
-              style={{ animationDelay: `${index * 60}ms` }}
+              className={`benefit-card benefit-card--${s.icon}`}
+              delay={index * 60}
             >
               {s.tag && <span className="spec-bar__tag">{s.tag}</span>}
-              <span className="spec-bar__icon">{ICONS[s.icon]}</span>
-              <span className="display spec-bar__value">{s.value}</span>
-              <span className="spec-bar__copy">{s.copy}</span>
-            </div>
+              <span className="benefit-card__icon">{ICONS[s.icon]}</span>
+              <h3 className="display benefit-card__title">{s.value}</h3>
+              <p className="benefit-card__copy">{s.copy}</p>
+            </Reveal>
           ))}
+        </div>
+        <Reveal className="delivery-meter">
+          <span className="delivery-meter__icon">{ICONS.truck}</span>
+          <div>
+            <h3 className="display">Wholesale delivery tiers</h3>
+            <p>1–{order.delivery.freeQualifyingTyres - 1} tyres: {formatCurrency(order.delivery.feeAud)} Adelaide-wide · {order.delivery.freeQualifyingTyres}+ tyres: free Adelaide-wide</p>
+          </div>
+          <div className="delivery-meter__scale" aria-hidden>
+            <div><span>{formatCurrency(order.delivery.feeAud)} delivery</span><span>Free from {order.delivery.freeQualifyingTyres}</span></div>
+            <span><i /></span>
+          </div>
         </Reveal>
       </div>
     </section>
