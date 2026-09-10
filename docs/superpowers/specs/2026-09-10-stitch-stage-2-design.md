@@ -51,7 +51,7 @@ Preserve the current configured rules exactly unless the owner separately change
 - $50 Adelaide-wide delivery for total orders of 1–7 tyres
 - Free Adelaide-wide delivery for total orders of 8+ tyres
 - Warehouse pickup is free
-- Warehouse: 6 Birralee Rd, Regency Park SA 5010
+- Warehouse: 4 Birralee Rd, Regency Park SA 5010
 - Product price, stock and identity come from `lib/catalogue.ts`
 - Contact actions only render when real environment-backed contact details are configured
 

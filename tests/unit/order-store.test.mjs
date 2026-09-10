@@ -13,7 +13,7 @@ function order(sessionId) {
     customerName: "Test",
     customerPhone: "0400000000",
     deliveryMethod: "pickup",
-    deliveryAddress: "6 Birralee Rd, Regency Park SA 5010",
+    deliveryAddress: "4 Birralee Rd, Regency Park SA 5010",
     notes: "",
     lines: [],
   };

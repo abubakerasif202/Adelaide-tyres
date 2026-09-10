@@ -8,7 +8,7 @@ import { breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Adelaide Tyre Delivery Rates | Regency Park Warehouse Pickup",
-  description: `No minimum order. ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery on wholesale tyre orders under ${order.delivery.freeQualifyingTyres} tyres, free from ${order.delivery.freeQualifyingTyres} tyres up. Warehouse pickup available at 6 Birralee Rd, Regency Park SA 5010.`,
+  description: `No minimum order. ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery on wholesale tyre orders under ${order.delivery.freeQualifyingTyres} tyres, free from ${order.delivery.freeQualifyingTyres} tyres up. Warehouse pickup available at 4 Birralee Rd, Regency Park SA 5010.`,
   alternates: { canonical: "/delivery" },
 };
 
