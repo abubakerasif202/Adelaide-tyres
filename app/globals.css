@@ -679,27 +679,6 @@ img {
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-/* Mint key light behind the tyre. The Stitch bay reads as a lit studio, not a
-   flat panel; without this the real white-background product shot sits on dead
-   black and the bay looks like an ordinary dark card. */
-.hero__bay::before {
-  position: absolute;
-  z-index: 0;
-  top: 12%;
-  left: 50%;
-  width: 78%;
-  height: 74%;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(127, 209, 179, 0.22) 0%,
-    rgba(6, 59, 44, 0.34) 42%,
-    transparent 72%
-  );
-  content: "";
-  pointer-events: none;
-}
 .hero__bay:hover {
   transform: translateY(-3px);
   box-shadow:
@@ -738,55 +717,129 @@ img {
   aspect-ratio: 4 / 3;
   margin-top: 18px;
 }
-/* Decorative spinning wheel rings. The product photo itself is a real 3/4
-   studio angle (not a top-down circular shot), so rotating the raster image
-   would warp it — these abstract dashed rings sit behind the tyre and read
-   as a spinning wheel instead, visible through the oval mask's faded edges. */
-.hero__bay-wheel {
+/* ---------------------------------------------------------------
+   Rotating tyre stage.
+
+   Three nested elements, ONE transform each, so the entrance and the
+   continuous rotation never overwrite one another:
+
+     .hero-tyre-stage    layout + scroll parallax (see the parallax block)
+       .hero-tyre-entrance   translateY / scale, one shot
+         .hero-tyre-spinner  rotate(), infinite
+
+   The asset is a front-facing wheel centred in a square transparent
+   canvas, which is what makes rotateZ read as a real axle rather than a
+   wobble. It is NOT a 3/4 photograph — do not swap one in without
+   re-centring it, and never reach for rotateY here.
+   --------------------------------------------------------------- */
+.hero-tyre-stage {
+  position: relative;
+  display: grid;
+  /* `min-height: 0` matters: without it a grid child larger than the 4/3 box
+     stretches the stage instead of being contained by it, and the wheel then
+     runs off the bay edges on narrow viewports. */
+  min-height: 0;
+  place-items: center;
+  isolation: isolate;
+  /* Lets the wheel below size off whichever stage axis is smaller. */
+  container-type: size;
+}
+.hero-tyre-stage > * {
+  grid-area: 1 / 1;
+}
+
+/* Showroom key light: a restrained mint/charcoal pool behind the wheel.
+   Bled past the stage on every side and faded out well before its own edges —
+   a gradient that still carries alpha at the box boundary reads as a lighter
+   rectangle plated over the bay, which is exactly what it must not do. */
+.hero-tyre-glow {
   position: absolute;
-  inset: 0;
+  z-index: 0;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side circle at 50% 48%, rgba(127, 209, 179, 0.30) 0%, rgba(6, 59, 44, 0.30) 46%, transparent 78%),
+    radial-gradient(closest-side circle at 34% 26%, rgba(226, 248, 240, 0.13) 0%, transparent 62%);
+}
+
+/* Technical rings — the only decorative motion on the stage. */
+.hero-tyre-rings {
+  position: relative;
   z-index: 0;
   display: grid;
+  width: 100%;
+  height: 100%;
   place-items: center;
   pointer-events: none;
 }
-.hero__bay-wheel-ring {
+.hero-tyre-ring {
   position: absolute;
   aspect-ratio: 1;
   border-radius: 50%;
 }
-.hero__bay-wheel-ring--outer {
-  width: 64%;
-  border: 1.5px dashed rgba(127, 209, 179, 0.38);
-  animation: wheel-spin 9s linear infinite;
+.hero-tyre-ring--outer {
+  height: 104%;
+  border: 1px dashed rgba(127, 209, 179, 0.30);
+  animation: wheel-spin 28s linear infinite;
 }
-.hero__bay-wheel-ring--inner {
-  width: 46%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  animation: wheel-spin-reverse 6s linear infinite;
+.hero-tyre-ring--inner {
+  height: 72%;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  animation: wheel-spin-reverse 20s linear infinite;
 }
-.hero__bay:hover .hero__bay-wheel-ring--outer {
-  animation-duration: 2.6s;
+
+/* Entrance: forward out of depth, then settled. `backwards` means reduced
+   motion (which zeroes the animation) simply shows the final state. */
+.hero-tyre-entrance {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* Sized off whichever stage axis is smaller, so the wheel fills the bay on
+     wide stages without ever running past its edges on narrow ones. A plain
+     percentage height cannot do this: it stretches the stage instead of being
+     contained by it, and the tread ends up clipped at 320px. */
+  width: min(88cqw, 94cqh);
+  aspect-ratio: 1;
+  place-items: center;
+  animation: hero-tyre-arrive 980ms cubic-bezier(0.22, 1, 0.36, 1) 300ms backwards;
+  filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.62));
 }
-.hero__bay:hover .hero__bay-wheel-ring--inner {
-  animation-duration: 1.8s;
+
+/* Idle rotation. ~14s per revolution: a showroom turntable, not a spinner. */
+.hero-tyre-spinner {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  animation: wheel-spin 14s linear 520ms infinite;
+  will-change: transform;
 }
-/* The verified product shots are white-background studio photographs. On the
-   dark bay their square white field reads as a bright rectangle, so the edges
-   are feathered out with a radial mask and the remaining glow is used as the
-   studio backlight. Saturation stays near-real (a heavy desaturate was what
-   made this look like a flat grey product card rather than the Stitch bay). */
-.hero__bay-tyre {
-  filter: saturate(0.82) brightness(0.99) contrast(1.14)
-    drop-shadow(0 26px 30px rgba(0, 0, 0, 0.65));
-  -webkit-mask-image: radial-gradient(ellipse 33% 80% at 50% 49%, #000 58%, transparent 88%);
-  mask-image: radial-gradient(ellipse 33% 80% at 50% 49%, #000 58%, transparent 88%);
-  transform: scale(1.06);
-  animation: hero-image-breathe 12s ease-in-out infinite;
+.hero-tyre-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
-.hero__visual[data-active="false"] .hero__bay-tyre {
-  animation-play-state: paused;
+
+/* Contact shadow on the bay floor. Sits outside the spinner so it stays put
+   while the wheel turns. */
+.hero-tyre-contact {
+  position: relative;
+  z-index: 0;
+  align-self: end;
+  width: 62%;
+  height: 7%;
+  margin-bottom: 2%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, transparent 72%);
+  pointer-events: none;
 }
+
+@keyframes hero-tyre-arrive {
+  from { transform: translateY(40px) scale(0.88); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 .hero__bay-footer {
   position: relative;
   z-index: 2;
@@ -1043,10 +1096,6 @@ footer a {
 @keyframes tyre-idle {
   0%, 100% { transform: translate3d(0, 0, 0); }
   50% { transform: translate3d(0, -10px, 0); }
-}
-@keyframes hero-image-breathe {
-  0%, 100% { transform: scale(1.06); }
-  50% { transform: scale(1.078); }
 }
 @keyframes wheel-spin {
   to { transform: rotate(360deg); }
@@ -1411,7 +1460,9 @@ footer.on-dark { background:var(--color-green-dark); }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal--ready { animation: none !important; }
-  .hero__bay-tyre { animation: none !important; }
+  .hero-tyre-spinner,
+  .hero-tyre-entrance,
+  .hero-tyre-ring { animation: none !important; }
 }
 
 /* ---------------------------------------------------------------
@@ -1646,10 +1697,11 @@ footer.on-dark { background:var(--color-green-dark); }
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .hero__bay-tyre,
-  .hero__bay-wheel-ring,
-  .hero__bay-wheel-ring--outer,
-  .hero__bay-wheel-ring--inner,
+  .hero-tyre-spinner,
+  .hero-tyre-entrance,
+  .hero-tyre-ring,
+  .hero-tyre-ring--outer,
+  .hero-tyre-ring--inner,
   .hero__badge,
   .hero__badge-dot::after,
   .delivery-zone--outer,
@@ -2220,6 +2272,13 @@ footer.on-dark { background:var(--color-green-dark); }
       animation-timeline: scroll(root block);
       animation-range: 0 110vh;
     }
+    /* The technical rings drift the other way, so the wheel and its ring
+       backdrop separate slightly in depth as the hero scrolls past. */
+    .hero-tyre-rings {
+      animation: home-parallax-down linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 110vh;
+    }
     /* The commercial band's texture layer counter-drifts as it passes. */
     .commercial-band__texture {
       animation: home-parallax-up linear both;
@@ -2319,6 +2378,7 @@ footer.on-dark { background:var(--color-green-dark); }
   .hero__meta-item,
   .hero__visual,
   .hero__bay-image,
+  .hero-tyre-rings,
   .commercial-band__texture,
   .reveal,
   .reveal--ready,
@@ -2354,4 +2414,211 @@ footer.on-dark { background:var(--color-green-dark); }
   .homepage-finder__panel .btn--red:not(:disabled):active {
     transform: none !important;
   }
+}
+
+/* ---------------------------------------------------------------
+   Warehouse location band.
+
+   Information column left, map right on desktop; on mobile the
+   information stacks first and the map follows, because the address
+   and the directions button are what a phone visitor actually needs.
+   The map frame reserves its height up front (aspect-ratio + a
+   min-height floor), so the lazy iframe cannot shift the page when it
+   paints.
+   --------------------------------------------------------------- */
+.location-band {
+  padding-block: 72px;
+  border-top: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(127, 209, 179, 0.10) 0%, transparent 52%),
+    linear-gradient(165deg, var(--color-green-deep) 0%, #0b1514 58%, var(--color-gunmetal) 100%);
+  color: #fff;
+}
+.location-band__grid {
+  display: grid;
+  align-items: stretch;
+  gap: 32px;
+}
+.location-band__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #7fd1b3;
+}
+.location-band__eyebrow-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(127, 209, 179, 0.34);
+  border-radius: 8px;
+  background: rgba(127, 209, 179, 0.10);
+}
+.location-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.location-info__title {
+  margin-top: 14px;
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.04;
+  text-transform: uppercase;
+}
+.location-address {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 16px;
+  padding-left: 16px;
+  border-left: 3px solid #7fd1b3;
+  font-style: normal;
+}
+.location-address__line {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 700;
+  color: #fff;
+}
+.location-address__country {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.58);
+}
+.location-facts {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+.location-fact {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+}
+.location-fact dt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+.location-fact dt > span {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #7fd1b3;
+}
+.location-fact dd {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+.location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+.location-actions .btn {
+  min-height: 48px;
+}
+/* The shared green fill is very close to the band behind it. A mint hairline
+   is what separates the primary action from its background here. */
+.location-actions .btn--green {
+  border: 1px solid rgba(127, 209, 179, 0.5);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.7);
+}
+.location-actions .btn--green:hover {
+  border-color: #7fd1b3;
+}
+.location-actions .btn--outline {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+}
+.location-actions .btn--outline:hover {
+  border-color: #7fd1b3;
+  background: rgba(127, 209, 179, 0.12);
+}
+
+.location-map {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg, 16px);
+  background: rgba(6, 12, 12, 0.55);
+  box-shadow: 0 40px 80px -34px rgba(0, 0, 0, 0.75);
+}
+.location-map__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+.location-map__pin {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #7fd1b3;
+}
+.location-map__frame {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 4 / 3;
+  min-height: 320px;
+  background: #0d1413;
+}
+.location-map__frame iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+@media (min-width: 1024px) {
+  .location-band { padding-block: 88px; }
+  .location-band__grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 48px;
+  }
+  .location-map__frame { aspect-ratio: auto; min-height: 440px; }
+}
+
+@media (max-width: 767px) {
+  /* Reduced motion intensity on phones: a slower turn, a shorter travel on the
+     entrance, and static technical rings. Same choreography, less of it. */
+  .hero-tyre-spinner { animation-duration: 20s; }
+  .hero-tyre-ring--outer,
+  .hero-tyre-ring--inner { animation: none; }
+  .hero-tyre-entrance { animation-duration: 760ms; }
+}
+@keyframes hero-tyre-arrive-compact {
+  from { transform: translateY(24px) scale(0.92); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+@media (max-width: 767px) {
+  .hero-tyre-entrance { animation-name: hero-tyre-arrive-compact; }
+}
+
+@media (max-width: 639px) {
+  .location-band { padding-block: 56px; }
+  .location-map__frame { aspect-ratio: 1 / 1; min-height: 300px; max-height: 380px; }
+  .location-actions .btn { width: 100%; justify-content: center; }
 }

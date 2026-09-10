@@ -8,9 +8,9 @@ test('transaction pages are noindex with their own canonical', async ({ page }) 
   }
 });
 
-test('submission APIs reject oversized bodies without notification', async ({ request }) => {
+test('submission APIs reject oversized bodies without notification', async ({ request, baseURL }) => {
   for (const path of ['/api/orders', '/api/enquiries']) {
-    const response = await request.post(path, { headers: { origin: 'http://localhost:3100', 'x-forwarded-for': path.endsWith('orders') ? '192.0.2.91' : '192.0.2.92' }, data: { message: 'x'.repeat(33000) } });
+    const response = await request.post(path, { headers: { origin: baseURL!, 'x-forwarded-for': path.endsWith('orders') ? '192.0.2.91' : '192.0.2.92' }, data: { message: 'x'.repeat(33000) } });
     expect(response.status()).toBe(413);
   }
 });

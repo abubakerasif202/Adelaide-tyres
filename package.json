@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --conditions=react-server --test tests/unit/*.test.mjs",
     "test:e2e": "playwright test",
-    "release-stale-claims": "node --conditions=react-server scripts/release-stale-claims.mjs"
+    "release-stale-claims": "node --conditions=react-server scripts/release-stale-claims.mjs",
+    "check:hero-tyre": "node scripts/check-hero-tyre.mjs"
   },
   "dependencies": {
     "next": "16.3.3",

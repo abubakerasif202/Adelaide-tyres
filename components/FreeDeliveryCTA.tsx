@@ -31,7 +31,7 @@ export function FreeDeliveryCTA({ motion }: { motion?: "strong" } = {}) {
           <div className="delivery-zone-panel__head"><span>Regency Park delivery hub</span><span>Adelaide-wide</span></div>
           <div className="delivery-zone-panel__map" aria-label="Adelaide delivery tiers centred on the Regency Park warehouse">
             <span className="delivery-zone delivery-zone--outer"/><span className="delivery-zone delivery-zone--middle"/><span className="delivery-zone delivery-zone--inner"/>
-            <div className="delivery-zone-panel__hub"><strong>Regency Park</strong><span>4 Birralee Rd · SA 5010</span></div>
+            <div className="delivery-zone-panel__hub"><strong>{business.address.suburb}</strong><span>{business.address.street} · {business.address.state} {business.address.postcode}</span></div>
           </div>
           <div className="delivery-zone-panel__tiers"><span>1–{order.delivery.freeQualifyingTyres - 1} tyres<br/><strong>{formatCurrency(order.delivery.feeAud)}</strong></span><span>{order.delivery.freeQualifyingTyres}+ tyres<br/><strong>Free delivery</strong></span><span>Warehouse pickup<br/><strong>Free</strong></span></div>
         </div>

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
 import { EnquiryForm } from "@/components/EnquiryForm";
 import { ContactChannels } from "@/components/ContactChannels";
-import { order } from "@/lib/config";
+import { business, order } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
 import { breadcrumbJsonLd, localBusinessJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Contact & Wholesale Enquiry | Adelaide Wholesale Tyres",
-  description: `Contact Adelaide Wholesale Tyres for bulk tyre orders and wholesale quotes. 4 Birralee Rd, Regency Park SA 5010. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
+  description: `Contact Adelaide Wholesale Tyres for bulk tyre orders and wholesale quotes. ${business.address.oneLine}. No minimum order, ${formatCurrency(order.delivery.feeAud)} Adelaide-wide delivery under ${order.delivery.freeQualifyingTyres} tyres, free for ${order.delivery.freeQualifyingTyres}+.`,
   alternates: { canonical: "/contact" },
 };
 

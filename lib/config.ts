@@ -30,6 +30,30 @@ export const business = {
   email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || "",
 } as const;
 
+/**
+ * Map links. Both are built from `business.address` by query, deliberately:
+ * a hardcoded lat/lng is a second copy of the address that can silently drift
+ * out of sync with it, and we hold no surveyed coordinates for the site.
+ * The embed form needs no API key.
+ */
+/**
+ * Street address only. Prefixing the business name makes Google's geocoder
+ * fall back to a fuzzy area match several kilometres off (verified: the embed
+ * landed near Dry Creek instead of Birralee Rd); the bare address pins the
+ * marker on the warehouse exactly.
+ */
+const addressQuery = encodeURIComponent(
+  `${business.address.oneLine}, ${business.address.country}`,
+);
+const destinationQuery = addressQuery;
+
+export const maps = {
+  /** Keyless Google Maps embed centred on the Regency Park warehouse. */
+  embedUrl: `https://www.google.com/maps?q=${addressQuery}&z=16&output=embed`,
+  /** Opens turn-by-turn directions in Google Maps (web or native app). */
+  directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${destinationQuery}`,
+} as const;
+
 export const order = {
   currency: "AUD",
   /** Default quantity pre-filled on product cards and detail pages. No minimum order. */
@@ -43,7 +67,8 @@ export const order = {
   },
   pickup: {
     label: "Warehouse pickup",
-    address: "4 Birralee Rd, Regency Park SA 5010",
+    /** Derived, never restated — see `business.address.oneLine`. */
+    address: business.address.oneLine,
   },
   /** Real, business-supplied wholesale pricing. */
   pricingIsPlaceholder: false,
