@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 import { formatCurrency } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
 
@@ -17,27 +16,11 @@ export function HeroArtwork({
   units: number;
   skuLines: number;
 }) {
-  const visualRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const visual = visualRef.current;
-    if (!visual || !("IntersectionObserver" in window)) return;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      visual.dataset.active = entry?.isIntersecting ? "true" : "false";
-    });
-    observer.observe(visual);
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div ref={visualRef} className="hero__visual relative mx-auto w-full max-w-[560px]" data-active="true">
+    <div className="hero__visual relative mx-auto w-full">
       <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4">
         <div className="hero__bay-tags">
           <span className="hero__bay-tag">Immediate Regency Park dispatch</span>
-          <span className="hero__bay-tag hero__bay-tag--muted">
-            {units} units · {skuLines} SKU lines
-          </span>
         </div>
 
         <div className="hero__bay-image relative">
@@ -47,7 +30,7 @@ export function HeroArtwork({
               alt={`${tyre.brand} ${tyre.pattern} ${tyre.size} from current Adelaide stock`}
               fill
               priority
-              sizes="(max-width: 1023px) min(100vw - 32px, 560px), 46vw"
+              sizes="(max-width: 1023px) calc(100vw - 32px), 500px"
               className="hero__bay-tyre object-contain"
             />
           )}
@@ -55,7 +38,7 @@ export function HeroArtwork({
 
         <div className="hero__bay-footer">
           <div>
-            <span className="hero__bay-eyebrow">Featured wholesale stock</span>
+            <span className="hero__bay-eyebrow">Featured wholesale stock · {units} units / {skuLines} lines</span>
             <span className="hero__bay-name">
               {tyre.brand} {tyre.pattern} · {tyre.size}
             </span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "./Reveal";
-import { catalogueStats, uniqueBrands, uniqueSizes } from "@/lib/catalogue";
+import { catalogueStats } from "@/lib/catalogue";
 
 /**
  * Homepage teaser for wholesale/fleet supply. Copy is the same verified set
@@ -15,18 +15,11 @@ const points = [
 ] as const;
 
 export function CommercialTeaser() {
-  const stats = [
-    { value: catalogueStats.skuLines, label: "Listed SKU lines" },
-    { value: catalogueStats.unitsListed, label: "Units in the warehouse" },
-    { value: uniqueBrands().length, label: "Brands carried" },
-    { value: uniqueSizes().length, label: "Sizes in stock" },
-  ];
-
   return (
     <section id="commercial" className="commercial-band on-dark relative overflow-hidden text-white">
       <div className="commercial-band__texture pointer-events-none absolute inset-0" aria-hidden />
-      <Reveal className="container-x relative grid gap-12 py-20 md:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
-        <div>
+      <Reveal className="homepage-container commercial-band__grid relative grid items-center gap-8 py-[72px] lg:grid-cols-12">
+        <div className="lg:col-span-7">
           <p className="eyebrow text-[#7fd1b3]">Wholesale supply</p>
           <h2 className="display mt-2 text-[clamp(32px,4.6vw,50px)]">
             Truck, commercial and fleet tyre supply
@@ -55,19 +48,13 @@ export function CommercialTeaser() {
           </div>
         </div>
 
-        <div className="commercial-stat-panel">
-          <p className="eyebrow text-white/55">Wholesale supply at a glance</p>
-          <div className="mt-5 grid grid-cols-2 gap-5">
-            {stats.map((s) => (
-              <div key={s.label} className="commercial-stat">
-                <span className="display commercial-stat__value">{s.value}</span>
-                <span className="commercial-stat__label">{s.label}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 border-t border-white/12 pt-5 text-[12px] font-semibold text-white/55">
-            Live from the Adelaide catalogue — updated as stock moves.
-          </p>
+        <div className="commercial-quote-card lg:col-span-5">
+          <p className="eyebrow text-[var(--color-green)]">Wholesale pricing / fleet quote</p>
+          <h3 className="display mt-2 text-[28px] text-[var(--color-green-deep)]">Tell us what your operation needs</h3>
+          <p className="mt-3 text-[14px] text-[var(--color-text-muted)]">Send your required sizes and quantities through the existing wholesale enquiry workflow. Current catalogue stock includes {catalogueStats.skuLines} listed SKU lines and {catalogueStats.unitsListed} units.</p>
+          <div className="commercial-quote-card__lines" aria-hidden><span/><span/><span/></div>
+          <Link href="/contact?type=quote" className="btn btn--green mt-6 w-full">Request wholesale pricing</Link>
+          <p className="mt-3 text-center text-[12px] text-[var(--color-text-muted)]">No credit terms or response time is implied.</p>
         </div>
       </Reveal>
     </section>

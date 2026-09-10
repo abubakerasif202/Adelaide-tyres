@@ -19,7 +19,7 @@ export function ProductCard({
 }: {
   tyre: Tyre;
   priority?: boolean;
-  variant?: "compact" | "feature";
+  variant?: "compact" | "feature" | "homepage";
   /** The wide, editorially-weighted lead card (spans 2 grid columns on desktop). */
   lead?: boolean;
 }) {
@@ -109,6 +109,31 @@ export function ProductCard({
 
   const compactTitle = tyreTitle(tyre);
 
+  if (variant === "homepage") {
+    return (
+      <article className="homepage-product-card">
+        <Link href={`/tyres/${tyre.slug}`} className="product-card__media">
+          {tyre.image ? <Image src={tyre.image} alt={compactTitle} fill priority={priority} sizes="(max-width:639px) calc(100vw - 32px), (max-width:1023px) 50vw, 300px" className="product-card__media-contain" /> : <TyreImage src={null} alt={compactTitle} size={124} />}
+          <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+        </Link>
+        <div className="homepage-product-card__body">
+          <div>
+            <span className="homepage-product-card__brand">{tyre.brand} · {APPLICATION_LABEL(tyre.application)}</span>
+            <Link href={`/tyres/${tyre.slug}`} className="display homepage-product-card__title">{tyre.pattern}</Link>
+            <span className="homepage-product-card__size">{tyre.size}</span>
+          </div>
+          <div className="homepage-product-card__purchase">
+            <PriceDisplay price={tyre.price} />
+            <div className="homepage-product-card__actions">
+              <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${compactTitle}`} size="sm" />
+              <button type="button" className="btn btn--red" data-added={added} aria-live="polite" onClick={handleAdd} disabled={soldOut || atStockLimit}>{soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : "Add to order"}</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article className="surface-card product-card flex flex-col gap-3.5 p-0">
       <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
@@ -175,4 +200,8 @@ export function ProductCard({
       </div>
     </article>
   );
+}
+
+function APPLICATION_LABEL(application: Tyre["application"]) {
+  return application.replace("-", " ");
 }

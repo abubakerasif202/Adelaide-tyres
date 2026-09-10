@@ -31,12 +31,12 @@ export default function HomePage() {
       <HomepageFinder />
       <Benefits />
 
-      <section id="stock" className="bg-[var(--color-surface-muted)] pb-20 pt-12 md:pb-28 md:pt-16">
-        <div className="container-x">
+      <section id="stock" className="homepage-stock">
+        <div className="homepage-container">
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <SectionHeading
-              eyebrow="Shop available stock"
-              title="Order from listed stock"
+              eyebrow="Regency Park warehouse inventory"
+              title="In-demand wholesale stock"
               intro="Wholesale pricing per tyre. No minimum order — mix any products, any quantity."
             />
             <span className="pill pill--muted">
@@ -47,7 +47,7 @@ export default function HomePage() {
 
           <div className="homepage-stock-grid mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 md:mt-12">
             {previewTyres.map((tyre, index) => (
-              <ProductCard key={tyre.id} tyre={tyre} priority={index < 2} />
+              <ProductCard key={tyre.id} tyre={tyre} priority={index < 2} variant="homepage" />
             ))}
           </div>
           <div className="mt-9 text-center">
@@ -59,12 +59,7 @@ export default function HomePage() {
 
       <CommercialTeaser />
 
-      {/* Dark -> light -> dark step into the final conversion block: without
-          the light band, the dark CommercialTeaser and the dark delivery CTA
-          read as one undifferentiated mass. */}
-      <div className="delivery-band">
-        <FreeDeliveryCTA />
-      </div>
+      <FreeDeliveryCTA />
     </>
   );
 }
@@ -72,18 +67,19 @@ export default function HomePage() {
 function HomepageFinder() {
   const sizes = uniqueSizes();
   return (
-    <section id="finder" className="homepage-finder relative z-20 -mt-7">
-      <div className="container-x">
-        <form action="/tyres" className="surface-card homepage-finder__panel p-5 md:p-7">
+    <section id="finder" className="homepage-finder relative z-20">
+      <div className="homepage-container">
+        <form action="/tyres" className="surface-card homepage-finder__panel">
           <div className="flex items-center gap-2 overflow-x-auto border-b border-[var(--color-border)] pb-4">
             <span className="homepage-finder__tab">All tyres</span>
             <Link href="/tyres?application=commercial" className="homepage-finder__tab homepage-finder__tab--muted">Truck &amp; commercial</Link>
             <Link href="/tyres?application=truck" className="homepage-finder__tab homepage-finder__tab--muted">Truck fitments</Link>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
-            <label><span className="field-label">Tyre width</span><select name="size" defaultValue="" className="field-input"><option value="">Any width</option>{sizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+          <div className="homepage-finder__fields grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <label><span className="field-label">1. Search</span><input name="q" className="field-input" placeholder="Brand or pattern" /></label>
+            <label><span className="field-label">2. Tyre size</span><select name="size" defaultValue="" className="field-input"><option value="">Any size</option>{sizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
             <label><span className="field-label">Application</span><select name="application" defaultValue="" className="field-input"><option value="">All applications</option><option value="truck">Truck</option><option value="commercial">Commercial</option></select></label>
-            <label><span className="field-label">Availability</span><select name="inStockOnly" defaultValue="true" className="field-input"><option value="true">In stock now</option><option value="false">All listed stock</option></select></label>
+            <label><span className="field-label">Availability</span><select name="stock" defaultValue="in" className="field-input"><option value="in">In stock now</option><option value="">All listed stock</option></select></label>
             <button className="btn btn--red self-end" type="submit">Find tyres <span aria-hidden>→</span></button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">

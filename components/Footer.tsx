@@ -22,16 +22,11 @@ const columns = [
     ],
   },
   {
-    heading: "Company",
+    heading: "Company & legal",
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
       { label: "Commercial", href: "/commercial" },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
     ],
@@ -41,7 +36,7 @@ const columns = [
 export function Footer() {
   return (
     <footer className="on-dark bg-[var(--color-ink)] text-white/80">
-      <div className="container-x grid gap-10 py-16 md:grid-cols-[1.4fr_repeat(4,1fr)]">
+      <div className="homepage-container grid gap-6 py-12 md:grid-cols-4">
         <Reveal>
         <div>
           <Logo tone="light" />
@@ -74,7 +69,7 @@ export function Footer() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <div className="container-x flex flex-col gap-1 py-6 text-[12px] text-white/55 sm:flex-row sm:justify-between">
+        <div className="homepage-container flex flex-col gap-1 py-4 text-[12px] text-white/55 sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} {business.name}</span>
           <span>No minimum order · {deliveryRuleSummary("long")}</span>
         </div>

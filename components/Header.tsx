@@ -90,23 +90,27 @@ export function Header() {
   return (
     <header className="site-header sticky top-0 z-50" data-compact={compact || undefined}>
       <div className="bg-[var(--color-ink)] text-white">
-        <div className="container-x flex h-[38px] items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em]">
+        <div className="header-container flex h-9 items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em]">
           <span className="announcement-copy"><span className="sm:hidden">No minimum · {deliveryRuleSummary("short")}</span><span className="hidden sm:inline">{deliveryRuleSummary("announcement")}</span></span>
           <span className="hidden md:block text-white/70">{announcement.address}</span>
         </div>
       </div>
 
-      <div
-        className={`header-main border-b border-[var(--color-border)] bg-white/96 backdrop-blur-md ${
-          compact ? "py-2" : "py-3.5"
-        }`}
-      >
-        <div className="container-x flex items-center justify-between gap-4">
+      <div className="header-main border-b border-[var(--color-border)] bg-white/96 backdrop-blur-md">
+        <div className="header-container flex h-20 items-center justify-between gap-4">
           <Link href="/" aria-label="AWT — Adelaide Wholesale Tyres home" className="header-logo rounded-sm" onClick={() => setOpen(false)}>
             <Logo tone="dark" />
           </Link>
 
-          <nav aria-label="Main" className="hidden lg:flex items-center gap-7">
+          <form action="/tyres" className="header-search hidden lg:block">
+            <label className="relative block">
+              <span className="sr-only">Search stock from header</span>
+              <span className="header-search__icon" aria-hidden>⌕</span>
+              <input name="q" type="search" placeholder="Search stock by size or brand" />
+            </label>
+          </form>
+
+          <nav aria-label="Main" className="hidden xl:flex items-center gap-6">
             {nav.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -115,9 +119,9 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`text-[13px] font-bold uppercase tracking-[0.06em] transition-colors ${
+                  className={`header-nav-link text-[13px] font-bold uppercase tracking-[0.06em] transition-colors ${
                     active
-                      ? "text-[var(--color-green)]"
+                      ? "is-active text-[var(--color-green)]"
                       : "text-[var(--color-text)] hover:text-[var(--color-green)]"
                   }`}
                 >
@@ -132,7 +136,7 @@ export function Header() {
             <button
               ref={menuButtonRef}
               type="button"
-              className="btn btn--outline min-h-[44px] px-4 py-2 lg:hidden"
+              className="btn btn--outline min-h-[44px] px-4 py-2 xl:hidden"
               aria-expanded={open}
               aria-controls="mobile-nav"
               onClick={() => setOpen((v) => !v)}
@@ -147,9 +151,9 @@ export function Header() {
         <div
           ref={menuRef}
           id="mobile-nav"
-          className="mobile-menu lg:hidden fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-white"
+          className="mobile-menu xl:hidden fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-white"
         >
-          <nav aria-label="Mobile" className="container-x flex flex-col py-4">
+          <nav aria-label="Mobile" className="header-container flex flex-col py-4">
             {nav.map((item) => (
               <Link
                 key={item.href}
