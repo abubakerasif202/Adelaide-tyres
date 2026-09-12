@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { business } from "@/lib/config";
 import { deliveryRuleSummary } from "@/lib/format";
@@ -77,9 +78,30 @@ export function Footer() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <div className="homepage-container flex flex-col gap-1 py-4 text-[12px] text-white/55 sm:flex-row sm:justify-between">
-          <span>© {new Date().getFullYear()} {business.name}</span>
-          <span>No minimum order · {deliveryRuleSummary("long")}</span>
+        <div className="homepage-container flex flex-col gap-4 py-4 text-[12px] text-white/55 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <span>© {new Date().getFullYear()} {business.name}</span>
+            <span>No minimum order · {deliveryRuleSummary("long")}</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 sm:items-end">
+            <span className="text-[11px] uppercase tracking-wide text-white/60">Website by</span>
+            <a
+              href="https://www.abwebstudio.com.au/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Website designed and developed by AB Digital Solutions"
+              className="inline-block opacity-90 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-100"
+            >
+              <Image
+                src="/images/branding/ab-digital-solutions.webp"
+                alt="AB Digital Solutions"
+                width={672}
+                height={309}
+                loading="lazy"
+                className="h-auto w-[130px] sm:w-[150px] md:w-[170px]"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
