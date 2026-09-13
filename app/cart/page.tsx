@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { QuantitySelector } from "@/components/QuantitySelector";
+import { LineQuantitySelector } from "@/components/LineQuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -66,18 +66,15 @@ export default function CartPage() {
                       </span>
                       <p className="display text-[22px]">{line.size}</p>
                       <p className="text-[13px] text-[var(--color-text-muted)]">
-                        Pattern {line.pattern} · {line.stock} in stock
+                        Pattern {line.pattern} · availability confirmed at checkout
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <QuantitySelector
+                      <LineQuantitySelector
+                        slug={line.slug}
                         value={line.quantity}
                         onChange={(q) => setQuantity(line.id, q)}
-                        min={1}
-                        max={line.stock}
-                        disabled={line.stock <= 0}
                         label={`Quantity for ${tyreFullName(line)}`}
-                        size="sm"
                       />
                       <div className="text-right">
                         <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">

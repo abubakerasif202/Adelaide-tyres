@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
+import { useInventoryAvailability } from "@/lib/inventory/availability-context";
 import { order } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
@@ -15,7 +16,9 @@ import { PriceDisplay } from "./primitives";
 export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
   const { add, cart, totalTyres, qualifiesForFreeDelivery, deliveryFee } = useCart();
   const router = useRouter();
-  const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
+  const availability = useInventoryAvailability(tyre.slug);
+  const available = availability.available ?? 0;
+  const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, available)));
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -24,8 +27,9 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
   // Derived from lib/config.ts, never a literal: the fee beside this range
   // was already config-driven, the range itself was not.
   const paidDeliveryRange = `1–${order.delivery.freeQualifyingTyres - 1}`;
-  const remainingStock = Math.max(0, tyre.stock - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
-  const soldOut = tyre.stock <= 0;
+  const remainingStock = Math.max(0, available - (cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0));
+  const soldOut = availability.state === "out_of_stock";
+  const unavailable = availability.state === "unavailable" || availability.state === "unmapped";
   const atStockLimit = remainingStock === 0;
   const selectedQty = Math.min(qty, Math.max(1, remainingStock));
 
@@ -38,7 +42,6 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
       pattern: tyre.pattern,
       size: tyre.size,
       price: tyre.price,
-      stock: tyre.stock,
       image: tyre.image,
       quantity: selectedQty,
     });
@@ -63,7 +66,7 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-green)]" />
           </span>
         )}
-        <span>{soldOut ? "Currently out of stock" : `${tyre.stock} in stock now`}</span>
+        <span>{availability.state === "unmapped" ? "Contact us for availability" : unavailable ? "Checking availability" : soldOut ? "Currently out of stock" : availability.state === "low_stock" ? "Low stock" : "In stock"}</span>
       </p>
 
       <div className="mt-5 flex items-center gap-3">
@@ -72,7 +75,7 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
           onChange={setQty}
           min={1}
           max={Math.max(1, remainingStock)}
-          disabled={atStockLimit}
+          disabled={unavailable || atStockLimit}
           label={`Quantity for ${tyreFullName(tyre)}`}
         />
         <span className="text-[13px] text-[var(--color-text-muted)]">No minimum order</span>
@@ -84,14 +87,14 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
           className="btn btn--red w-full"
           data-added={added}
           onClick={addToCart}
-          disabled={soldOut || atStockLimit}
+          disabled={unavailable || soldOut || atStockLimit}
         >
-          {soldOut ? "Out of stock" : added ? "Added to cart ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
+          {availability.state === "unmapped" ? "Contact for availability" : unavailable ? "Check availability" : soldOut ? "Out of stock" : added ? "Added to cart ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
         </button>
         <button
           type="button"
           className="link-underline inline-flex min-h-[44px] items-center justify-center self-center text-[13px] font-bold uppercase tracking-wide disabled:opacity-50"
-          disabled={soldOut || atStockLimit}
+          disabled={unavailable || soldOut || atStockLimit}
           onClick={() => {
             addToCart();
             // Let the cart context commit before navigation so the destination

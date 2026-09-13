@@ -33,7 +33,8 @@ export function filterTyres(tyres: Tyre[], filters: TyreFilters): Tyre[] {
     if (filters.size && tyre.size !== filters.size) return false;
     if (filters.brand && tyre.brand !== filters.brand) return false;
     if (filters.application && tyre.application !== filters.application) return false;
-    if (filters.inStockOnly && tyre.stock <= 0) return false;
+    // Live inventory is applied by the client catalogue component. This pure
+    // metadata filter must never treat build-time catalogue quantities as stock.
     return true;
   });
 
@@ -46,11 +47,10 @@ export function filterTyres(tyres: Tyre[], filters: TyreFilters): Tyre[] {
       sorted.sort((a, b) => b.price - a.price);
       break;
     case "stock-desc":
-      sorted.sort((a, b) => b.stock - a.stock);
       break;
     default:
       sorted.sort(
-        (a, b) => Number(b.featured) - Number(a.featured) || b.stock - a.stock,
+        (a, b) => Number(b.featured) - Number(a.featured),
       );
   }
   return sorted;

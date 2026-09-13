@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { order } from "@/lib/config";
 import { deliveryRuleSummary, formatCurrency } from "@/lib/format";
+import { mockAvailability } from "./support/availability";
+
+test.beforeEach(async ({ page }) => { await mockAvailability(page); });
 
 const fabricated = /08 8240 0000|Bridgestone R168|Michelin X Multi|Kumho Heavy Duty|SA'?s largest/i;
 

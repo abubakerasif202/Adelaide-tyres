@@ -47,7 +47,7 @@ export default function TyresPage() {
               </p>
             </div>
             <span className="pill pill--muted">
-              {catalogueStats.skuLines} SKU lines · {catalogueStats.unitsListed} units listed
+              {catalogueStats.skuLines} SKU lines · live availability
             </span>
           </div>
 

@@ -49,8 +49,8 @@ test("application filter narrows results", () => {
   assert.equal(filterTyres(data, { ...DEFAULT_FILTERS, application: "commercial" }).length, 1);
 });
 
-test("inStockOnly hides zero-stock lines", () => {
-  assert.equal(filterTyres(data, { ...DEFAULT_FILTERS, inStockOnly: true }).length, 2);
+test("metadata filtering never uses build-time stock", () => {
+  assert.equal(filterTyres(data, { ...DEFAULT_FILTERS, inStockOnly: true }).length, 3);
 });
 
 test("price sorting works both directions", () => {

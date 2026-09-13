@@ -1,6 +1,7 @@
 import { getTyreBySlug } from "./catalogue.ts";
+import { inventoryMappingIdForProduct } from "./inventory/mapping.ts";
 
-/** Resolve authoritative prices and validate aggregate stock before any order side effect. */
+/** Resolve authoritative prices; 247 atomically validates live inventory later. */
 export function validateOrderLines(input: unknown) {
   if (!Array.isArray(input) || input.length === 0) {
     return { error: "Your cart is empty." } as const;
@@ -16,10 +17,8 @@ export function validateOrderLines(input: unknown) {
   const lines = [];
   for (const [slug, quantity] of quantities) {
     const tyre = getTyreBySlug(slug);
-    if (!tyre) return { error: "One or more items are no longer available." } as const;
-    if (quantity > tyre.stock || tyre.stock <= 0) {
-      return { error: `Only ${tyre.stock} of ${tyre.brand} ${tyre.pattern} ${tyre.size} available.` } as const;
-    }
+    if (!tyre || quantity > 1000) return { error: "One or more items are no longer available." } as const;
+    if (!inventoryMappingIdForProduct(tyre.id)) return { error: `${tyre.brand} ${tyre.pattern} ${tyre.size} requires availability confirmation. Please contact us.` } as const;
     lines.push({ id: tyre.id, brand: tyre.brand, pattern: tyre.pattern, size: tyre.size, quantity, price: tyre.price });
   }
   return { lines } as const;

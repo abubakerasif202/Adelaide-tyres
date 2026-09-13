@@ -3,7 +3,10 @@ import { readSubmission } from "@/lib/request-body";
 import { validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
-import { createCheckoutSession, isPaymentConfigured } from "@/lib/payment";
+import { createCheckoutSession, generateReference, isPaymentConfigured } from "@/lib/payment";
+import { releaseInventory, reserveInventory } from "@/lib/inventory/client";
+import { InventoryConflictError, InventoryUnavailableError } from "@/lib/inventory/types";
+import { randomUUID } from "node:crypto";
 import {
   clampString,
   clientKey,
@@ -41,6 +44,10 @@ export async function POST(request: Request) {
   if (looksAutomated({ honeypot: body.company_website, startedAt: Number(body.startedAt) })) {
     return NextResponse.json({ error: "Please try again." }, { status: 400 });
   }
+  const checkoutAttemptId = typeof body.checkoutAttemptId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutAttemptId)
+    ? body.checkoutAttemptId
+    : null;
+  if (!checkoutAttemptId) return NextResponse.json({ error: "Invalid checkout attempt." }, { status: 400 });
 
   const rawDetails = (body.details ?? {}) as Record<string, unknown>;
   const details: CheckoutDetails = {
@@ -77,7 +84,13 @@ export async function POST(request: Request) {
     details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
   const deliveryFee = freeDelivery ? 0 : order.delivery.feeAud;
 
+  let reservationId: string | null = null;
+  let releaseRequestId: string | null = null;
   try {
+    const reference = generateReference(checkoutAttemptId);
+    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
+    reservationId = reservation.reservationId;
+    releaseRequestId = randomUUID();
     const session = await createCheckoutSession({
       details,
       lines,
@@ -85,9 +98,16 @@ export async function POST(request: Request) {
       subtotal,
       freeDelivery,
       deliveryFee,
-    });
+    }, { reservationId: reservation.reservationId, reference, commitRequestId: randomUUID(), releaseRequestId });
     return NextResponse.json({ url: session.url, reference: session.reference });
   } catch (err) {
+    if (reservationId && releaseRequestId) {
+      try { await releaseInventory(reservationId, "checkout_start_failed", releaseRequestId); } catch { /* 247 expiry/reconciliation retains safe hold if recovery is unavailable */ }
+    }
+    // Inventory outcomes are customer-facing and never blamed on the card
+    // provider: a stock conflict is a 409, an unreachable 247 fails closed.
+    if (err instanceof InventoryConflictError) return NextResponse.json({ error: err.message }, { status: 409 });
+    if (err instanceof InventoryUnavailableError) return NextResponse.json({ error: err.message }, { status: 503 });
     console.error("Stripe Checkout Session creation failed", err);
     return NextResponse.json({ error: "Could not start card checkout. Please try again or submit for invoice." }, { status: 502 });
   }

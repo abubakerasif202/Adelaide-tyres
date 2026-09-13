@@ -16,8 +16,9 @@ export class MemoryOrderStore implements OrderStore {
   private events = new Set<string>();
 
   async createPendingOrder(order: NewOrderInput): Promise<void> {
-    if (this.orders.has(order.checkoutSessionId)) return;
-    this.orders.set(order.checkoutSessionId, { ...order, status: "pending", notifiedAt: null });
+    const key = order.checkoutSessionId ?? order.reference;
+    if (this.orders.has(key)) return;
+    this.orders.set(key, { ...order, status: "pending", notifiedAt: null, inventoryReservationId: order.inventoryReservationId ?? null, inventoryStatus: order.inventoryStatus ?? "pending", inventoryCommitRequestId: order.inventoryCommitRequestId ?? null, inventoryReleaseRequestId: order.inventoryReleaseRequestId ?? null });
   }
 
   async claimFulfilment(checkoutSessionId: string): Promise<OrderRecord | null> {
@@ -76,6 +77,19 @@ export class MemoryOrderStore implements OrderStore {
       if (order.paymentIntentId === paymentIntentId) return order;
     }
     return null;
+  }
+
+  async getByReference(reference: string): Promise<OrderRecord | null> {
+    for (const order of this.orders.values()) if (order.reference === reference) return order;
+    return null;
+  }
+
+  async markInventoryCommitted(reference: string): Promise<void> {
+    for (const [key, order] of this.orders) if (order.reference === reference && order.inventoryStatus === "reserved") this.orders.set(key, { ...order, inventoryStatus: "committed" });
+  }
+
+  async markInventoryReleased(reference: string): Promise<void> {
+    for (const [key, order] of this.orders) if (order.reference === reference && (order.inventoryStatus === "pending" || order.inventoryStatus === "reserved")) this.orders.set(key, { ...order, inventoryStatus: "released" });
   }
 
   async recordEvent(eventId: string): Promise<void> {

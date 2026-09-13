@@ -18,13 +18,32 @@ export function isNotifyConfigured(): boolean {
   );
 }
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+/**
+ * Local cross-system testing only: deliver to a loopback stand-in instead of
+ * Resend so a paid order can complete its notification step without any
+ * network egress. Non-loopback values are ignored, so production traffic can
+ * never be redirected.
+ */
+function transportEndpoint(): string {
+  const base = process.env.NOTIFY_API_BASE;
+  if (base) {
+    try {
+      const url = new URL(base);
+      if (url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname)) return `${url.origin}/emails`;
+    } catch { /* fall through to the real transport */ }
+  }
+  return "https://api.resend.com/emails";
+}
+
 export async function sendNotification(message: Message): Promise<{ delivered: boolean }> {
   if (!isNotifyConfigured()) {
     console.info("[notify:dev] Transport is not configured; no notification sent.");
     return { delivered: false };
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
+  const res = await fetch(transportEndpoint(), {
     method: "POST",
     signal: AbortSignal.timeout(10_000),
     headers: {

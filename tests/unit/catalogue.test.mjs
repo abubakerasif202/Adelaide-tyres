@@ -10,7 +10,7 @@ test("all 25 verified catalogue SKUs load", () => {
   assert.equal(catalogue.length, 25);
 });
 
-test("verified production inventory totals 491 tyres", () => {
+test("legacy catalogue transcription remains present but is not live inventory", () => {
   assert.equal(catalogue.reduce((total, tyre) => total + tyre.stock, 0), 491);
 });
 
@@ -77,16 +77,14 @@ test("model search finds real SKUs case-insensitively", () => {
   }
 });
 
-test("low-stock SKUs clamp quantity to available stock", () => {
+test("legacy catalogue quantities do not cap cart quantity", () => {
   const rmr61_275 = getTyreBySlug("ralson-rmr61-275-70r22-5");
   const att420 = getTyreBySlug("haulmax-att420-295-80r22-5");
   const sfr22 = getTyreBySlug("sailun-sfr22-385-65r22-5");
   assert.equal(rmr61_275.stock, 3);
   assert.equal(att420.stock, 2);
   assert.equal(sfr22.stock, 2);
-  assert.equal(clampQuantity(10, rmr61_275.stock), 3);
-  assert.equal(clampQuantity(10, att420.stock), 2);
-  assert.equal(clampQuantity(10, sfr22.stock), 2);
+  assert.equal(clampQuantity(10), 10);
 });
 
 test("every catalogue image mapping has a complete provenance record and local asset", () => {

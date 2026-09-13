@@ -1,7 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockAvailability } from "./support/availability";
 
 const product = "/tyres/greforce-gr881w-11r22-5";
 const quantityName = "Quantity for Greforce GR881W 11R22.5";
+// Live 247 figure declared for the browser tests; stock is never a catalogue constant.
+const LIVE_AVAILABLE = 107;
+
+test.beforeEach(async ({ page }) => { await mockAvailability(page, { "greforce-gr881w-11r22-5": { state: "in_stock", available: LIVE_AVAILABLE } }); });
 
 test("undelivered enquiry preserves input and never claims receipt", async ({ page }) => {
   await page.route("**/api/enquiries", (route) => route.fulfill({
@@ -23,28 +28,39 @@ test("undelivered enquiry preserves input and never claims receipt", async ({ pa
   await expect(form.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
 });
 
-test("order API rejects duplicate stock overflow and malformed quantities before processing", async ({ request, baseURL }, testInfo) => {
+test("order API rejects malformed quantities before processing and fails closed without an inventory feed", async ({ request, baseURL }, testInfo) => {
+  const slug = product.split("/").pop();
+  const submit = (lines: unknown, index: number, checkoutAttemptId: string | null = crypto.randomUUID()) => request.post("/api/orders", {
+    headers: { origin: baseURL!, "x-forwarded-for": `192.0.2.${testInfo.project.name === "desktop" ? index + 1 : index + 20}` },
+    data: {
+      startedAt: Date.now() - 10_000,
+      company_website: "",
+      checkoutAttemptId,
+      details: { name: "Regression test", phone: "0400000000", email: "regression@example.invalid", deliveryMethod: "pickup" },
+      lines,
+    },
+  });
   const invalidLines = [
-    [{ slug: product.split("/").pop(), quantity: 60 }, { slug: product.split("/").pop(), quantity: 60 }],
-    [{ slug: product.split("/").pop(), quantity: 1.5 }],
-    [{ slug: product.split("/").pop(), quantity: 0 }],
+    [{ slug, quantity: 1.5 }],
+    [{ slug, quantity: 0 }],
+    [{ slug, quantity: 600 }, { slug, quantity: 600 }],
+    [{ slug: "greforce-g-pilot-x1-295-80r22-5", quantity: 1 }],
     [null],
   ];
   for (const [index, lines] of invalidLines.entries()) {
-    const response = await request.post("/api/orders", {
-      headers: { origin: baseURL!, "x-forwarded-for": `192.0.2.${testInfo.project.name === "desktop" ? index + 1 : index + 20}` },
-      data: {
-        startedAt: Date.now() - 10_000,
-        company_website: "",
-        details: { name: "Regression test", phone: "0400000000", email: "regression@example.invalid", deliveryMethod: "pickup" },
-        lines,
-      },
-    });
-    expect(response.status()).toBe(409);
+    const response = await submit(lines, index);
+    expect(response.status(), JSON.stringify(lines)).toBe(409);
     const body = await response.json();
     expect(body.error).toEqual(expect.any(String));
     expect(body).not.toHaveProperty("reference");
   }
+  // Duplicate lines aggregate (60 + 60 = 120) instead of being rejected as a
+  // static "stock overflow"; without a 247 connection the order fails closed.
+  const aggregate = await submit([{ slug, quantity: 60 }, { slug, quantity: 60 }], 8);
+  expect(aggregate.status()).toBe(503);
+  expect((await aggregate.json()).error).toBe("We're confirming tyre availability. Please try again shortly.");
+  const noAttempt = await submit([{ slug, quantity: 1 }], 9, null);
+  expect(noAttempt.status()).toBe(400);
   const malformed = await request.post("/api/enquiries", {
     headers: { origin: baseURL!, "x-forwarded-for": "198.51.100.99" },
     data: null,
@@ -91,7 +107,7 @@ test("7 to 8 to 7 tyres updates delivery and pickup stays free", async ({ page }
   await expect(summaryValue(page, "Delivery")).toHaveText("$50");
 });
 
-test("quantity is capped at verified stock on product and cart", async ({ page }) => {
+test("quantity is capped at live 247 availability on product and cart", async ({ page }) => {
   await page.goto(product);
   const panel = page.getByTestId("purchase-panel");
   await panel.getByRole("spinbutton", { name: quantityName }).fill("108");
@@ -116,8 +132,10 @@ test("Product structured data identifies the SKU and only exposes a verified loc
   expect(productSchema).toMatchObject({
     sku: "ralson-rmr61-29580r225",
     image: expect.stringMatching(/ralson-rmr61-295-80r22-5\.webp$/),
-    offers: { priceCurrency: "AUD", availability: "https://schema.org/InStock" },
+    offers: { priceCurrency: "AUD" },
   });
+  // Availability is live 247 data, never baked into the static page.
+  expect(productSchema.offers).not.toHaveProperty("availability");
 
   // jumbo-ss398-295-80r22-5 is the only catalogue SKU with no verified image, so its
   // Product schema must omit `image` rather than advertise the neutral placeholder.

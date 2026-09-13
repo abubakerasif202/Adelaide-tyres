@@ -87,10 +87,6 @@ export function productJsonLd(tyre: Tyre) {
       "@type": "Offer",
       priceCurrency: "AUD",
       price: tyre.price,
-      availability:
-        tyre.stock > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
       seller: { "@id": `${siteUrl}/#organization` },
       url: `${siteUrl}/tyres/${tyre.slug}`,
     },
