@@ -88,12 +88,16 @@ export class PostgresOrderStore implements OrderStore {
     `;
   }
 
-  async claimFulfilment(checkoutSessionId: string): Promise<OrderRecord | null> {
+  async claimFulfilment(checkoutSessionId: string, paymentIntentId?: string): Promise<OrderRecord | null> {
     const rows = (await this.sql`
       update orders
-      set status = 'paid', notify_claimed_at = now(), updated_at = now()
+      set status = 'paid',
+          payment_intent_id = coalesce(payment_intent_id, ${paymentIntentId ?? null}),
+          notify_claimed_at = now(),
+          updated_at = now()
       where checkout_session_id = ${checkoutSessionId}
-        and status = 'pending'
+        and status in ('pending', 'paid')
+        and notified_at is null
         and notify_claimed_at is null
       returning *
     `) as unknown as OrderRow[];
@@ -110,7 +114,7 @@ export class PostgresOrderStore implements OrderStore {
   async releaseFulfilmentClaim(checkoutSessionId: string): Promise<void> {
     await this.sql`
       update orders
-      set status = 'pending', notify_claimed_at = null, updated_at = now()
+      set notify_claimed_at = null, updated_at = now()
       where checkout_session_id = ${checkoutSessionId}
         and notified_at is null
     `;
@@ -137,7 +141,7 @@ export class PostgresOrderStore implements OrderStore {
   async releaseStaleClaims(olderThanMinutes: number): Promise<number> {
     const rows = await this.sql`
       update orders
-      set status = 'pending', notify_claimed_at = null, updated_at = now()
+      set notify_claimed_at = null, updated_at = now()
       where status = 'paid'
         and notified_at is null
         and notify_claimed_at is not null

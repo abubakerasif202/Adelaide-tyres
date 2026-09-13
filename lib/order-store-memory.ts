@@ -14,6 +14,7 @@ import type { NewOrderInput, OrderRecord, OrderStore } from "./order-store.ts";
 export class MemoryOrderStore implements OrderStore {
   private orders = new Map<string, OrderRecord>();
   private events = new Set<string>();
+  private claims = new Set<string>();
 
   async createPendingOrder(order: NewOrderInput): Promise<void> {
     const key = order.checkoutSessionId ?? order.reference;
@@ -21,11 +22,16 @@ export class MemoryOrderStore implements OrderStore {
     this.orders.set(key, { ...order, status: "pending", notifiedAt: null, inventoryReservationId: order.inventoryReservationId ?? null, inventoryStatus: order.inventoryStatus ?? "pending", inventoryCommitRequestId: order.inventoryCommitRequestId ?? null, inventoryReleaseRequestId: order.inventoryReleaseRequestId ?? null });
   }
 
-  async claimFulfilment(checkoutSessionId: string): Promise<OrderRecord | null> {
+  async claimFulfilment(checkoutSessionId: string, paymentIntentId?: string): Promise<OrderRecord | null> {
     const order = this.orders.get(checkoutSessionId);
     if (!order) return null;
-    if (order.status !== "pending") return null;
-    const claimed: OrderRecord = { ...order, status: "paid" };
+    if (!["pending", "paid"].includes(order.status) || order.notifiedAt || this.claims.has(checkoutSessionId)) return null;
+    this.claims.add(checkoutSessionId);
+    const claimed: OrderRecord = {
+      ...order,
+      status: "paid",
+      paymentIntentId: order.paymentIntentId ?? paymentIntentId ?? null,
+    };
     this.orders.set(checkoutSessionId, claimed);
     return claimed;
   }
@@ -39,7 +45,7 @@ export class MemoryOrderStore implements OrderStore {
   async releaseFulfilmentClaim(checkoutSessionId: string): Promise<void> {
     const order = this.orders.get(checkoutSessionId);
     if (!order || order.notifiedAt) return;
-    this.orders.set(checkoutSessionId, { ...order, status: "pending" });
+    this.claims.delete(checkoutSessionId);
   }
 
   async transitionPendingTo(checkoutSessionId: string, status: "failed" | "cancelled"): Promise<boolean> {

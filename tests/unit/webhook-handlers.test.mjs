@@ -117,7 +117,7 @@ test("failed notification releases the claim so a retry can succeed", async () =
 
   await assert.rejects(processStripeEvent(checkoutCompletedEvent("sess_4", { eventId: "evt_1" }), { store, notify, ...inventory }));
   let order = await store.getByCheckoutSessionId("sess_4");
-  assert.equal(order.status, "pending", "claim must be released, not left stuck as paid-but-unnotified");
+  assert.equal(order.status, "paid", "confirmed payment must survive a notification retry");
   assert.equal(order.notifiedAt, null);
 
   // Stripe redelivers the same event (or a related one) after the 500.
@@ -151,6 +151,7 @@ test("checkout session expiry cancels a still-pending order but never a paid one
   );
   order = await store.getByCheckoutSessionId("sess_6");
   assert.equal(order.status, "paid");
+  assert.equal(inventory.released.length, 1, "late expiry must not release paid inventory");
 });
 
 test("async payment failure marks a pending order failed", async () => {
@@ -201,4 +202,50 @@ test("payment_status other than paid on checkout.session.completed does not fulf
   const order = await store.getByCheckoutSessionId("sess_9");
   assert.equal(order.status, "pending");
   assert.equal(notify.calls.length, 0);
+});
+
+
+test("payment success persists a PaymentIntent assigned after Session creation", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput("late_pi", { paymentIntentId: null }));
+  const notify = makeNotify();
+  const inventory = inventoryDeps();
+
+  await processStripeEvent(checkoutCompletedEvent("late_pi"), { store, notify, ...inventory });
+  assert.equal((await store.getByCheckoutSessionId("late_pi")).paymentIntentId, "pi_late_pi");
+
+  await processStripeEvent(
+    { id: "evt_late_refund", type: "charge.refunded", data: { object: { payment_intent: "pi_late_pi" } } },
+    { store, notify, ...inventory },
+  );
+  assert.equal((await store.getByCheckoutSessionId("late_pi")).status, "refunded");
+});
+
+test("terminal Stripe event retries an inventory release after a transient failure", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput("release_retry"));
+  let attempts = 0;
+  const releaseInventory = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("offline");
+    return { status: "released" };
+  };
+  const event = {
+    id: "evt_release_retry",
+    type: "checkout.session.expired",
+    data: { object: { id: "release_retry" } },
+  };
+
+  await assert.rejects(
+    processStripeEvent(event, { store, notify: makeNotify(), releaseInventory, commitInventory: inventoryDeps().commitInventory }),
+    /offline/,
+  );
+  assert.equal((await store.getByCheckoutSessionId("release_retry")).status, "cancelled");
+  await processStripeEvent(event, {
+    store,
+    notify: makeNotify(),
+    releaseInventory,
+    commitInventory: inventoryDeps().commitInventory,
+  });
+  assert.equal(attempts, 2);
 });
