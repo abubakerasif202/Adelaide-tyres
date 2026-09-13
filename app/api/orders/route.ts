@@ -6,7 +6,8 @@ import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/
 import { generateReference } from "@/lib/payment";
 import { getOrderStore, hasDurableOrderStore } from "@/lib/order-store";
 import { releaseInventory, reserveInventory } from "@/lib/inventory/client";
-import { InventoryConflictError } from "@/lib/inventory/types";
+import { InventoryConflictError, InventoryUnavailableError } from "@/lib/inventory/types";
+import { errorCodeOf, logInventoryEvent } from "@/lib/inventory/log";
 import { randomUUID } from "node:crypto";
 import { sendNotification } from "@/lib/notify";
 import {
@@ -104,9 +105,15 @@ export async function POST(request: Request) {
       inventoryReleaseRequestId: releaseRequestId,
     });
   } catch (error) {
-    if (reservationId) try { await releaseInventory(reservationId, "reference_order_persistence_failed", releaseRequestId); } catch { /* expiry/reconciliation is the safe fallback */ }
-    if (error instanceof InventoryConflictError) return NextResponse.json({ error: error.message }, { status: 409 });
-    console.error("Reference order inventory reservation failed", error);
+    if (reservationId) {
+      try { await releaseInventory(reservationId, "reference_order_persistence_failed", releaseRequestId); }
+      catch (releaseError) { logInventoryEvent("error", "orders.release_after_failure.failed", { orderReference: reference, reservationId, requestId: releaseRequestId, errorCode: errorCodeOf(releaseError) }); }
+    }
+    if (error instanceof InventoryConflictError) {
+      logInventoryEvent("info", "orders.reservation.conflict", { orderReference: reference, requestId: checkoutAttemptId });
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    logInventoryEvent("error", error instanceof InventoryUnavailableError ? "orders.reservation.unavailable" : "orders.persistence.failed", { orderReference: reference, reservationId: reservationId ?? undefined, requestId: checkoutAttemptId, errorCode: errorCodeOf(error) });
     return NextResponse.json({ error: "We're confirming tyre availability. Please try again shortly." }, { status: 503 });
   }
 
