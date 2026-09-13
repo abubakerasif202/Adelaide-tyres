@@ -56,7 +56,7 @@ export interface OrderStore {
    * completed, or is currently attempting notification — the caller must do
    * nothing further in that case.
    */
-  claimFulfilment(checkoutSessionId: string): Promise<OrderRecord | null>;
+  claimFulfilment(checkoutSessionId: string, paymentIntentId?: string): Promise<OrderRecord | null>;
 
   /** Marks the order successfully notified. Call only after claimFulfilment succeeded and the notification was actually delivered. */
   markNotified(checkoutSessionId: string): Promise<void>;
