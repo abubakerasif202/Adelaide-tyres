@@ -41,13 +41,17 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
     case "checkout.session.async_payment_failed": {
       const session = event.data.object as Stripe.Checkout.Session;
       await store.recordEvent(event.id, event.type, session.id);
-      if (await store.transitionPendingTo(session.id, "failed")) await releaseOrderReservation(session.id, deps);
+      const transitioned = await store.transitionPendingTo(session.id, "failed");
+      const order = transitioned ? undefined : await store.getByCheckoutSessionId(session.id);
+      if (transitioned || order?.status === "failed") await releaseOrderReservation(session.id, deps);
       return;
     }
     case "checkout.session.expired": {
       const session = event.data.object as Stripe.Checkout.Session;
       await store.recordEvent(event.id, event.type, session.id);
-      if (await store.transitionPendingTo(session.id, "cancelled")) await releaseOrderReservation(session.id, deps);
+      const transitioned = await store.transitionPendingTo(session.id, "cancelled");
+      const order = transitioned ? undefined : await store.getByCheckoutSessionId(session.id);
+      if (transitioned || order?.status === "cancelled") await releaseOrderReservation(session.id, deps);
       return;
     }
     case "charge.refunded": {
@@ -69,7 +73,12 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
 async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: WebhookDeps): Promise<void> {
   if (session.payment_status !== "paid") return;
 
-  const claimed = await deps.store.claimFulfilment(session.id);
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+
+  const claimed = await deps.store.claimFulfilment(session.id, paymentIntentId);
   if (!claimed) {
     // Already notified, already claimed by a concurrent delivery, or the
     // order doesn't exist (shouldn't happen — createPendingOrder runs at
