@@ -3,6 +3,7 @@ import type { OrderStore } from "./order-store.ts";
 import { sendNotification } from "./notify.ts";
 import { order as orderConfig } from "./config.ts";
 import { commitInventory, releaseInventory } from "./inventory/client.ts";
+import { errorCodeOf, logInventoryEvent } from "./inventory/log.ts";
 
 export type NotifyFn = typeof sendNotification;
 
@@ -105,7 +106,12 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   } catch (err) {
     // Release the claim so the next redelivery of this (or an equivalent)
     // event can retry — we must never silently drop a paid order because an
-    // email failed to send.
+    // email failed to send. Inventory stays "reserved" until 247 confirms.
+    logInventoryEvent("error", "inventory.commit.failed", {
+      orderReference: claimed.reference, reservationId: claimed.inventoryReservationId ?? undefined,
+      requestId: claimed.inventoryCommitRequestId ?? undefined, checkoutSessionId: session.id, errorCode: errorCodeOf(err),
+      detail: err instanceof Error ? err.message.slice(0, 120) : undefined,
+    });
     await deps.store.releaseFulfilmentClaim(session.id);
     throw err;
   }
@@ -120,7 +126,10 @@ async function releaseOrderReservation(checkoutSessionId: string, deps: WebhookD
   } catch (error) {
     // A non-2xx makes Stripe retry the lifecycle event; the 247 release is
     // idempotent and a successful commit can never be released/restocked.
-    console.error("Inventory reservation release failed", { orderReference: order.reference, error });
+    logInventoryEvent("error", "inventory.release.failed", {
+      orderReference: order.reference, reservationId: order.inventoryReservationId, requestId: order.inventoryReleaseRequestId,
+      checkoutSessionId, errorCode: errorCodeOf(error),
+    });
     throw error;
   }
 }

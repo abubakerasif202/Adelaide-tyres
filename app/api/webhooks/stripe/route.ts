@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { getStripeClient, isStripeConfigured } from "@/lib/stripe-client";
 import { getOrderStore } from "@/lib/order-store";
 import { processStripeEvent, defaultNotify } from "@/lib/webhook-handlers";
+import { errorCodeOf, logInventoryEvent } from "@/lib/inventory/log";
 
 // Needs the raw request body for signature verification — must run on Node,
 // not the Edge runtime, and must not have its body pre-parsed.
@@ -42,11 +43,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
   }
 
+  const startedAt = Date.now();
   try {
     const store = await getOrderStore();
     await processStripeEvent(event, { store, notify: defaultNotify });
   } catch (err) {
-    console.error(`Stripe webhook handling failed for ${event.type}`, err);
+    // Non-2xx below asks Stripe to redeliver; log enough to correlate the retry.
+    logInventoryEvent("error", "stripe.webhook.retry_requested", {
+      stripeEventId: event.id, stripeEventType: event.type, durationMs: Date.now() - startedAt, errorCode: errorCodeOf(err),
+      detail: err instanceof Error ? err.message.slice(0, 120) : undefined,
+    });
     // A non-2xx response tells Stripe to retry delivery later. Every
     // transition in processStripeEvent is idempotent/guarded, so a retry —
     // of this event or a concurrently-arriving duplicate — is always safe.

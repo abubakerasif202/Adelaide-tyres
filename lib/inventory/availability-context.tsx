@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getAllTyres } from '@/lib/catalogue';
 import type { InventoryAvailability } from './types';
 
@@ -8,9 +8,16 @@ type AvailabilityContextValue = { bySlug: ReadonlyMap<string, InventoryAvailabil
 const AvailabilityContext = createContext<AvailabilityContextValue | null>(null);
 
 const unknown = (slug: string): InventoryAvailability => ({ slug, state: 'unavailable', available: null, updatedAt: null });
+/**
+ * Display-only grace: after a transient read failure the last successful
+ * snapshot may keep being shown for at most this long. Checkout never reads
+ * this map — every reservation is validated live by 247.
+ */
+const STALE_DISPLAY_MS = 60_000;
 
 export function InventoryAvailabilityProvider({ children }: { children: React.ReactNode }) {
   const [bySlug, setBySlug] = useState<ReadonlyMap<string, InventoryAvailability>>(new Map());
+  const lastGoodAt = useRef(0);
   const refresh = useCallback(async () => {
     try {
       const response = await fetch('/api/inventory/availability', {
@@ -19,10 +26,13 @@ export function InventoryAvailabilityProvider({ children }: { children: React.Re
       });
       if (!response.ok) throw new Error('availability unavailable');
       const payload = await response.json() as { items: InventoryAvailability[] };
+      lastGoodAt.current = Date.now();
       setBySlug(new Map(payload.items.map((item) => [item.slug, item])));
     } catch {
-      // The safe fallback intentionally has no stock quantity and disables purchase.
-      setBySlug(new Map());
+      // Keep the last successful snapshot briefly so one cold-start blip does not
+      // flicker every card; beyond the grace window the safe fallback has no
+      // quantity and disables purchase. Never a static catalogue figure.
+      if (Date.now() - lastGoodAt.current > STALE_DISPLAY_MS) setBySlug(new Map());
     }
   }, []);
   useEffect(() => {

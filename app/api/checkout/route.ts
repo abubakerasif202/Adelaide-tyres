@@ -6,6 +6,7 @@ import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/
 import { createCheckoutSession, generateReference, isPaymentConfigured } from "@/lib/payment";
 import { releaseInventory, reserveInventory } from "@/lib/inventory/client";
 import { InventoryConflictError, InventoryUnavailableError } from "@/lib/inventory/types";
+import { errorCodeOf, logInventoryEvent } from "@/lib/inventory/log";
 import { randomUUID } from "node:crypto";
 import {
   clampString,
@@ -101,9 +102,15 @@ export async function POST(request: Request) {
     }, { reservationId: reservation.reservationId, reference, commitRequestId: randomUUID(), releaseRequestId });
     return NextResponse.json({ url: session.url, reference: session.reference });
   } catch (err) {
+    const reference = generateReference(checkoutAttemptId);
     if (reservationId && releaseRequestId) {
-      try { await releaseInventory(reservationId, "checkout_start_failed", releaseRequestId); } catch { /* 247 expiry/reconciliation retains safe hold if recovery is unavailable */ }
+      // Stripe/order persistence failed after the hold was made: release it.
+      try { await releaseInventory(reservationId, "checkout_start_failed", releaseRequestId); }
+      catch (releaseError) { logInventoryEvent("error", "checkout.release_after_failure.failed", { orderReference: reference, reservationId, requestId: releaseRequestId, errorCode: errorCodeOf(releaseError) }); }
     }
+    if (err instanceof InventoryConflictError) logInventoryEvent("info", "checkout.reservation.conflict", { orderReference: reference, requestId: checkoutAttemptId });
+    else if (err instanceof InventoryUnavailableError) logInventoryEvent("error", "checkout.reservation.unavailable", { orderReference: reference, requestId: checkoutAttemptId });
+    else logInventoryEvent("error", "checkout.session.failed", { orderReference: reference, reservationId: reservationId ?? undefined, errorCode: errorCodeOf(err) });
     // Inventory outcomes are customer-facing and never blamed on the card
     // provider: a stock conflict is a 409, an unreachable 247 fails closed.
     if (err instanceof InventoryConflictError) return NextResponse.json({ error: err.message }, { status: 409 });

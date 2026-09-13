@@ -4,6 +4,7 @@ import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { getTyreById, getTyreBySlug } from '../catalogue.ts';
 import { inventoryMappingIdForProduct } from './mapping.ts';
 import { InventoryConflictError, InventoryUnavailableError, type InventoryAvailability, type InventoryReservation } from './types.ts';
+import { errorCodeOf, logInventoryEvent } from './log.ts';
 
 type FetchLike = typeof fetch;
 type HttpMethod = 'POST' | 'DELETE';
@@ -17,7 +18,16 @@ export const INVENTORY_HOLD_MINUTES = 45;
 export const STRIPE_SESSION_TTL_MINUTES = 30;
 /** Hard ceiling per line; mirrors 247's schema so a bad request is refused here first. */
 export const MAX_LINE_QUANTITY = 1000;
-const REQUEST_TIMEOUT_MS = 8_000;
+/** Mutations get one attempt with a generous timeout; a retry would need the same durable request id, which callers own. */
+const MUTATION_TIMEOUT_MS = 8_000;
+/**
+ * Read-only availability: a shorter attempt plus one bounded retry absorbs a
+ * cold start or a dropped connection without exceeding ~11 s in the worst case.
+ * Failure still ends fail-closed — there is no static catalogue fallback.
+ */
+const AVAILABILITY_ATTEMPT_TIMEOUT_MS = 5_000;
+const AVAILABILITY_RETRY_JITTER_MS: readonly [number, number] = [150, 450];
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
@@ -51,29 +61,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-async function call<T>(method: HttpMethod, path: string, body: unknown, requestId: string, validate: (payload: unknown) => T | null, fetcher: FetchLike = fetch): Promise<T> {
+type CallOptions = {
+  /** Read-only calls may retry once on transient failures; mutations never do. */
+  readOnly?: boolean;
+  /** Test seam for the retry pause. */
+  sleep?: (ms: number) => Promise<void>;
+  log?: { orderReference?: string; reservationId?: string };
+};
+
+class TransientUpstreamError extends Error {
+  readonly status: number;
+  constructor(status: number) { super(`UPSTREAM_${status}`); this.name = 'TransientUpstreamError'; this.status = status; }
+}
+
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** One signed attempt. Throws TransientUpstreamError / fetch errors for the caller to classify. */
+async function attempt<T>(method: HttpMethod, path: string, raw: string, requestId: string, timeoutMs: number, validate: (payload: unknown) => T | null, fetcher: FetchLike): Promise<T> {
   const current = config();
-  if (!UUID.test(requestId)) throw new InventoryUnavailableError();
-  const raw = JSON.stringify(body);
   const timestamp = String(Date.now());
-  let response: Response;
-  try {
-    response = await fetcher(`${current.baseUrl}${path}`, {
-      method, cache: 'no-store',
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      headers: {
-        'content-type': 'application/json',
-        'x-awt-client-id': current.clientId,
-        'x-awt-timestamp': timestamp,
-        'x-awt-request-id': requestId,
-        'x-awt-signature': signRequest(method, path, timestamp, requestId, raw, current.secret),
-      },
-      body: raw,
-    });
-  } catch {
-    // Timeout, DNS, connection refused: fail closed.
-    throw new InventoryUnavailableError();
-  }
+  const response = await fetcher(`${current.baseUrl}${path}`, {
+    method, cache: 'no-store',
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: {
+      'content-type': 'application/json',
+      'x-awt-client-id': current.clientId,
+      'x-awt-timestamp': timestamp,
+      'x-awt-request-id': requestId,
+      'x-awt-signature': signRequest(method, path, timestamp, requestId, raw, current.secret),
+    },
+    body: raw,
+  });
   let payload: unknown = null;
   try { payload = await response.json(); } catch { payload = null; }
   if (!response.ok) {
@@ -81,11 +99,44 @@ async function call<T>(method: HttpMethod, path: string, body: unknown, requestI
     if (response.status === 409 || /INSUFFICIENT|RESERVATION|INACTIVE|UNKNOWN_PRODUCT/.test(code)) {
       throw new InventoryConflictError('One or more tyres are no longer available in the requested quantity.');
     }
+    if (RETRYABLE_STATUSES.has(response.status)) throw new TransientUpstreamError(response.status);
     throw new InventoryUnavailableError();
   }
   const value = validate(payload);
   if (value === null) throw new InventoryUnavailableError();
   return value;
+}
+
+function isTransient(error: unknown): boolean {
+  if (error instanceof TransientUpstreamError) return true;
+  if (error instanceof InventoryConflictError || error instanceof InventoryUnavailableError) return false;
+  // AbortSignal timeout, DNS, connection refused/reset.
+  return error instanceof Error;
+}
+
+async function call<T>(method: HttpMethod, path: string, body: unknown, requestId: string, validate: (payload: unknown) => T | null, fetcher: FetchLike = fetch, options: CallOptions = {}): Promise<T> {
+  config();
+  if (!UUID.test(requestId)) throw new InventoryUnavailableError();
+  const raw = JSON.stringify(body);
+  const maxAttempts = options.readOnly ? 2 : 1;
+  const timeoutMs = options.readOnly ? AVAILABILITY_ATTEMPT_TIMEOUT_MS : MUTATION_TIMEOUT_MS;
+  const sleep = options.sleep ?? defaultSleep;
+  const startedAt = Date.now();
+  for (let n = 1; ; n += 1) {
+    try {
+      return await attempt(method, path, raw, requestId, timeoutMs, validate, fetcher);
+    } catch (error) {
+      if (error instanceof InventoryConflictError) throw error;
+      const errorCode = error instanceof TransientUpstreamError ? String(error.status) : errorCodeOf(error);
+      const canRetry = n < maxAttempts && isTransient(error);
+      logInventoryEvent(canRetry ? 'warn' : 'error', canRetry ? 'inventory.request.retry' : 'inventory.request.failed', {
+        route: path, method, attempt: n, errorCode, durationMs: Date.now() - startedAt, requestId, ...options.log,
+      });
+      if (!canRetry) throw new InventoryUnavailableError();
+      const [min, max] = AVAILABILITY_RETRY_JITTER_MS;
+      await sleep(min + Math.floor(Math.random() * (max - min)));
+    }
+  }
 }
 
 function stateFor(available: number): InventoryAvailability['state'] {
@@ -122,7 +173,7 @@ function validateReservation(payload: unknown): InventoryReservation | null {
   };
 }
 
-export async function getAvailabilityForSlugs(slugs: string[], fetcher?: FetchLike): Promise<InventoryAvailability[]> {
+export async function getAvailabilityForSlugs(slugs: string[], fetcher?: FetchLike, options: Pick<CallOptions, 'sleep'> = {}): Promise<InventoryAvailability[]> {
   const requested = [...new Set(slugs)].map((slug) => ({ slug, tyre: getTyreBySlug(slug) }));
   const mapped = requested.flatMap(({ slug, tyre }) => {
     const mappingId = tyre ? inventoryMappingIdForProduct(tyre.id) : null;
@@ -130,7 +181,7 @@ export async function getAvailabilityForSlugs(slugs: string[], fetcher?: FetchLi
   });
   const fallback = requested.filter(({ slug }) => !mapped.some((item) => item.slug === slug)).map(({ slug }) => ({ slug, state: 'unmapped' as const, available: null, updatedAt: null }));
   if (!mapped.length) return fallback;
-  const payload = await call('POST', '/api/integrations/adelaide/availability', { items: mapped.map((item) => ({ inventoryMappingId: item.mappingId })) }, randomUUID(), validateAvailability, fetcher);
+  const payload = await call('POST', '/api/integrations/adelaide/availability', { items: mapped.map((item) => ({ inventoryMappingId: item.mappingId })) }, randomUUID(), validateAvailability, fetcher, { readOnly: true, sleep: options.sleep });
   const byMapping = new Map(payload.items.map((item) => [item.inventoryMappingId.toLowerCase(), item]));
   return [
     ...mapped.map(({ slug, mappingId }) => {
@@ -179,17 +230,18 @@ export async function reserveInventory(orderReference: string, lines: { id: stri
     requestId,
     validateReservation,
     fetcher,
+    { log: { orderReference } },
   );
 }
 
 export async function releaseInventory(reservationId: string, reason: string, requestId: string = randomUUID(), fetcher?: FetchLike): Promise<InventoryReservation> {
   if (!UUID.test(reservationId)) throw new InventoryUnavailableError();
-  return call('DELETE', `/api/integrations/adelaide/reservations/${reservationId}`, { reason }, requestId, validateReservation, fetcher);
+  return call('DELETE', `/api/integrations/adelaide/reservations/${reservationId}`, { reason }, requestId, validateReservation, fetcher, { log: { reservationId } });
 }
 
 export async function commitInventory(reservationId: string, orderReference: string, requestId: string, fetcher?: FetchLike): Promise<InventoryReservation> {
   if (!UUID.test(reservationId)) throw new InventoryUnavailableError();
-  const result = await call('POST', '/api/integrations/adelaide/sales/commit', { reservationId, orderReference }, requestId, validateReservation, fetcher);
+  const result = await call('POST', '/api/integrations/adelaide/sales/commit', { reservationId, orderReference }, requestId, validateReservation, fetcher, { log: { orderReference, reservationId } });
   // Defence in depth: only a committed result may mark the order committed.
   if (result.status !== 'committed') throw new InventoryConflictError('The stock hold for this order is no longer active.');
   return result;

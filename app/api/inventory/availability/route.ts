@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAvailabilityForSlugs } from '@/lib/inventory/client';
 import type { InventoryAvailability } from '@/lib/inventory/types';
+import { logInventoryEvent } from '@/lib/inventory/log';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,8 @@ export async function POST(request: Request) {
     const items = await getAvailabilityForSlugs(body.slugs);
     return NextResponse.json({ items }, { headers: { 'Cache-Control': 'private, max-age=15, stale-while-revalidate=15' } });
   } catch {
+    // The client already logged the attempt detail; this marks the customer-visible outcome.
+    logInventoryEvent('warn', 'availability.fail_closed', { route: '/api/inventory/availability', status: 503 });
     const items: InventoryAvailability[] = [];
     return NextResponse.json({ items, error: 'Availability temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }

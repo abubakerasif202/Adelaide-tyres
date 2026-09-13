@@ -289,3 +289,83 @@ test("commit: a 200 whose status is not committed is never treated as a sale", a
   const reservationId = randomUUID();
   await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch({ body: { reservation_id: reservationId, status: "expired", order_reference: "AWT-1" } })), InventoryConflictError);
 });
+
+// ---------------------------------------------------------------------------
+// Cold-start resilience: read-only availability retries once; mutations never do.
+// ---------------------------------------------------------------------------
+const noSleep = async () => {};
+const okAvailability = () => ({ body: { items: [{ inventoryMappingId: inventoryMappingIdForProduct(getTyreBySlug(MAPPED_SLUG).id), available: 9, updatedAt: "" }] } });
+const timeoutError = () => Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+const quiet = async (fn) => { const w = console.warn, e = console.error; console.warn = () => {}; console.error = () => {}; try { return await fn(); } finally { console.warn = w; console.error = e; } };
+
+test("availability: first attempt times out, the single retry succeeds", async () => {
+  const fetcher = fakeFetch((_u, _i, n) => (n === 1 ? timeoutError() : okAvailability()));
+  const [row] = await quiet(() => getAvailabilityForSlugs([MAPPED_SLUG], fetcher, { sleep: noSleep }));
+  assert.equal(row.available, 9);
+  assert.equal(fetcher.calls.length, 2);
+  assert.notEqual(fetcher.calls[0].init.headers["x-awt-request-id"], undefined);
+});
+
+test("availability: first attempt 503, the single retry succeeds (also 502/504)", async () => {
+  for (const status of [502, 503, 504]) {
+    const fetcher = fakeFetch((_u, _i, n) => (n === 1 ? { status, body: { error: "INTEGRATION_UNAVAILABLE" } } : okAvailability()));
+    const [row] = await quiet(() => getAvailabilityForSlugs([MAPPED_SLUG], fetcher, { sleep: noSleep }));
+    assert.equal(row.available, 9, `status ${status}`);
+    assert.equal(fetcher.calls.length, 2);
+  }
+});
+
+test("availability: both attempts fail -> fail closed, exactly two attempts, no static catalogue fallback", async () => {
+  for (const respond of [() => timeoutError(), () => ({ status: 503, body: { error: "INTEGRATION_UNAVAILABLE" } }), () => new TypeError("fetch failed")]) {
+    const fetcher = fakeFetch(respond);
+    await assert.rejects(quiet(() => getAvailabilityForSlugs([MAPPED_SLUG], fetcher, { sleep: noSleep })), InventoryUnavailableError);
+    assert.equal(fetcher.calls.length, 2);
+  }
+  assert.ok(getTyreBySlug(MAPPED_SLUG).stock > 0, "fixture: the static figure is positive and must never be used");
+});
+
+test("availability: non-transient failures (500, 401, 400, invalid schema) are not retried", async () => {
+  for (const response of [{ status: 500, body: { error: "INTEGRATION_UNAVAILABLE" } }, { status: 401, body: { error: "INTEGRATION_SIGNATURE_INVALID" } }, { status: 400, body: { error: "INVALID_REQUEST" } }, { status: 200, body: { items: "nope" } }]) {
+    const fetcher = fakeFetch(response);
+    await assert.rejects(quiet(() => getAvailabilityForSlugs([MAPPED_SLUG], fetcher, { sleep: noSleep })), InventoryUnavailableError);
+    assert.equal(fetcher.calls.length, 1, JSON.stringify(response));
+  }
+});
+
+test("reservation timeout is never retried (a retry must reuse the durable request id, owned by the caller)", async () => {
+  for (const respond of [() => timeoutError(), () => ({ status: 503, body: { error: "INTEGRATION_UNAVAILABLE" } })]) {
+    const fetcher = fakeFetch(respond);
+    await assert.rejects(quiet(() => reserveInventory("AWT-1", [{ id: MAPPED_SLUG, quantity: 1 }], randomUUID(), fetcher)), InventoryUnavailableError);
+    assert.equal(fetcher.calls.length, 1);
+  }
+});
+
+test("commit and release are never retried by the client; the same request id is reused by the caller's retry", async () => {
+  const reservationId = randomUUID();
+  const requestId = randomUUID();
+  const seen = [];
+  const fetcher = fakeFetch((_u, init, n) => { seen.push(init.headers["x-awt-request-id"]); return n === 1 ? timeoutError() : { body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }; });
+  await assert.rejects(quiet(() => commitInventory(reservationId, "AWT-1", requestId, fetcher)), InventoryUnavailableError);
+  assert.equal(fetcher.calls.length, 1, "no automatic retry inside the client");
+  const result = await commitInventory(reservationId, "AWT-1", requestId, fetcher);
+  assert.equal(result.status, "committed");
+  assert.deepEqual(seen, [requestId, requestId], "the caller's retry carried the identical durable request id");
+  const releaseFetcher = fakeFetch({ status: 503, body: { error: "INTEGRATION_UNAVAILABLE" } });
+  await assert.rejects(quiet(() => releaseInventory(reservationId, "x", randomUUID(), releaseFetcher)), InventoryUnavailableError);
+  assert.equal(releaseFetcher.calls.length, 1);
+});
+
+test("structured failure logs carry only operational fields", async () => {
+  const lines = [];
+  const w = console.warn, e = console.error; console.warn = (l) => lines.push(l); console.error = (l) => lines.push(l);
+  try { await assert.rejects(reserveInventory("AWT-LOG-1", [{ id: MAPPED_SLUG, quantity: 1 }], randomUUID(), fakeFetch(() => timeoutError())), InventoryUnavailableError); }
+  finally { console.warn = w; console.error = e; }
+  assert.equal(lines.length, 1);
+  const entry = JSON.parse(lines[0]);
+  assert.equal(entry.event, "inventory.request.failed");
+  assert.equal(entry.errorCode, "TIMEOUT");
+  assert.equal(entry.orderReference, "AWT-LOG-1");
+  assert.equal(entry.route, "/api/integrations/adelaide/reservations");
+  assert.doesNotMatch(lines[0], new RegExp(SECRET));
+  assert.doesNotMatch(lines[0], /x-awt-signature|quantity|email/);
+});
