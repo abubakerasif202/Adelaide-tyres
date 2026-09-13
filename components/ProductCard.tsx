@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
+import { useInventoryAvailability } from "@/lib/inventory/availability-context";
 import { order } from "@/lib/config";
 import { deliveryRuleSummary } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
@@ -24,18 +25,21 @@ export function ProductCard({
   lead?: boolean;
 }) {
   const { add, cart } = useCart();
-  const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, tyre.stock)));
+  const availability = useInventoryAvailability(tyre.slug);
+  const available = availability.available ?? 0;
+  const [qty, setQty] = useState(Math.min(order.defaultQuantity, Math.max(1, available)));
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
     if (addedTimer.current) clearTimeout(addedTimer.current);
   }, []);
   const inCart = cart.lines.find((line) => line.id === tyre.id)?.quantity ?? 0;
-  const remainingStock = Math.max(0, tyre.stock - inCart);
+  const remainingStock = Math.max(0, available - inCart);
   // One status region per card: the buttons must not carry aria-live, or the
   // changing button label is announced twice and competes with this message.
   const cartStatus = added ? `Added — ${inCart} in cart` : "";
-  const soldOut = tyre.stock <= 0;
+  const soldOut = availability.state === "out_of_stock";
+  const unavailable = availability.state === "unavailable" || availability.state === "unmapped";
   const atStockLimit = remainingStock === 0;
   const selectedQty = Math.min(qty, Math.max(1, remainingStock));
 
@@ -48,7 +52,6 @@ export function ProductCard({
       pattern: tyre.pattern,
       size: tyre.size,
       price: tyre.price,
-      stock: tyre.stock,
       image: tyre.image,
       quantity: selectedQty,
     });
@@ -85,7 +88,7 @@ export function ProductCard({
           ) : (
             <TyreImage src={null} alt={title} size={190} className="product-card__placeholder" />
           )}
-          <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+          <span className="product-card__stock-pill"><StockBadge stock={available} state={availability.state} /></span>
         </Link>
 
         <div className="flex flex-1 flex-col gap-3.5 px-5 pb-5 pt-[18px]">
@@ -100,10 +103,10 @@ export function ProductCard({
               <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">Wholesale price</span>
               <PriceDisplay price={tyre.price} />
             </div>
-            <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${title}`} size="sm" />
+            <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={unavailable || atStockLimit} label={`Quantity for ${title}`} size="sm" />
           </div>
-          <button type="button" className="btn btn--red w-full" data-added={added} onClick={handleAdd} disabled={soldOut || atStockLimit}>
-            {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
+          <button type="button" className="btn btn--red w-full" data-added={added} onClick={handleAdd} disabled={unavailable || soldOut || atStockLimit}>
+            {availability.state === "unmapped" ? "Contact for availability" : unavailable ? "Check availability" : soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
           </button>
           <span role="status" className="sr-only">{cartStatus}</span>
           <p className="mt-auto text-[12px] font-medium text-[var(--color-text-muted)]">{deliveryRuleSummary("card")}</p>
@@ -119,7 +122,7 @@ export function ProductCard({
       <article className="homepage-product-card">
         <Link href={`/tyres/${tyre.slug}`} className="product-card__media">
           {tyre.image ? <Image src={tyre.image} alt={compactTitle} fill priority={priority} sizes="(max-width:639px) calc(100vw - 32px), (max-width:1023px) 50vw, 300px" className="product-card__media-contain" /> : <TyreImage src={null} alt={compactTitle} size={124} />}
-          <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+          <span className="product-card__stock-pill"><StockBadge stock={available} state={availability.state} /></span>
         </Link>
         <div className="homepage-product-card__body">
           <div>
@@ -130,8 +133,8 @@ export function ProductCard({
           <div className="homepage-product-card__purchase">
             <PriceDisplay price={tyre.price} />
             <div className="homepage-product-card__actions">
-              <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={atStockLimit} label={`Quantity for ${compactTitle}`} size="sm" />
-              <button type="button" className="btn btn--red" data-added={added} onClick={handleAdd} disabled={soldOut || atStockLimit}>{soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : "Add to order"}</button>
+              <QuantitySelector value={selectedQty} onChange={setQty} min={1} max={Math.max(1, remainingStock)} disabled={unavailable || atStockLimit} label={`Quantity for ${compactTitle}`} size="sm" />
+              <button type="button" className="btn btn--red" data-added={added} onClick={handleAdd} disabled={unavailable || soldOut || atStockLimit}>{availability.state === "unmapped" ? "Contact for availability" : unavailable ? "Check availability" : soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : "Add to order"}</button>
             </div>
           </div>
           <span role="status" className="sr-only">{cartStatus}</span>
@@ -155,7 +158,7 @@ export function ProductCard({
         ) : (
           <TyreImage src={null} alt={compactTitle} size={124} className="product-card__placeholder" />
         )}
-        <span className="product-card__stock-pill"><StockBadge stock={tyre.stock} /></span>
+        <span className="product-card__stock-pill"><StockBadge stock={available} state={availability.state} /></span>
       </Link>
 
       <div className="flex flex-1 flex-col gap-3.5 px-[18px] pb-[18px]">
@@ -183,7 +186,7 @@ export function ProductCard({
             onChange={setQty}
             min={1}
             max={Math.max(1, remainingStock)}
-            disabled={atStockLimit}
+            disabled={unavailable || atStockLimit}
             label={`Quantity for ${compactTitle}`}
             size="sm"
           />
@@ -194,9 +197,9 @@ export function ProductCard({
           className="btn btn--red w-full"
           data-added={added}
           onClick={handleAdd}
-          disabled={soldOut || atStockLimit}
+          disabled={unavailable || soldOut || atStockLimit}
         >
-          {soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
+          {availability.state === "unmapped" ? "Contact for availability" : unavailable ? "Check availability" : soldOut ? "Out of stock" : added ? "Added ✓" : atStockLimit ? "All stock in cart" : `Add ${selectedQty} to cart`}
         </button>
         <span role="status" className="sr-only">{cartStatus}</span>
 

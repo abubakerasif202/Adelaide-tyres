@@ -2,12 +2,16 @@ import type Stripe from "stripe";
 import type { OrderStore } from "./order-store.ts";
 import { sendNotification } from "./notify.ts";
 import { order as orderConfig } from "./config.ts";
+import { commitInventory, releaseInventory } from "./inventory/client.ts";
 
 export type NotifyFn = typeof sendNotification;
 
 export type WebhookDeps = {
   store: OrderStore;
   notify: NotifyFn;
+  /** Injectable only for deterministic webhook tests; production uses 247. */
+  commitInventory?: typeof commitInventory;
+  releaseInventory?: typeof releaseInventory;
 };
 
 /**
@@ -36,13 +40,13 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
     case "checkout.session.async_payment_failed": {
       const session = event.data.object as Stripe.Checkout.Session;
       await store.recordEvent(event.id, event.type, session.id);
-      await store.transitionPendingTo(session.id, "failed");
+      if (await store.transitionPendingTo(session.id, "failed")) await releaseOrderReservation(session.id, deps);
       return;
     }
     case "checkout.session.expired": {
       const session = event.data.object as Stripe.Checkout.Session;
       await store.recordEvent(event.id, event.type, session.id);
-      await store.transitionPendingTo(session.id, "cancelled");
+      if (await store.transitionPendingTo(session.id, "cancelled")) await releaseOrderReservation(session.id, deps);
       return;
     }
     case "charge.refunded": {
@@ -73,6 +77,11 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   }
 
   try {
+    if (!claimed.inventoryReservationId || !claimed.inventoryCommitRequestId) {
+      throw new Error("Paid order is missing its inventory reservation.");
+    }
+    await (deps.commitInventory ?? commitInventory)(claimed.inventoryReservationId, claimed.reference, claimed.inventoryCommitRequestId);
+    await deps.store.markInventoryCommitted(claimed.reference);
     const { delivered } = await deps.notify({
       subject: `PAID order ${claimed.reference} · ${(claimed.amountTotalCents / 100).toFixed(2)} ${claimed.currency.toUpperCase()}`,
       replyTo: claimed.customerEmail,
@@ -99,6 +108,20 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
     // email failed to send.
     await deps.store.releaseFulfilmentClaim(session.id);
     throw err;
+  }
+}
+
+async function releaseOrderReservation(checkoutSessionId: string, deps: WebhookDeps): Promise<void> {
+  const order = await deps.store.getByCheckoutSessionId(checkoutSessionId);
+  if (!order?.inventoryReservationId || !order.inventoryReleaseRequestId) return;
+  try {
+    await (deps.releaseInventory ?? releaseInventory)(order.inventoryReservationId, "payment_not_completed", order.inventoryReleaseRequestId);
+    await deps.store.markInventoryReleased(order.reference);
+  } catch (error) {
+    // A non-2xx makes Stripe retry the lifecycle event; the 247 release is
+    // idempotent and a successful commit can never be released/restocked.
+    console.error("Inventory reservation release failed", { orderReference: order.reference, error });
+    throw error;
   }
 }
 

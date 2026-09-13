@@ -3,7 +3,11 @@ import { readSubmission } from "@/lib/request-body";
 import { validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
-import { createPaymentIntent } from "@/lib/payment";
+import { generateReference } from "@/lib/payment";
+import { getOrderStore, hasDurableOrderStore } from "@/lib/order-store";
+import { releaseInventory, reserveInventory } from "@/lib/inventory/client";
+import { InventoryConflictError } from "@/lib/inventory/types";
+import { randomUUID } from "node:crypto";
 import { sendNotification } from "@/lib/notify";
 import {
   clampString,
@@ -67,14 +71,46 @@ export async function POST(request: Request) {
     details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
   const deliveryFee = freeDelivery ? 0 : order.delivery.feeAud;
 
-  const intent = await createPaymentIntent({
-    details,
-    lines,
-    totalTyres,
-    subtotal,
-    freeDelivery,
-    deliveryFee,
-  });
+  const checkoutAttemptId = typeof body.checkoutAttemptId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.checkoutAttemptId)
+    ? body.checkoutAttemptId
+    : null;
+  if (!checkoutAttemptId) return NextResponse.json({ error: "Invalid checkout attempt." }, { status: 400 });
+  if (!hasDurableOrderStore()) {
+    return NextResponse.json({ error: "We're confirming tyre availability. Please try again shortly." }, { status: 503 });
+  }
+
+  const reference = generateReference(checkoutAttemptId);
+  const releaseRequestId = randomUUID();
+  let reservationId: string | null = null;
+  try {
+    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
+    reservationId = reservation.reservationId;
+    await (await getOrderStore()).createPendingOrder({
+      reference,
+      checkoutSessionId: null,
+      paymentIntentId: null,
+      amountTotalCents: Math.round((subtotal + deliveryFee) * 100),
+      currency: order.currency,
+      customerEmail: details.email,
+      customerName: details.name,
+      customerPhone: details.phone,
+      deliveryMethod: details.deliveryMethod,
+      deliveryAddress: details.deliveryMethod === "delivery" ? `${details.address}, ${details.suburb} SA ${details.postcode}` : order.pickup.address,
+      notes: details.notes ?? "",
+      lines,
+      inventoryReservationId: reservationId,
+      inventoryStatus: "reserved",
+      inventoryCommitRequestId: randomUUID(),
+      inventoryReleaseRequestId: releaseRequestId,
+    });
+  } catch (error) {
+    if (reservationId) try { await releaseInventory(reservationId, "reference_order_persistence_failed", releaseRequestId); } catch { /* expiry/reconciliation is the safe fallback */ }
+    if (error instanceof InventoryConflictError) return NextResponse.json({ error: error.message }, { status: 409 });
+    console.error("Reference order inventory reservation failed", error);
+    return NextResponse.json({ error: "We're confirming tyre availability. Please try again shortly." }, { status: 503 });
+  }
+
+  const intent = { reference, mode: "test" as const, requiresPayment: false };
 
   try {
     const { delivered } = await sendNotification({

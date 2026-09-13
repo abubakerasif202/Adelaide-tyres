@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
+import { InventoryAvailabilityProvider } from "@/lib/inventory/availability-context";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileCartBar } from "@/components/MobileCartBar";
@@ -80,12 +81,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className="skip-link btn btn--dark sr-only focus:not-sr-only fixed left-4 top-2 z-[100]">
           Skip to content
         </a>
-        <CartProvider>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-          <MobileCartBar />
-        </CartProvider>
+        <InventoryAvailabilityProvider>
+          <CartProvider>
+            <Header />
+            <main id="main">{children}</main>
+            <Footer />
+            <MobileCartBar />
+          </CartProvider>
+        </InventoryAvailabilityProvider>
       </body>
     </html>
   );

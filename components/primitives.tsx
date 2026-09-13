@@ -1,11 +1,13 @@
 import { tyreFullName } from "@/lib/tyre";
 
-export function StockBadge({ stock }: { stock: number }) {
-  if (stock <= 0) {
+export function StockBadge({ stock, state }: { stock: number | null; state?: "in_stock" | "low_stock" | "out_of_stock" | "unmapped" | "unavailable" }) {
+  if (state === "unmapped") return <span className="pill pill--muted">Contact for availability</span>;
+  if (state === "unavailable") return <span className="pill pill--muted">Check availability</span>;
+  if (state === "out_of_stock" || stock == null || stock <= 0) {
     return <span className="pill pill--muted">Out of stock</span>;
   }
-  const label = stock <= 10 ? "Low stock" : stock >= 40 ? "High stock" : "Current stock";
-  return <span className="pill pill--green">{label} · {stock}</span>;
+  const label = state === "low_stock" ? "Low stock" : "In stock";
+  return <span className="pill pill--green">{label}</span>;
 }
 
 export function BadgePill({ label }: { label: string }) {

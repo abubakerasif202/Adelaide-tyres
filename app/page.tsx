@@ -17,8 +17,7 @@ export default function HomePage() {
   // excluding whichever SKU the hero is already showing, sorted by stock so
   // the highest-availability tyre leads the editorial showcase.
   const featured = getFeaturedTyres()
-    .filter((tyre) => tyre.slug !== HERO_TYRE_SLUG)
-    .sort((a, b) => b.stock - a.stock);
+    .filter((tyre) => tyre.slug !== HERO_TYRE_SLUG);
   const previewTyres = [...featured, ...catalogue.filter((tyre) => !featured.some((item) => item.id === tyre.id))].slice(0, 4);
 
   return (

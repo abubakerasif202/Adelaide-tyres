@@ -4,7 +4,7 @@ import type { NewOrderInput, OrderLine, OrderRecord, OrderStatus, OrderStore } f
 
 type OrderRow = {
   reference: string;
-  checkout_session_id: string;
+  checkout_session_id: string | null;
   payment_intent_id: string | null;
   status: OrderStatus;
   amount_total_cents: number;
@@ -17,6 +17,10 @@ type OrderRow = {
   order_notes: string;
   lines: OrderLine[];
   notified_at: string | null;
+  inventory_reservation_id: string | null;
+  inventory_status: OrderRecord["inventoryStatus"];
+  inventory_commit_request_id: string | null;
+  inventory_release_request_id: string | null;
 };
 
 function fromRow(row: OrderRow): OrderRecord {
@@ -35,6 +39,10 @@ function fromRow(row: OrderRow): OrderRecord {
     notes: row.order_notes,
     lines: row.lines,
     notifiedAt: row.notified_at,
+    inventoryReservationId: row.inventory_reservation_id,
+    inventoryStatus: row.inventory_status,
+    inventoryCommitRequestId: row.inventory_commit_request_id,
+    inventoryReleaseRequestId: row.inventory_release_request_id,
   };
 }
 
@@ -67,14 +75,16 @@ export class PostgresOrderStore implements OrderStore {
       insert into orders (
         reference, checkout_session_id, payment_intent_id, status,
         amount_total_cents, currency, customer_email, customer_name,
-        customer_phone, delivery_method, delivery_address, order_notes, lines
+        customer_phone, delivery_method, delivery_address, order_notes, lines,
+        inventory_reservation_id, inventory_status, inventory_commit_request_id, inventory_release_request_id
       ) values (
         ${order.reference}, ${order.checkoutSessionId}, ${order.paymentIntentId}, 'pending',
         ${order.amountTotalCents}, ${order.currency}, ${order.customerEmail}, ${order.customerName},
         ${order.customerPhone}, ${order.deliveryMethod}, ${order.deliveryAddress}, ${order.notes},
-        ${this.sql.json(order.lines)}
+        ${this.sql.json(order.lines)}, ${order.inventoryReservationId ?? null}, ${order.inventoryStatus ?? 'pending'},
+        ${order.inventoryCommitRequestId ?? null}, ${order.inventoryReleaseRequestId ?? null}
       )
-      on conflict (checkout_session_id) do nothing
+      on conflict (reference) do nothing
     `;
   }
 
@@ -149,6 +159,19 @@ export class PostgresOrderStore implements OrderStore {
       select * from orders where payment_intent_id = ${paymentIntentId}
     `) as unknown as OrderRow[];
     return rows[0] ? fromRow(rows[0]) : null;
+  }
+
+  async getByReference(reference: string): Promise<OrderRecord | null> {
+    const rows = (await this.sql`select * from orders where reference = ${reference}`) as unknown as OrderRow[];
+    return rows[0] ? fromRow(rows[0]) : null;
+  }
+
+  async markInventoryCommitted(reference: string): Promise<void> {
+    await this.sql`update orders set inventory_status = 'committed', inventory_committed_at = now(), updated_at = now() where reference = ${reference} and inventory_status = 'reserved'`;
+  }
+
+  async markInventoryReleased(reference: string): Promise<void> {
+    await this.sql`update orders set inventory_status = 'released', inventory_released_at = now(), updated_at = now() where reference = ${reference} and inventory_status in ('pending', 'reserved')`;
   }
 
   async recordEvent(eventId: string, eventType: string, checkoutSessionId: string | undefined): Promise<void> {

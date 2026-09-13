@@ -11,6 +11,7 @@ import {
   paramsFromFilters,
   type TyreFilters,
 } from "@/lib/filter";
+import { useInventoryAvailabilityMap } from "@/lib/inventory/availability-context";
 import { MobileSheet } from "./MobileSheet";
 import { ProductCard } from "./ProductCard";
 
@@ -97,7 +98,19 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
   // grid so the pause reads as "working", not as "the search is ignoring me".
   const searchPending = queryDraft !== filters.query;
 
-  const results = useMemo(() => filterTyres(tyres, filters), [tyres, filters]);
+  // Stock is never a build-time catalogue figure: the "In stock only" filter
+  // and the stock sort read live 247 availability from the provider.
+  const availability = useInventoryAvailabilityMap();
+  const results = useMemo(() => {
+    const filtered = filterTyres(tyres, filters);
+    const availableOf = (tyre: Tyre) => availability.get(tyre.slug)?.available ?? 0;
+    const purchasable = (tyre: Tyre) => {
+      const state = availability.get(tyre.slug)?.state;
+      return state === "in_stock" || state === "low_stock";
+    };
+    const scoped = filters.inStockOnly ? filtered.filter(purchasable) : filtered;
+    return filters.sort === "stock-desc" ? [...scoped].sort((a, b) => availableOf(b) - availableOf(a)) : scoped;
+  }, [tyres, filters, availability]);
   const activeCount = activeFilterCount(filters);
 
   return (

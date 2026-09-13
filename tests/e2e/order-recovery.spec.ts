@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { mockAvailability } from './support/availability';
+
+test.beforeEach(async ({ page }) => { await mockAvailability(page); });
 
 test('transaction pages are noindex with their own canonical', async ({ page }) => {
   for (const path of ['/cart', '/checkout']) {

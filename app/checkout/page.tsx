@@ -17,7 +17,7 @@ import {
 } from "@/lib/checkout-validation";
 import { CheckoutProgress, type CheckoutStepIndex } from "@/components/CheckoutProgress";
 import { FormField } from "@/components/FormField";
-import { QuantitySelector } from "@/components/QuantitySelector";
+import { LineQuantitySelector } from "@/components/LineQuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 
@@ -45,6 +45,7 @@ function CheckoutPageInner() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{ reference: string; mode: string; notified: boolean } | null>(null);
   const [startedAt] = useState(() => Date.now());
+  const checkoutAttemptId = useRef(crypto.randomUUID());
   // Never inferred from a build-time env var — the server is the only source
   // of truth for whether Stripe, its webhook, and the order store are all
   // actually configured (see app/api/checkout/status/route.ts).
@@ -160,6 +161,7 @@ function CheckoutPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           startedAt,
+          checkoutAttemptId: checkoutAttemptId.current,
           company_website: "",
           details,
           lines: cart.lines.map((l) => ({ slug: l.slug, quantity: l.quantity })),
@@ -190,6 +192,7 @@ function CheckoutPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           startedAt,
+          checkoutAttemptId: checkoutAttemptId.current,
           company_website: "",
           details,
           lines: cart.lines.map((l) => ({ slug: l.slug, quantity: l.quantity })),
@@ -262,17 +265,14 @@ function CheckoutPageInner() {
                       </span>
                       <p className="display text-[20px]">{line.size}</p>
                       <p className="text-[12px] text-[var(--color-text-muted)]">
-                        Pattern {line.pattern} · {line.stock} in stock
+                        Pattern {line.pattern} · availability confirmed at checkout
                       </p>
                     </div>
-                    <QuantitySelector
+                    <LineQuantitySelector
+                      slug={line.slug}
                       value={line.quantity}
                       onChange={(q) => setQuantity(line.id, q)}
-                      min={1}
-                      max={line.stock}
-                      disabled={line.stock <= 0}
                       label={`Quantity for ${tyreFullName(line)}`}
-                      size="sm"
                     />
                     <div className="text-right">
                       <p className="text-[11px] font-bold uppercase text-[var(--color-text-muted)]">

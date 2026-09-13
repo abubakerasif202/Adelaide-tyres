@@ -403,6 +403,10 @@ export function getTyreBySlug(slug: string): Tyre | undefined {
   return catalogue.find((t) => t.slug === slug);
 }
 
+export function getTyreById(id: string): Tyre | undefined {
+  return catalogue.find((t) => t.id === id);
+}
+
 export function getFeaturedTyres(): Tyre[] {
   return catalogue.filter((t) => t.featured);
 }
@@ -421,9 +425,6 @@ export function getRelatedTyres(tyre: Tyre, limit = 3): Tyre[] {
 export const catalogueStats = {
   get skuLines() {
     return catalogue.length;
-  },
-  get unitsListed() {
-    return catalogue.reduce((sum, t) => sum + t.stock, 0);
   },
 };
 

@@ -67,12 +67,12 @@ test("delivery defaults to the delivery method when no destination is given", ()
   assert.equal(getDeliveryFee(under), 50);
 });
 
-test("clampQuantity respects min of 1 and stock ceiling", () => {
-  assert.equal(clampQuantity(0, 50), 1);
-  assert.equal(clampQuantity(-3, 50), 1);
-  assert.equal(clampQuantity(80, 50), 50);
-  assert.equal(clampQuantity(20, 50), 20);
-  assert.equal(clampQuantity(2.9, 50), 2);
+test("clampQuantity respects min of 1 without treating browser stock as authoritative", () => {
+  assert.equal(clampQuantity(0), 1);
+  assert.equal(clampQuantity(-3), 1);
+  assert.equal(clampQuantity(80), 80);
+  assert.equal(clampQuantity(20), 20);
+  assert.equal(clampQuantity(2.9), 2);
 });
 
 test("addLine merges quantity for an existing product", () => {
@@ -83,11 +83,11 @@ test("addLine merges quantity for an existing product", () => {
   assert.equal(cart.lines[0].quantity, 5);
 });
 
-test("addLine clamps merged quantity to stock", () => {
+test("addLine keeps cart intent for live inventory validation at checkout", () => {
   let cart = { lines: [] };
   cart = addLine(cart, line({ quantity: 30, stock: 40 }));
   cart = addLine(cart, line({ quantity: 30, stock: 40 }));
-  assert.equal(cart.lines[0].quantity, 40);
+  assert.equal(cart.lines[0].quantity, 60);
 });
 
 test("updateLineQuantity changes only the targeted line", () => {
@@ -126,8 +126,7 @@ test("stored cart restores only current catalogue facts and aggregates duplicate
     pattern: "GR881W",
     size: "11R22.5",
     price: 220,
-    quantity: 107,
-    stock: 107,
+    quantity: 120,
     image: "/images/tyres/greforce-gr881w-11r22-5.webp",
   });
 });

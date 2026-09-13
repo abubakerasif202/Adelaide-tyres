@@ -16,8 +16,6 @@ export type CartLine = {
   /** Unit wholesale price at time of adding, in AUD. */
   price: number;
   quantity: number;
-  /** Units available — used to clamp quantity. */
-  stock: number;
   image: string | null;
 };
 
@@ -74,11 +72,10 @@ export function canCheckout(cart: Cart): boolean {
   return cart.lines.length > 0;
 }
 
-export function clampQuantity(quantity: number, stock: number): number {
+export function clampQuantity(quantity: number): number {
   if (!Number.isFinite(quantity)) return MIN_QTY_PER_LINE;
   const rounded = Math.floor(quantity);
   if (rounded < MIN_QTY_PER_LINE) return MIN_QTY_PER_LINE;
-  if (stock > 0 && rounded > stock) return stock;
   return rounded;
 }
 
@@ -92,7 +89,7 @@ export function addLine(cart: Cart, input: AddInput): Cart {
   return {
     lines: [
       ...cart.lines,
-      { ...input, quantity: clampQuantity(input.quantity, input.stock) },
+      { ...input, quantity: clampQuantity(input.quantity) },
     ],
   };
 }
@@ -101,7 +98,7 @@ export function updateLineQuantity(cart: Cart, id: string, quantity: number): Ca
   return {
     lines: cart.lines.map((line) =>
       line.id === id
-        ? { ...line, quantity: clampQuantity(quantity, line.stock) }
+        ? { ...line, quantity: clampQuantity(quantity) }
         : line,
     ),
   };
@@ -119,7 +116,7 @@ export const EMPTY_CART: Cart = { lines: [] };
 
 /**
  * Restores a browser-stored cart using catalogue data, never the stored price,
- * name, stock or image. Browser storage is user-controlled and can be stale or
+ * name or image. Browser storage is user-controlled and can be stale or
  * edited, so it is only a record of SKU quantities. The orders API performs the
  * same authority check again before any notification is sent.
  */
@@ -135,8 +132,8 @@ export function restoreStoredCart(input: unknown): Cart {
     if (typeof slug !== "string" || typeof quantity !== "number" ||
       !Number.isSafeInteger(quantity) || quantity < MIN_QTY_PER_LINE) continue;
     const tyre = getTyreBySlug(slug);
-    if (!tyre || tyre.stock <= 0) continue;
-    quantities.set(slug, Math.min(tyre.stock, (quantities.get(slug) ?? 0) + quantity));
+    if (!tyre) continue;
+    quantities.set(slug, (quantities.get(slug) ?? 0) + quantity);
   }
 
   return {
@@ -151,7 +148,6 @@ export function restoreStoredCart(input: unknown): Cart {
         size: tyre.size,
         price: tyre.price,
         quantity,
-        stock: tyre.stock,
         image: tyre.image,
       }];
     }),

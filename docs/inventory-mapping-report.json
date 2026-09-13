@@ -1,0 +1,9 @@
+{
+  "generatedFor": "adelaide-wholesale-tyres-to-247-integration",
+  "summary": { "matched": 24, "unmatched": 1, "ambiguous": 0 },
+  "runtimeIdentity": "The permanent mapping UUID is a 247 database foreign-key mapping to the authoritative products.id. It is not a text match at runtime.",
+  "unmatched": [
+    { "slug": "greforce-g-pilot-x1-295-80r22-5", "brand": "Greforce", "pattern": "G-PILOT X1", "size": "295/80R22.5", "inventoryProductId": null }
+  ],
+  "verificationQuery": "select website_product_id, inventory_product_id from public.adelaide_product_mappings order by website_product_id;"
+}

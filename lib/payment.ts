@@ -15,6 +15,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { getStripeClient, isStripeConfigured } from "./stripe-client.ts";
+import { STRIPE_SESSION_TTL_MINUTES } from "./inventory/client.ts";
 import { hasDurableOrderStore, getOrderStore } from "./order-store.ts";
 import { business, order as orderConfig, siteUrl } from "./config.ts";
 import type { CheckoutDetails } from "./checkout-validation.ts";
@@ -46,8 +47,11 @@ export function isPaymentConfigured(): boolean {
   return isStripeConfigured() && Boolean(process.env.STRIPE_WEBHOOK_SECRET) && hasDurableOrderStore();
 }
 
-function generateReference(): string {
-  return `AWT-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+export function generateReference(checkoutAttemptId: string = randomUUID()): string {
+  // The browser holds one UUID for the lifetime of a submit attempt. Deriving
+  // the reference from it makes network retries converge on the same durable
+  // order/reservation without accepting browser supplied prices or stock.
+  return `AWT-${new Date().getFullYear()}-${checkoutAttemptId.slice(0, 8).toUpperCase()}`;
 }
 
 /** Order-reference checkout (existing invoice / EFT flow). No charge taken. */
@@ -71,12 +75,13 @@ export type CheckoutSessionResult = {
  */
 export async function createCheckoutSession(
   input: OrderIntentInput,
+  inventory: { reservationId: string; commitRequestId: string; releaseRequestId: string; reference: string },
 ): Promise<CheckoutSessionResult> {
   if (!isPaymentConfigured()) {
     throw new Error("Stripe is not fully configured.");
   }
   const stripe = getStripeClient();
-  const reference = generateReference();
+  const reference = inventory.reference;
 
   const lineItems: Array<{
     price_data: {
@@ -115,6 +120,9 @@ export async function createCheckoutSession(
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    // The Checkout Session must expire before the 247 stock hold does, so a
+    // late payment can never land on an already-released reservation.
+    expires_at: Math.floor(Date.now() / 1000) + STRIPE_SESSION_TTL_MINUTES * 60,
     payment_method_types: ["card"],
     line_items: lineItems,
     customer_email: input.details.email,
@@ -147,6 +155,10 @@ export async function createCheckoutSession(
     deliveryAddress: address,
     notes: input.details.notes ?? "",
     lines: input.lines,
+    inventoryReservationId: inventory.reservationId,
+    inventoryStatus: "reserved",
+    inventoryCommitRequestId: inventory.commitRequestId,
+    inventoryReleaseRequestId: inventory.releaseRequestId,
   });
 
   return { url: session.url, reference };

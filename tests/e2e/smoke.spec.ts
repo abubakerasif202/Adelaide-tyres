@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { mockAvailability } from "./support/availability";
+
+// The Playwright server has no 247 connection; purchasable state is declared
+// per test (the real feed is proven in tests/cross-system).
+test.beforeEach(async ({ page }) => { await mockAvailability(page); });
 
 test("homepage hero and stock preview render", async ({ page }) => {
   await page.goto("/");

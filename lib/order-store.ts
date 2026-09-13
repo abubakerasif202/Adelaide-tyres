@@ -23,7 +23,7 @@ export type OrderLine = {
 
 export type OrderRecord = {
   reference: string;
-  checkoutSessionId: string;
+  checkoutSessionId: string | null;
   paymentIntentId: string | null;
   status: OrderStatus;
   amountTotalCents: number;
@@ -36,9 +36,13 @@ export type OrderRecord = {
   notes: string;
   lines: OrderLine[];
   notifiedAt: string | null;
+  inventoryReservationId: string | null;
+  inventoryStatus: "pending" | "reserved" | "committed" | "released" | "failed";
+  inventoryCommitRequestId: string | null;
+  inventoryReleaseRequestId: string | null;
 };
 
-export type NewOrderInput = Omit<OrderRecord, "status" | "notifiedAt">;
+export type NewOrderInput = Omit<OrderRecord, "status" | "notifiedAt" | "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId"> & Partial<Pick<OrderRecord, "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId">>;
 
 export interface OrderStore {
   /** Inserts the order row at Checkout Session creation time, status = "pending". */
@@ -81,6 +85,9 @@ export interface OrderStore {
 
   getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null>;
   getByPaymentIntentId(paymentIntentId: string): Promise<OrderRecord | null>;
+  getByReference(reference: string): Promise<OrderRecord | null>;
+  markInventoryCommitted(reference: string): Promise<void>;
+  markInventoryReleased(reference: string): Promise<void>;
 
   /** Best-effort audit log of every Stripe event seen. Must never throw — a logging failure must not block webhook processing. */
   recordEvent(eventId: string, eventType: string, checkoutSessionId: string | undefined): Promise<void>;
