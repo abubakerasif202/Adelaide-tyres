@@ -130,8 +130,8 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
     await deps.store.markNotified(session.id);
   } catch (err) {
     // Release the claim so the next redelivery of this (or an equivalent)
-    // event can retry — we must never silently drop a paid order because an
-    // email failed to send. Tyre inventory stays reserved until 247 confirms.
+    // event can retry. The order stays `paid` because Stripe already confirmed
+    // payment; only the notification/fulfilment claim is released.
     logInventoryEvent("error", "order.fulfilment.failed", {
       orderReference: claimed.reference, reservationId: claimed.inventoryReservationId ?? undefined,
       requestId: claimed.inventoryCommitRequestId ?? undefined, checkoutSessionId: session.id, errorCode: errorCodeOf(err),
@@ -145,6 +145,10 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
 async function releaseOrderReservation(checkoutSessionId: string, deps: WebhookDeps): Promise<void> {
   const order = await deps.store.getByCheckoutSessionId(checkoutSessionId);
   if (!order?.inventoryReservationId || !order.inventoryReleaseRequestId) return;
+  // Duplicate Stripe lifecycle events are expected. Once 247 has confirmed a
+  // release, do not call it again. A committed sale must never be restocked by
+  // a late failure/expiry event either.
+  if (order.inventoryStatus === "released" || order.inventoryStatus === "committed") return;
   try {
     await (deps.releaseInventory ?? releaseInventory)(order.inventoryReservationId, "payment_not_completed", order.inventoryReleaseRequestId);
     await deps.store.markInventoryReleased(order.reference);
