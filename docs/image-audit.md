@@ -7,6 +7,20 @@ The first version of this audit made two mistakes, both corrected below:
 1. It overwrote two SKUs' **genuine manufacturer-sourced images** (Ralson RMR61 295/80R22.5 and Greforce G-PILOT X1 295/80R22.5 — both originally sourced from the brands' own official product pages) with the owner-supplied AI renders. Those two files have been **restored** from git history and the catalogue/manifest reverted. AI renders should only fill a gap where no real asset existed — never replace one that did.
 2. It said "no SKU exists for Ralson RAC55 295/80R22.5" without checking `docs/catalogue-verification.md`, which had already researched this exact question and found the real Ralson RAC55 **does not come in 295/80R22.5 at all** — it's a construction/waste-haul block tyre sold only in 315/80R22.5, 11R22.5, 11R24.5, 385/65R22.5 and 425/65R22.5. The historical stock list's "RAC55 295/80R22.5, qty 38" row is itself the unresolved record that triggered that research (it's flagged `withheld` in the reconciliation, not confirmed) — it is not proof the combination is real, and an AI render repeating the same label isn't independent evidence either.
 
+## Fifth pass (2026-09-14) — genuine Ralson material replaces three AI renders
+
+The owner supplied Ralson-sourced files for the three shared Ralson pattern images:
+
+- `ralson-rdr55.webp` — Ralson RDR55 tyre-on-rim product render (`rdr55.jpg.jpeg`, 628×776). Sidewall reads "RALSON / RDR55".
+  - **Superseded later on 2026-09-14**: the owner then supplied an AWT-branded ChatGPT card built from that render (`ChatGPT Image Sep 14, 2026, 03_11_20 PM (1).png`, 960×1200 WebP) and it now replaces the raw Ralson render as `ralson-rdr55.webp`; status back to `owner-approved-ai-render`. A matching AWT-branded RDR55 spec card is held as `ralson-rdr55-spec-sheet.webp` (900×1600, unwired — single image slot per SKU).
+- `ralson-rdr75.webp` and `ralson-rmr61.webp` — Ralson "Features & Benefits" spec-sheet posters rasterised at 300 dpi from `rdr75.pdf` / `rmr61.pdf`, cropped to the poster (the PDF's "CONFIDENTIAL @ 2025 RALSON TYRES LIMITED" header/footer banners are excluded), 689×1600. These are datasheets, not product photos — the owner chose them over the AI renders because they are real manufacturer collateral. The pattern-only tread render inside each poster carries A–E callout labels so it could not be cropped out cleanly.
+- `ralson-rmr51.webp` — AWT-branded ChatGPT card built from the Ralson RMR51 render (`ChatGPT Image Sep 14, 2026, 03_11_21 PM (2).png`, 960×1200; replaced the raw `rmr51.jpg.jpeg` conversion later the same day). **Not wired to any product**: the catalogue has no RMR51 SKU (it has RMR61). Held in `public/images/tyres/` for when an RMR51 product (price, stock, inventory UUID) is added.
+- An RDR55 "Features & Benefits" poster (`WhatsApp Image 2026-09-14 at 11.13.54 AM.jpeg`, 273×660) was also supplied but not used — the clean RDR55 render above is the product image and the catalogue has a single `image` slot per SKU.
+
+All nine RDR75 / RMR61 / RDR55 size variants keep sharing their pattern image, so `lib/catalogue.ts` is unchanged. Manifest statuses: `owner-supplied-manufacturer-asset` (RDR55) and `owner-supplied-manufacturer-spec-sheet` (RDR75, RMR61).
+
+**Tally after this pass: 24 of 25 SKUs have an image** (2 genuine supplier assets + 2 patterns / 8 SKUs on Ralson spec-sheet posters + 14 owner-approved AI renders); Jumbo SS398 still intentionally has none.
+
 ## Fourth pass (2026-09-09, later still) — final 4 renders, and SS398 resolved
 
 The owner supplied the last 4 requested images (Opartner CP989 265/70R19.5, Haulmax ATT420 295/80R22.5, Ralson RDR75 235/75R17.5, Haulmax ATT101 275/70R22.5), same AWT-branded card style as the third pass. All 4 matched exactly — no discrepancies, no suffixes, no ambiguity — and were integrated.
@@ -37,19 +51,19 @@ The owner supplied 15 more images directly in `Downloads\` (not the `tyres\` sub
 
 | Brand | Pattern | Size | SKU | Website image path | Status | Action needed |
 | --- | --- | --- | --- | --- | --- | --- |
-| Ralson | RDR75 | 265/70R19.5 | ralson-rdr75-26570r195 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 265/70R19.5". |
-| Ralson | RMR61 | 265/70R19.5 | ralson-rmr61-26570r195 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 265/70R19.5". |
-| Ralson | RMR61 | 295/80R22.5 | ralson-rmr61-29580r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — pattern card reads "RALSON RMR61" (replaced the earlier ralsontires.com photo on 2026-09-14; the homepage hero uses its own `/images/hero/hero-truck-tyre.webp`). |
-| Ralson | RDR75 | 295/80R22.5 | ralson-rdr75-29580r225 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 295/80R22.5". |
-| Ralson | RMR61 | 385/65R22.5 | ralson-rmr61-38565r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 385/65R22.5". |
+| Ralson | RDR75 | 265/70R19.5 | ralson-rdr75-26570r195 | `/images/tyres/ralson-rdr75.webp` | **manufacturer spec sheet** | None — Ralson 'RDR75 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RMR61 | 265/70R19.5 | ralson-rmr61-26570r195 | `/images/tyres/ralson-rmr61.webp` | **manufacturer spec sheet** | None — Ralson 'RMR61 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RMR61 | 295/80R22.5 | ralson-rmr61-29580r225 | `/images/tyres/ralson-rmr61.webp` | **manufacturer spec sheet** | None — Ralson 'RMR61 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RDR75 | 295/80R22.5 | ralson-rdr75-29580r225 | `/images/tyres/ralson-rdr75.webp` | **manufacturer spec sheet** | None — Ralson 'RDR75 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RMR61 | 385/65R22.5 | ralson-rmr61-38565r225 | `/images/tyres/ralson-rmr61.webp` | **manufacturer spec sheet** | None — Ralson 'RMR61 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
 | Ralson | RTR71 | 11R22.5 | ralson-rtr71-11r225 | `/images/tyres/ralson-rtr71-11r22-5.webp` | **owner-approved AI render** | None — label reads "RTR71 11R22.5". |
 | Ralson | RDR52 | 11R22.5 | ralson-rdr52-11r225 | `/images/tyres/ralson-rdr52-11r22-5.webp` | **owner-approved AI render** | None — label reads "RDR52 11R22.5". |
-| Ralson | RDR55 | 11R22.5 | ralson-rdr55-11r225 | `/images/tyres/ralson-rdr55.webp` | **owner-approved AI render** | None — label reads "RDR55 11R22.5". |
+| Ralson | RDR55 | 11R22.5 | ralson-rdr55-11r225 | `/images/tyres/ralson-rdr55.webp` | **owner-approved AI render** | None — AWT-branded card built from the Ralson RDR55 render, supplied by the owner 2026-09-14 (second update that day); sidewall reads 'RALSON RDR55'. |
 | Ralson | RDC66 | 11R22.5 | ralson-rdc66-11r225 | `/images/tyres/ralson-rdc66-11r22-5.webp` | **owner-approved AI render** | None — label reads "RDC66 11R22.5". |
 | Ralson | RAC55 | 11R22.5 | ralson-rac55-11r225 | `/images/tyres/ralson-rac55-11r22-5.webp` | **owner-approved AI render** | None — label reads "RAC55 11R22.5" (the correct, confirmed-real size — see `docs/catalogue-verification.md` #4). |
-| Ralson | RDR75 | 235/75R17.5 | ralson-rdr75-23575r175 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 235/75R17.5". |
-| Ralson | RMR61 | 235/75R17.5 | ralson-rmr61-23575r175 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 235/75R17.5". |
-| Ralson | RMR61 | 275/70R22.5 | ralson-rmr61-27570r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 275/70R22.5". |
+| Ralson | RDR75 | 235/75R17.5 | ralson-rdr75-23575r175 | `/images/tyres/ralson-rdr75.webp` | **manufacturer spec sheet** | None — Ralson 'RDR75 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RMR61 | 235/75R17.5 | ralson-rmr61-23575r175 | `/images/tyres/ralson-rmr61.webp` | **manufacturer spec sheet** | None — Ralson 'RMR61 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
+| Ralson | RMR61 | 275/70R22.5 | ralson-rmr61-27570r225 | `/images/tyres/ralson-rmr61.webp` | **manufacturer spec sheet** | None — Ralson 'RMR61 Features & Benefits' poster rasterised from the owner-supplied PDF on 2026-09-14 (replaced the AI render). |
 | Greforce | HD02 | 11R22.5 | greforce-hd02-11r225 | `/images/tyres/greforce-hd02-11r22-5.webp` | **owner-approved AI render** | None — label reads "HD02 11R22.5". |
 | Greforce | GR881W | 11R22.5 | greforce-gr881w-11r225 | `/images/tyres/greforce-gr881w-11r22-5.webp` | **owner-approved AI render** | None — label reads "GR881W 11R22.5". |
 | Greforce | GRD1919 | 11R22.5 | greforce-grd1919-11r225 | `/images/tyres/greforce-grd1919-11r22-5.webp` | **owner-approved AI render** | None — label reads "GRD1919 11R22.5". |
