@@ -15,9 +15,11 @@ export const metadata: Metadata = {
 export default async function ContactPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; product?: string }>;
 }) {
-  const { type } = await searchParams;
+  const { type, product } = await searchParams;
+  // Same cap as the enquiries API; the form is the only consumer.
+  const initialProduct = typeof product === "string" ? product.slice(0, 160) : "";
   const variant = type === "quote" ? "quote" : "contact";
 
   return (
@@ -47,7 +49,7 @@ export default async function ContactPage({
       <section className="bg-[var(--color-surface-muted)]">
         <div className="container-x grid gap-8 py-14 lg:grid-cols-[1fr_360px]">
           <div id="enquiry">
-            <EnquiryForm variant={variant} />
+            <EnquiryForm variant={variant} initialProduct={initialProduct} />
           </div>
           <ContactChannels />
         </div>

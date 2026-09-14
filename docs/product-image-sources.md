@@ -152,3 +152,11 @@ material for products being resold. None of it is confirmed royalty-free. The si
 therefore has 2 exact-model local assets with rights pending and 23 neutral
 fallbacks; it does not claim licensed or complete genuine-image coverage. Usage
 rights should be confirmed with each manufacturer before commercial launch.
+
+---
+
+## Accessories
+
+| Product | Status | Source |
+|---|---|---|
+| TR545D Truck Tyre Valve | `/images/accessories/tr545d-truck-tyre-valve.webp` | Business-supplied product render (not manufacturer photography); marketing text overlay removed, trimmed to the part, converted to WebP. Accessories are outside `product-image-manifest.json` because they are not tyre SKUs. |

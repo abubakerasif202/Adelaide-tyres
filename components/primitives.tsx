@@ -14,14 +14,15 @@ export function BadgePill({ label }: { label: string }) {
   return <span className="pill pill--muted">{label}</span>;
 }
 
-export function PriceDisplay({ price, per = "ea" }: { price: number; per?: string }) {
+export function PriceDisplay({ price, per = "ea", fractionDigits = 0 }: { price: number; per?: string; /** Tyres show whole dollars; accessories show cents (e.g. $10.00). */ fractionDigits?: 0 | 2 }) {
   return (
     <span className="whitespace-nowrap">
       <span className="display text-[20px] text-[var(--color-ink)]">
         {new Intl.NumberFormat("en-AU", {
           style: "currency",
           currency: "AUD",
-          maximumFractionDigits: 0,
+          minimumFractionDigits: fractionDigits,
+          maximumFractionDigits: fractionDigits,
         }).format(price)}
       </span>{" "}
       <span className="text-[13px] font-semibold text-[var(--color-text-muted)]">{per}</span>

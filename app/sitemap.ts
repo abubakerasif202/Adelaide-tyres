@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/config";
 import { catalogue } from "@/lib/catalogue";
+import { accessories } from "@/lib/accessories";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
@@ -24,5 +25,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...productRoutes];
+  const accessoryRoutes = accessories.map((accessory) => ({
+    url: `${siteUrl}/accessories/${accessory.slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...accessoryRoutes];
 }

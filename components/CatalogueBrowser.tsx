@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Tyre } from "@/lib/catalogue";
+import type { Accessory } from "@/lib/accessories";
 import { APPLICATION_LABELS } from "@/lib/catalogue";
 import {
   activeFilterCount,
+  filterAccessories,
   filterTyres,
   filtersFromParams,
   paramsFromFilters,
@@ -14,12 +16,14 @@ import {
 import { useInventoryAvailabilityMap } from "@/lib/inventory/availability-context";
 import { MobileSheet } from "./MobileSheet";
 import { ProductCard } from "./ProductCard";
+import { AccessoryCard } from "./AccessoryCard";
 
 /** Pause after the last keystroke before the URL (and results) update. */
 const SEARCH_DEBOUNCE_MS = 250;
 
 type Props = {
   tyres: Tyre[];
+  accessories?: Accessory[];
   sizes: string[];
   brands: string[];
   applications: string[];
@@ -34,7 +38,7 @@ type FilterControlsProps = {
   onClear: () => void;
 };
 
-export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) {
+export function CatalogueBrowser({ tyres, accessories = [], sizes, brands, applications }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -111,6 +115,10 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
     const scoped = filters.inStockOnly ? filtered.filter(purchasable) : filtered;
     return filters.sort === "stock-desc" ? [...scoped].sort((a, b) => availableOf(b) - availableOf(a)) : scoped;
   }, [tyres, filters, availability]);
+  // Accessories (valves etc.) follow the tyre results; they carry no live
+  // stock and are enquiry-only, so the stock facets never surface them.
+  const accessoryResults = useMemo(() => filterAccessories(accessories, filters), [accessories, filters]);
+  const resultCount = results.length + accessoryResults.length;
   const activeCount = activeFilterCount(filters);
 
   return (
@@ -167,7 +175,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
               aria-atomic="true"
               className="text-[14px] font-semibold text-[var(--color-text-muted)]"
             >
-              {results.length} {results.length === 1 ? "result" : "results"}
+              {resultCount} {resultCount === 1 ? "result" : "results"}
             </p>
           </div>
 
@@ -187,7 +195,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
             </div>
           )}
 
-          {results.length === 0 ? (
+          {resultCount === 0 ? (
             <div className="surface-card mt-6 p-10 text-center">
               <h3 className="display text-[22px]">No tyres match those filters</h3>
               <p className="mx-auto mt-2 max-w-md text-[var(--color-text-muted)]">
@@ -206,6 +214,9 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
               {results.map((tyre) => (
                 <ProductCard key={tyre.id} tyre={tyre} />
               ))}
+              {accessoryResults.map((accessory) => (
+                <AccessoryCard key={accessory.id} accessory={accessory} />
+              ))}
             </div>
           )}
         </section>
@@ -221,7 +232,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
           describedById="mobile-filter-result-count"
           footer={
             <button type="button" className="btn btn--red w-full" onClick={() => setMobileFiltersOpen(false)}>
-              Show {results.length} {results.length === 1 ? "result" : "results"}
+              Show {resultCount} {resultCount === 1 ? "result" : "results"}
             </button>
           }
         >
@@ -234,7 +245,7 @@ export function CatalogueBrowser({ tyres, sizes, brands, applications }: Props) 
             onClear={clearFilters}
           />
           <p id="mobile-filter-result-count" className="sr-only" aria-live="polite" aria-atomic="true">
-            {results.length} {results.length === 1 ? "result" : "results"}
+            {resultCount} {resultCount === 1 ? "result" : "results"}
           </p>
         </MobileSheet>
       )}
