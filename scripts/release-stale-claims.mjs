@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-// Recovery for orders stuck mid-fulfilment: an order that was claimed
-// (status = 'paid', notify_claimed_at set) but never marked notified,
-// because the process handling the webhook was killed (OOM, deploy restart)
-// between the claim and the notify/release step. No further webhook
-// redelivery can re-claim it — claimFulfilment requires status = 'pending'.
+// Manual nudge for staff-notification leases. Notification claims self-heal
+// after WORK_LEASE_SECONDS (lib/order-store.ts) and the cron worker retries
+// them, so this is only needed to force an earlier retry after an incident.
+// It never touches payment or inventory state.
 //
 // Run on a schedule (cron) or on demand:
 //   npm run release-stale-claims -- [minutes]
