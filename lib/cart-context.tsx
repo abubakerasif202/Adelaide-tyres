@@ -15,6 +15,7 @@ import {
   EMPTY_CART,
   getCartSubtotal,
   getDeliveryFee,
+  getTotalItemQuantity,
   getTotalTyreQuantity,
   qualifiesForFreeDelivery,
   removeLine,
@@ -31,6 +32,7 @@ type AddPayload = Omit<CartLine, "quantity"> & { quantity: number };
 type CartContextValue = {
   cart: Cart;
   hydrated: boolean;
+  totalItems: number;
   totalTyres: number;
   subtotal: number;
   /** Free-delivery qualification and fee assume delivery (not pickup) until checkout confirms the method. */
@@ -113,6 +115,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return {
       cart,
       hydrated,
+      totalItems: getTotalItemQuantity(cart),
       totalTyres: getTotalTyreQuantity(cart),
       subtotal: getCartSubtotal(cart),
       qualifiesForFreeDelivery: qualifiesForFreeDelivery(cart),
