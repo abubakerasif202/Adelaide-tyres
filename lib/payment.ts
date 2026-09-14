@@ -101,19 +101,20 @@ export async function createCheckoutSession(
     quantity: number;
   }> = input.lines.map((line) => {
     const accessory = getAccessoryById(line.id);
+    const productData: { name: string; metadata: Record<string, string> } = accessory
+      ? {
+          name: accessory.name,
+          metadata: { sku: accessory.sku, product_type: "accessory" },
+        }
+      : {
+          name: `${line.brand} ${line.pattern} ${line.size}`,
+          metadata: { tyre_id: line.id, product_type: "tyre" },
+        };
     return {
       price_data: {
         currency: orderConfig.currency.toLowerCase(),
         unit_amount: Math.round(line.price * 100),
-        product_data: accessory
-          ? {
-              name: accessory.name,
-              metadata: { sku: accessory.sku, product_type: "accessory" },
-            }
-          : {
-              name: `${line.brand} ${line.pattern} ${line.size}`,
-              metadata: { tyre_id: line.id, product_type: "tyre" },
-            },
+        product_data: productData,
       },
       quantity: line.quantity,
     };
