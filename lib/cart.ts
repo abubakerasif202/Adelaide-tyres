@@ -6,6 +6,7 @@
 // Explicit .ts extension so Node's test runner can resolve this at runtime.
 import { order } from "./config.ts";
 import { getTyreBySlug } from "./catalogue.ts";
+import { getAccessoryBySlug } from "./accessories.ts";
 
 export type CartLine = {
   id: string;
@@ -25,9 +26,22 @@ export type Cart = {
 
 export const MIN_QTY_PER_LINE = 1;
 
-/** THE authoritative helper. Total tyre quantity across the whole cart. */
-export function getTotalTyreQuantity(cart: Cart): number {
+/** Total quantity across every cart line, tyres and accessories. */
+export function getTotalItemQuantity(cart: Cart): number {
   return cart.lines.reduce((sum, line) => sum + line.quantity, 0);
+}
+
+/**
+ * THE authoritative client-side helper for tyre-based delivery thresholds.
+ * Known accessory lines are excluded. Unknown lines are treated as tyres here
+ * for backwards-compatible pure tests; persisted unknown lines are discarded
+ * by restoreStoredCart and the server validates everything again at checkout.
+ */
+export function getTotalTyreQuantity(cart: Cart): number {
+  return cart.lines.reduce(
+    (sum, line) => sum + (getAccessoryBySlug(line.slug) ? 0 : line.quantity),
+    0,
+  );
 }
 
 export function getCartSubtotal(cart: Cart): number {
@@ -47,9 +61,9 @@ export type DeliveryDestination = {
 
 /**
  * Free delivery qualification. No minimum order — the business rule is a flat
- * Adelaide-wide delivery fee under 8 tyres, free from 8 tyres up. Pickup is
- * always free. Centralised here so the rule can tighten later (e.g. a
- * postcode allow-list) without touching UI.
+ * Adelaide-wide delivery fee under 8 tyres, free from 8 tyres up. Accessories
+ * never increase the tyre count. Pickup is always free. Centralised here so
+ * the rule can tighten later without touching UI.
  */
 export function qualifiesForFreeDelivery(
   cart: Cart,
@@ -117,8 +131,8 @@ export const EMPTY_CART: Cart = { lines: [] };
 /**
  * Restores a browser-stored cart using catalogue data, never the stored price,
  * name or image. Browser storage is user-controlled and can be stale or
- * edited, so it is only a record of SKU quantities. The orders API performs the
- * same authority check again before any notification is sent.
+ * edited, so it is only a record of SKU quantities. The checkout APIs perform
+ * the same authority check again before creating an order or Stripe session.
  */
 export function restoreStoredCart(input: unknown): Cart {
   if (!input || typeof input !== "object" || !Array.isArray((input as Cart).lines)) {
@@ -132,23 +146,37 @@ export function restoreStoredCart(input: unknown): Cart {
     if (typeof slug !== "string" || typeof quantity !== "number" ||
       !Number.isSafeInteger(quantity) || quantity < MIN_QTY_PER_LINE) continue;
     const tyre = getTyreBySlug(slug);
-    if (!tyre) continue;
+    const accessory = getAccessoryBySlug(slug);
+    if (!tyre && !accessory?.purchasable) continue;
     quantities.set(slug, (quantities.get(slug) ?? 0) + quantity);
   }
 
   return {
     lines: [...quantities.entries()].flatMap(([slug, quantity]) => {
       const tyre = getTyreBySlug(slug);
-      if (!tyre) return [];
+      if (tyre) {
+        return [{
+          id: tyre.id,
+          slug: tyre.slug,
+          brand: tyre.brand,
+          pattern: tyre.pattern,
+          size: tyre.size,
+          price: tyre.price,
+          quantity,
+          image: tyre.image,
+        }];
+      }
+      const accessory = getAccessoryBySlug(slug);
+      if (!accessory?.purchasable) return [];
       return [{
-        id: tyre.id,
-        slug: tyre.slug,
-        brand: tyre.brand,
-        pattern: tyre.pattern,
-        size: tyre.size,
-        price: tyre.price,
+        id: accessory.id,
+        slug: accessory.slug,
+        brand: accessory.sku,
+        pattern: accessory.name,
+        size: accessory.subtitle,
+        price: accessory.price,
         quantity,
-        image: tyre.image,
+        image: accessory.image,
       }];
     }),
   };

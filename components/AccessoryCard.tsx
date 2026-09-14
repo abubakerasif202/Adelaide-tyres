@@ -11,8 +11,7 @@ export function accessoryEnquiryHref(accessory: Accessory): string {
 
 /**
  * Catalogue card for a non-tyre accessory. Mirrors the compact ProductCard
- * frame (surface-card / product-card__media / type scale) but has no cart
- * controls: accessories are not in the 247 stock feed and are sold on enquiry.
+ * frame while keeping accessory inventory separate from the 247 tyre feed.
  */
 export function AccessoryCard({ accessory }: { accessory: Accessory }) {
   const href = `/accessories/${accessory.slug}`;
@@ -26,7 +25,11 @@ export function AccessoryCard({ accessory }: { accessory: Accessory }) {
           sizes="(max-width: 639px) calc(100vw - 32px), (max-width: 1024px) 45vw, 300px"
           className="product-card__media-contain"
         />
-        <span className="product-card__stock-pill"><span className="pill pill--muted">Enquire to order</span></span>
+        <span className="product-card__stock-pill">
+          <span className={accessory.purchasable ? "pill pill--green" : "pill pill--muted"}>
+            {accessory.purchasable ? "Buy online" : "Enquire to order"}
+          </span>
+        </span>
       </Link>
 
       <div className="flex flex-1 flex-col gap-3.5 px-[18px] pb-[18px]">
@@ -52,7 +55,11 @@ export function AccessoryCard({ accessory }: { accessory: Accessory }) {
 
         <div className="mt-auto grid grid-cols-2 gap-2.5">
           <Link href={href} className="btn btn--outline">View product</Link>
-          <Link href={accessoryEnquiryHref(accessory)} className="btn btn--red">Enquire</Link>
+          {accessory.purchasable ? (
+            <Link href={href} className="btn btn--red">Buy online</Link>
+          ) : (
+            <Link href={accessoryEnquiryHref(accessory)} className="btn btn--red">Enquire</Link>
+          )}
         </div>
       </div>
     </article>
