@@ -87,15 +87,18 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   }
 
   try {
-    // Tyre or mixed orders must commit the 247 reservation before fulfilment.
-    // Accessory-only orders intentionally have neither id and can proceed
-    // directly to notification because they are not tracked by 247 inventory.
-    const hasInventoryState = Boolean(
-      claimed.inventoryReservationId || claimed.inventoryCommitRequestId,
-    );
-    if (hasInventoryState) {
+    // Accessory-only orders are deliberately stored as inventoryStatus=committed
+    // with no reservation ids, meaning there is no 247 inventory work to do.
+    // Any other paid order must still have a complete reservation pair — this
+    // preserves the fail-closed rule for tyre orders.
+    const noInventoryRequired =
+      claimed.inventoryStatus === "committed" &&
+      !claimed.inventoryReservationId &&
+      !claimed.inventoryCommitRequestId;
+
+    if (!noInventoryRequired) {
       if (!claimed.inventoryReservationId || !claimed.inventoryCommitRequestId) {
-        throw new Error("Paid order has incomplete inventory reservation data.");
+        throw new Error("Paid order is missing its inventory reservation.");
       }
       await (deps.commitInventory ?? commitInventory)(
         claimed.inventoryReservationId,
