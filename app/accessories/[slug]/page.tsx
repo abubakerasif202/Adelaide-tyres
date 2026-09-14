@@ -5,8 +5,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FreeDeliveryCTA } from "@/components/FreeDeliveryCTA";
 import { ProductCard } from "@/components/ProductCard";
-import { accessoryEnquiryHref } from "@/components/AccessoryCard";
-import { PriceDisplay } from "@/components/primitives";
+import { AccessoryPurchasePanel } from "@/components/AccessoryPurchasePanel";
 import { accessories, getAccessoryBySlug, ACCESSORY_CATEGORY_LABELS } from "@/lib/accessories";
 import { getAllTyres } from "@/lib/catalogue";
 import { accessoryJsonLd, breadcrumbJsonLd } from "@/lib/seo";
@@ -95,24 +94,7 @@ export default async function AccessoryDetailPage({ params }: Params) {
             </div>
 
             <div className="lg:col-start-2 lg:row-start-2 lg:row-end-5 lg:sticky lg:top-[calc(var(--header-total)+44px)] lg:self-start">
-              <div className="surface-card p-6" data-testid="enquiry-panel">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">Price</span>
-                  <PriceDisplay price={accessory.price} fractionDigits={2} />
-                </div>
-                <p className="mt-1 text-[13px] font-semibold text-[var(--color-green)]">Sold on enquiry · SKU {accessory.sku}</p>
-                <div className="mt-5 flex flex-col gap-2.5">
-                  <Link href={accessoryEnquiryHref(accessory)} className="btn btn--red w-full">
-                    Enquire about this valve
-                  </Link>
-                  <Link href="/tyres" className="link-underline inline-flex min-h-[44px] items-center justify-center self-center text-[13px] font-bold uppercase tracking-wide">
-                    Back to catalogue
-                  </Link>
-                </div>
-                <div className="mt-5 border-t border-[var(--color-border)] pt-4 text-[13px] text-[var(--color-text-muted)]">
-                  <p>Tell us the quantity you need and we&apos;ll confirm availability and dispatch with your tyre order.</p>
-                </div>
-              </div>
+              <AccessoryPurchasePanel accessory={accessory} />
             </div>
 
             <div className="lg:col-start-1 lg:row-start-3">
