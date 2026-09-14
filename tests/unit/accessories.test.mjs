@@ -16,6 +16,7 @@ test("TR545D valve is listed at exactly $10.00 with its supplied copy", () => {
   assert.equal(valve.subtitle, "60° Alloy Wheel Valve");
   assert.equal(valve.price, 10);
   assert.equal(valve.price.toFixed(2), "10.00");
+  assert.equal(valve.purchasable, true);
   assert.equal(valve.imageAlt, "TR545D 60 degree truck tyre valve for alloy wheels");
   assert.equal(
     valve.metaDescription,
