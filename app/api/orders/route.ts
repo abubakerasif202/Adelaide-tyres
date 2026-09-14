@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readSubmission } from "@/lib/request-body";
-import { validateOrderLines } from "@/lib/order-lines";
+import { getTyreOrderLines, getValidatedTyreQuantity, validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
 import { generateReference } from "@/lib/payment";
@@ -65,7 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validated.error }, { status: 409 });
   }
   const lines = validated.lines;
-  const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
+  const tyreLines = getTyreOrderLines(lines);
+  const totalTyres = getValidatedTyreQuantity(lines);
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
@@ -81,11 +82,17 @@ export async function POST(request: Request) {
   }
 
   const reference = generateReference(checkoutAttemptId);
-  const releaseRequestId = randomUUID();
+  let releaseRequestId: string | null = null;
+  let commitRequestId: string | null = null;
   let reservationId: string | null = null;
   try {
-    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
-    reservationId = reservation.reservationId;
+    if (tyreLines.length > 0) {
+      releaseRequestId = randomUUID();
+      commitRequestId = randomUUID();
+      const reservation = await reserveInventory(reference, tyreLines, checkoutAttemptId);
+      reservationId = reservation.reservationId;
+    }
+
     await (await getOrderStore()).createPendingOrder({
       reference,
       checkoutSessionId: null,
@@ -100,12 +107,12 @@ export async function POST(request: Request) {
       notes: details.notes ?? "",
       lines,
       inventoryReservationId: reservationId,
-      inventoryStatus: "reserved",
-      inventoryCommitRequestId: randomUUID(),
+      inventoryStatus: reservationId ? "reserved" : "committed",
+      inventoryCommitRequestId: commitRequestId,
       inventoryReleaseRequestId: releaseRequestId,
     });
   } catch (error) {
-    if (reservationId) {
+    if (reservationId && releaseRequestId) {
       try { await releaseInventory(reservationId, "reference_order_persistence_failed", releaseRequestId); }
       catch (releaseError) { logInventoryEvent("error", "orders.release_after_failure.failed", { orderReference: reference, reservationId, requestId: releaseRequestId, errorCode: errorCodeOf(releaseError) }); }
     }
@@ -121,7 +128,7 @@ export async function POST(request: Request) {
 
   try {
     const { delivered } = await sendNotification({
-      subject: `New bulk order ${intent.reference} · ${totalTyres} tyres`,
+      subject: `New order ${intent.reference}`,
       replyTo: details.email,
       text: [
         `Reference: ${intent.reference} (${intent.mode})`,

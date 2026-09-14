@@ -7,6 +7,7 @@ import {
   clearCart,
   getCartSubtotal,
   getDeliveryFee,
+  getTotalItemQuantity,
   getTotalTyreQuantity,
   qualifiesForFreeDelivery,
   removeLine,
@@ -27,7 +28,7 @@ const line = (over = {}) => ({
   ...over,
 });
 
-test("getTotalTyreQuantity sums quantities across lines", () => {
+test("getTotalTyreQuantity sums quantities across tyre lines", () => {
   const cart = { lines: [line({ id: "a", quantity: 2 }), line({ id: "b", quantity: 3 })] };
   assert.equal(getTotalTyreQuantity(cart), 5);
 });
@@ -129,4 +130,33 @@ test("stored cart restores only current catalogue facts and aggregates duplicate
     quantity: 120,
     image: "/images/tyres/greforce-gr881w-11r22-5.webp",
   });
+});
+
+test("TR545D persists at its authoritative $10 price and does not count as a tyre", () => {
+  const cart = restoreStoredCart({
+    lines: [
+      { slug: "tr545d-truck-tyre-valve", quantity: 5, price: 0.01 },
+      { slug: "greforce-gr881w-11r22-5", quantity: 7, price: 0.01 },
+    ],
+  });
+  assert.equal(cart.lines.length, 2);
+  const valve = cart.lines.find((item) => item.slug === "tr545d-truck-tyre-valve");
+  assert.ok(valve);
+  assert.equal(valve.price, 10);
+  assert.equal(valve.quantity, 5);
+  assert.equal(getTotalItemQuantity(cart), 12);
+  assert.equal(getTotalTyreQuantity(cart), 7);
+  assert.equal(qualifiesForFreeDelivery(cart, { method: "delivery" }), false);
+  assert.equal(getDeliveryFee(cart, { method: "delivery" }), 50);
+});
+
+test("accessories never push seven tyres over the eight-tyre free-delivery threshold", () => {
+  const cart = restoreStoredCart({
+    lines: [
+      { slug: "greforce-gr881w-11r22-5", quantity: 7 },
+      { slug: "tr545d-truck-tyre-valve", quantity: 100 },
+    ],
+  });
+  assert.equal(getTotalTyreQuantity(cart), 7);
+  assert.equal(getDeliveryFee(cart, { method: "delivery" }), 50);
 });

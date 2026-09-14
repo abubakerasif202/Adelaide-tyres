@@ -17,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import { getStripeClient, isStripeConfigured } from "./stripe-client.ts";
 import { STRIPE_SESSION_TTL_MINUTES } from "./inventory/client.ts";
 import { hasDurableOrderStore, getOrderStore } from "./order-store.ts";
+import { getAccessoryById } from "./accessories.ts";
 import { business, order as orderConfig, siteUrl } from "./config.ts";
 import type { CheckoutDetails } from "./checkout-validation.ts";
 
@@ -67,6 +68,14 @@ export type CheckoutSessionResult = {
   reference: string;
 };
 
+type CheckoutInventory = {
+  /** Null for accessory-only orders, which do not use the 247 tyre stock feed. */
+  reservationId: string | null;
+  commitRequestId: string | null;
+  releaseRequestId: string | null;
+  reference: string;
+};
+
 /**
  * Creates a Stripe Checkout Session for immediate card payment, and records
  * a pending order row before returning — the durable order store (not
@@ -75,7 +84,7 @@ export type CheckoutSessionResult = {
  */
 export async function createCheckoutSession(
   input: OrderIntentInput,
-  inventory: { reservationId: string; commitRequestId: string; releaseRequestId: string; reference: string },
+  inventory: CheckoutInventory,
 ): Promise<CheckoutSessionResult> {
   if (!isPaymentConfigured()) {
     throw new Error("Stripe is not fully configured.");
@@ -90,17 +99,26 @@ export async function createCheckoutSession(
       product_data: { name: string; metadata?: Record<string, string> };
     };
     quantity: number;
-  }> = input.lines.map((line) => ({
-    price_data: {
-      currency: orderConfig.currency.toLowerCase(),
-      unit_amount: Math.round(line.price * 100),
-      product_data: {
-        name: `${line.brand} ${line.pattern} ${line.size}`,
-        metadata: { tyre_id: line.id },
+  }> = input.lines.map((line) => {
+    const accessory = getAccessoryById(line.id);
+    const productData: { name: string; metadata: Record<string, string> } = accessory
+      ? {
+          name: accessory.name,
+          metadata: { sku: accessory.sku, product_type: "accessory" },
+        }
+      : {
+          name: `${line.brand} ${line.pattern} ${line.size}`,
+          metadata: { tyre_id: line.id, product_type: "tyre" },
+        };
+    return {
+      price_data: {
+        currency: orderConfig.currency.toLowerCase(),
+        unit_amount: Math.round(line.price * 100),
+        product_data: productData,
       },
-    },
-    quantity: line.quantity,
-  }));
+      quantity: line.quantity,
+    };
+  });
 
   if (input.deliveryFee > 0) {
     lineItems.push({
@@ -120,8 +138,9 @@ export async function createCheckoutSession(
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    // The Checkout Session must expire before the 247 stock hold does, so a
-    // late payment can never land on an already-released reservation.
+    // The Checkout Session must expire before the 247 stock hold does. This
+    // is still applied to accessory-only sessions for one consistent checkout
+    // lifetime, even though no 247 reservation exists for those orders.
     expires_at: Math.floor(Date.now() / 1000) + STRIPE_SESSION_TTL_MINUTES * 60,
     payment_method_types: ["card"],
     line_items: lineItems,
@@ -156,7 +175,9 @@ export async function createCheckoutSession(
     notes: input.details.notes ?? "",
     lines: input.lines,
     inventoryReservationId: inventory.reservationId,
-    inventoryStatus: "reserved",
+    // "committed" means there is no external tyre inventory work pending for
+    // an accessory-only order; mixed orders remain reserved until Stripe pays.
+    inventoryStatus: inventory.reservationId ? "reserved" : "committed",
     inventoryCommitRequestId: inventory.commitRequestId,
     inventoryReleaseRequestId: inventory.releaseRequestId,
   });
