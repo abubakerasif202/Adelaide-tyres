@@ -1,11 +1,10 @@
 /**
  * Typed accessory catalogue (valves, fittings and other non-tyre lines).
  *
- * Accessories are deliberately kept out of `catalogue: Tyre[]`: they have no
- * size/pattern/application, are not tracked in the 247 inventory feed, and must
- * not count towards the tyre-based free-delivery threshold. They are sold on
- * enquiry — the storefront shows price and detail, the sales team confirms
- * quantity and dispatch.
+ * Accessories stay out of `catalogue: Tyre[]`: they have no tyre size/pattern/
+ * application and are not tracked in the 247 tyre inventory feed. They can,
+ * however, be sold through the same cart/checkout flow. Accessory quantities
+ * must never count towards the tyre-based free-delivery threshold.
  */
 
 export type AccessoryCategory = "valves";
@@ -13,13 +12,15 @@ export type AccessoryCategory = "valves";
 export type Accessory = {
   id: string;
   slug: string;
-  /** Product / SKU code shown to buyers and used in enquiries. */
+  /** Product / SKU code shown to buyers and used in orders. */
   sku: string;
   name: string;
   subtitle: string;
   category: AccessoryCategory;
   /** Price per unit in AUD. */
   price: number;
+  /** Whether this accessory can be purchased through cart/checkout. */
+  purchasable: boolean;
   /** Path under /public; the image alt text is supplied explicitly. */
   image: string;
   imageAlt: string;
@@ -45,6 +46,7 @@ export const accessories: Accessory[] = [
     subtitle: "60° Alloy Wheel Valve",
     category: "valves",
     price: 10,
+    purchasable: true,
     // Business-supplied product render (not manufacturer photography); text
     // overlay removed and trimmed to the part. See docs/product-image-sources.md.
     image: "/images/accessories/tr545d-truck-tyre-valve.webp",
@@ -87,6 +89,10 @@ export function getAllAccessories(): Accessory[] {
 
 export function getAccessoryBySlug(slug: string): Accessory | undefined {
   return accessories.find((a) => a.slug === slug);
+}
+
+export function getAccessoryById(id: string): Accessory | undefined {
+  return accessories.find((a) => a.id === id);
 }
 
 /** Every string a catalogue search may match against, lower-cased. */
