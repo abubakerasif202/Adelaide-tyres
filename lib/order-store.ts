@@ -12,6 +12,17 @@
 
 export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "refunded";
 
+/** See docs/payment-inventory-reconciliation.md for the legal transitions. */
+export type InventoryStatus =
+  | "pending"
+  | "reserved"
+  | "failed"
+  | "commit_pending"
+  | "committed"
+  | "release_pending"
+  | "released"
+  | "manual_review";
+
 export type OrderLine = {
   id: string;
   brand: string;
@@ -37,57 +48,88 @@ export type OrderRecord = {
   lines: OrderLine[];
   notifiedAt: string | null;
   inventoryReservationId: string | null;
-  inventoryStatus: "pending" | "reserved" | "committed" | "released" | "failed";
+  inventoryStatus: InventoryStatus;
   inventoryCommitRequestId: string | null;
   inventoryReleaseRequestId: string | null;
 };
 
+/** One durable unit of 247 work, claimed under a lease by exactly one worker. */
+export type InventoryWork = {
+  operationId: string;
+  orderReference: string;
+  operation: "commit" | "release";
+  reservationId: string;
+  requestId: string;
+  attemptCount: number;
+};
+
+export type PaymentConfirmation = {
+  checkoutSessionId: string;
+  paymentIntentId: string | null;
+  stripeEventId: string;
+  stripeEventType: string;
+};
+
 export type NewOrderInput = Omit<OrderRecord, "status" | "notifiedAt" | "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId"> & Partial<Pick<OrderRecord, "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId">>;
+
+/** Lease length shared by the inventory outbox and notification claims. */
+export const WORK_LEASE_SECONDS = 60;
+/** Attempts before a commit/release stops retrying and waits for an operator. */
+export const MAX_INVENTORY_ATTEMPTS = 8;
+
+/** Retry backoff in seconds: 15, 30, 60 … capped at one hour. */
+export function retryDelaySeconds(attemptCount: number): number {
+  return Math.min(3600, 15 * 2 ** Math.max(0, Math.min(attemptCount - 1, 8)));
+}
 
 export interface OrderStore {
   /** Inserts the order row at Checkout Session creation time, status = "pending". */
   createPendingOrder(order: NewOrderInput): Promise<void>;
 
   /**
-   * Atomically claims the right to notify the business for this order,
-   * transitioning it to "paid" in the same statement. Returns the order row
-   * iff this call performed the claim (status was "pending" and no claim was
-   * already in flight); returns null if another delivery already claimed,
-   * completed, or is currently attempting notification — the caller must do
-   * nothing further in that case.
+   * Persists a verified successful payment atomically: the Stripe event id (the
+   * idempotency gate — a duplicate returns the current row unchanged), the paid
+   * status, the PaymentIntent id, the inventory transition to `commit_pending`
+   * plus its outbox row, or `manual_review` when nothing can safely be
+   * committed. A prior full-refund receipt lands the order as `refunded`.
+   * Throws ORDER_NOT_PERSISTED when the session has no order row.
    */
-  claimFulfilment(checkoutSessionId: string, paymentIntentId?: string): Promise<OrderRecord | null>;
-
-  /** Marks the order successfully notified. Call only after claimFulfilment succeeded and the notification was actually delivered. */
-  markNotified(checkoutSessionId: string): Promise<void>;
-
-  /** Releases a fulfilment claim without marking notified, so a later retry (Stripe redelivering the event) can attempt again. Call when notification delivery fails after claimFulfilment succeeded. */
-  releaseFulfilmentClaim(checkoutSessionId: string): Promise<void>;
-
-  /** Atomically transitions a still-pending order to a terminal non-paid status (failed/cancelled). No-ops if the order is no longer pending (e.g. already paid). */
-  transitionPendingTo(checkoutSessionId: string, status: "failed" | "cancelled"): Promise<boolean>;
-
-  /** Atomically transitions a paid order to refunded. No-ops if the order isn't currently paid. */
-  transitionPaidToRefunded(paymentIntentId: string): Promise<boolean>;
+  confirmPaymentAndEnqueue(input: PaymentConfirmation): Promise<OrderRecord>;
 
   /**
-   * Recovery path for a claim that never resolved: if the process handling
-   * claimFulfilment is killed (OOM, deploy restart) between the claim and the
-   * notify/release step, the order is stuck at status "paid" with no
-   * notification sent and no further webhook redelivery able to re-claim it
-   * (claimFulfilment requires status "pending"). This releases any claim
-   * older than olderThanMinutes back to "pending" so the next redelivered or
-   * manually-replayed event can retry it. Intended to run from
-   * scripts/release-stale-claims.mjs on a schedule (cron) or on demand.
-   * Returns the number of orders released.
+   * Terminal non-payment outcome: `pending` → failed/cancelled and the hold is
+   * queued for release. Idempotent — duplicates and an already-cancelled order
+   * whose release has not completed re-arm the same outbox row. A paid order is
+   * never touched. Returns true when a release is queued.
+   */
+  cancelPendingOrder(checkoutSessionId: string, status: "failed" | "cancelled"): Promise<boolean>;
+
+  claimInventoryWork(workerId: string, leaseSeconds?: number): Promise<InventoryWork | null>;
+  /** Marks the work done and the order committed/released. Fenced on the worker's lease. */
+  completeInventoryWork(operationId: string, workerId: string): Promise<void>;
+  /** Re-queues with backoff, or parks in manual_review. Fenced on the worker's lease. */
+  retryInventoryWork(operationId: string, workerId: string, errorCode: string, manualReview?: boolean): Promise<void>;
+
+  /** Claims one paid order that is committed or in manual review and not yet notified. */
+  claimNotification(workerId: string, leaseSeconds?: number): Promise<OrderRecord | null>;
+  /** Records delivery or schedules a retry. Fenced on the worker's lease; never changes payment state. */
+  finishNotification(checkoutSessionId: string, workerId: string, delivered: boolean): Promise<void>;
+
+  /** Full refund: the order becomes `refunded` (never fulfilable/notifiable); inventory is untouched. */
+  recordRefund(paymentIntentId: string, eventId: string): Promise<void>;
+  /** Partial refund: durable audit only; the order stays paid and fulfilable. */
+  recordPartialRefund(paymentIntentId: string, eventId: string, amounts: { amount: number | null; amountRefunded: number | null }): Promise<void>;
+
+  /**
+   * Operational sweep for notification leases that outlived their worker by far
+   * longer than the lease (scripts/release-stale-claims.mjs). The lease already
+   * self-heals after WORK_LEASE_SECONDS; this only exists for a manual nudge.
    */
   releaseStaleClaims(olderThanMinutes: number): Promise<number>;
 
   getByCheckoutSessionId(checkoutSessionId: string): Promise<OrderRecord | null>;
   getByPaymentIntentId(paymentIntentId: string): Promise<OrderRecord | null>;
   getByReference(reference: string): Promise<OrderRecord | null>;
-  markInventoryCommitted(reference: string): Promise<void>;
-  markInventoryReleased(reference: string): Promise<void>;
 
   /** Best-effort audit log of every Stripe event seen. Must never throw — a logging failure must not block webhook processing. */
   recordEvent(eventId: string, eventType: string, checkoutSessionId: string | undefined): Promise<void>;

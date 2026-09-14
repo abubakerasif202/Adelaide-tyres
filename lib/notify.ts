@@ -5,6 +5,8 @@
  */
 
 type Message = {
+  /** Forwarded as Resend's Idempotency-Key so a retried send cannot double-deliver. */
+  idempotencyKey?: string;
   subject: string;
   text: string;
   replyTo?: string;
@@ -49,6 +51,7 @@ export async function sendNotification(message: Message): Promise<{ delivered: b
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
+      ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
     },
     body: JSON.stringify({
       from: process.env.ENQUIRY_FROM_EMAIL,
