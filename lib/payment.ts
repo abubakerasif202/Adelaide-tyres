@@ -24,6 +24,8 @@ export type OrderIntentInput = {
   details: CheckoutDetails;
   lines: {
     id: string;
+    /** Omitted on legacy/test lines; those are treated as tyres. */
+    kind?: "tyre" | "accessory";
     brand: string;
     pattern: string;
     size: string;
@@ -67,21 +69,31 @@ export type CheckoutSessionResult = {
   reference: string;
 };
 
+type InventoryCheckoutState = {
+  reservationId: string;
+  commitRequestId: string;
+  releaseRequestId: string;
+  reference: string;
+};
+
 /**
  * Creates a Stripe Checkout Session for immediate card payment, and records
  * a pending order row before returning — the durable order store (not
  * Stripe's own object store, and never the client redirect) is the source of
  * truth the webhook and the success page both read from.
+ *
+ * `inventory` is null for accessory-only orders. Mixed orders still reserve
+ * only their tyre lines before reaching this boundary.
  */
 export async function createCheckoutSession(
   input: OrderIntentInput,
-  inventory: { reservationId: string; commitRequestId: string; releaseRequestId: string; reference: string },
+  inventory: InventoryCheckoutState | null,
 ): Promise<CheckoutSessionResult> {
   if (!isPaymentConfigured()) {
     throw new Error("Stripe is not fully configured.");
   }
   const stripe = getStripeClient();
-  const reference = inventory.reference;
+  const reference = inventory?.reference ?? generateReference();
 
   const lineItems: Array<{
     price_data: {
@@ -90,17 +102,24 @@ export async function createCheckoutSession(
       product_data: { name: string; metadata?: Record<string, string> };
     };
     quantity: number;
-  }> = input.lines.map((line) => ({
-    price_data: {
-      currency: orderConfig.currency.toLowerCase(),
-      unit_amount: Math.round(line.price * 100),
-      product_data: {
-        name: `${line.brand} ${line.pattern} ${line.size}`,
-        metadata: { tyre_id: line.id },
+  }> = input.lines.map((line) => {
+    const isAccessory = line.kind === "accessory";
+    return {
+      price_data: {
+        currency: orderConfig.currency.toLowerCase(),
+        unit_amount: Math.round(line.price * 100),
+        product_data: {
+          name: isAccessory
+            ? `${line.brand} ${line.pattern} — ${line.size}`
+            : `${line.brand} ${line.pattern} ${line.size}`,
+          metadata: isAccessory
+            ? { item_type: "accessory", accessory_id: line.id }
+            : { item_type: "tyre", tyre_id: line.id },
+        },
       },
-    },
-    quantity: line.quantity,
-  }));
+      quantity: line.quantity,
+    };
+  });
 
   if (input.deliveryFee > 0) {
     lineItems.push({
@@ -120,8 +139,8 @@ export async function createCheckoutSession(
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    // The Checkout Session must expire before the 247 stock hold does, so a
-    // late payment can never land on an already-released reservation.
+    // Keep checkout short-lived. When tyres are present this must also expire
+    // before the 247 stock hold does; accessory-only orders use the same TTL.
     expires_at: Math.floor(Date.now() / 1000) + STRIPE_SESSION_TTL_MINUTES * 60,
     payment_method_types: ["card"],
     line_items: lineItems,
@@ -155,10 +174,12 @@ export async function createCheckoutSession(
     deliveryAddress: address,
     notes: input.details.notes ?? "",
     lines: input.lines,
-    inventoryReservationId: inventory.reservationId,
-    inventoryStatus: "reserved",
-    inventoryCommitRequestId: inventory.commitRequestId,
-    inventoryReleaseRequestId: inventory.releaseRequestId,
+    inventoryReservationId: inventory?.reservationId ?? null,
+    // `committed` means there is no inventory work outstanding. For an
+    // accessory-only order there is intentionally no 247 reservation to commit.
+    inventoryStatus: inventory ? "reserved" : "committed",
+    inventoryCommitRequestId: inventory?.commitRequestId ?? null,
+    inventoryReleaseRequestId: inventory?.releaseRequestId ?? null,
   });
 
   return { url: session.url, reference };
