@@ -39,8 +39,8 @@ Every Adelaide request signs `METHOD`, path, Unix timestamp, UUID request ID, an
 1. Adelaide creates one UUID checkout-attempt ID and derives a stable order reference.
 2. 247 atomically locks all mapped Regency Park balances, checks `available = on_hand - reserved`, and creates a 45-minute hold (`INVENTORY_HOLD_MINUTES`). The Stripe Checkout Session is created with a 30-minute `expires_at` (`STRIPE_SESSION_TTL_MINUTES`), so a late payment can never land on an already-released hold.
 3. Adelaide persists the reservation ID and commit/release request IDs with the durable order.
-4. A verified paid Stripe webhook commits the hold exactly once; 247 records `stock_out` movement with `source_type=adelaide_wholesale_tyres`, integration actor data, and source order reference.
-5. Failed/expired payment releases the hold. Refund does not restock; physical returns must use the normal 247 return workflow.
+4. A verified paid Stripe webhook persists the payment and a durable `inventory_outbox` commit row in one transaction (the Stripe event id is the idempotency gate), then a leased worker commits the hold exactly once; 247 records `stock_out` movement with `source_type=adelaide_wholesale_tyres`, integration actor data, and source order reference. `GET /api/cron/inventory-outbox` (Vercel Cron, every 5 minutes, `CRON_SECRET`) drains anything the webhook's inline pass did not finish.
+5. Failed/expired payment queues a release for the hold the same way. Refund does not restock; physical returns must use the normal 247 return workflow. Full design and state model: `docs/payment-inventory-reconciliation.md`.
 
 Reservation and commit request IDs are idempotent. The reservation identity is the canonical hash of `orderReference` plus the sorted `(mapping, quantity)` lines — the hold expiry is a retry parameter, not identity — so a retry of the same checkout attempt after a lost response converges on the same hold. Reusing a request ID with a different payload is rejected (`IDEMPOTENCY_KEY_REUSED`). Commit identity is the durable commit request ID stored with the Adelaide order. A commit validates the order reference while holding the reservation row, before posting any movement. Expired holds are released by the protected 247 cron endpoint and opportunistically by inventory calls.
 
@@ -51,10 +51,13 @@ Reservation and commit request IDs are idempotent. The reservation identity is t
 | 247 unreachable at checkout | 503 "We're confirming tyre availability…", no order | none | customer retries |
 | Hold made, Adelaide never got the response | 503, no order | active hold | same checkout attempt retries → same hold; otherwise the hold expires |
 | Hold made, Stripe session creation (or order persistence) failed | 502, no order | released (signed DELETE) | customer retries |
-| Paid, 247 down at commit | order `pending`, `inventory_status=reserved`, webhook 500 | active hold | Stripe redelivers → idempotent commit |
-| Commit done, Adelaide never got the response | as above | committed | Stripe redelivers → same commit request ID → no second deduction |
-| Payment failed / session expired | order `failed`/`cancelled`, `released` | released | — |
-| Refund | order `refunded`, inventory stays `committed` | committed | a physical return is a normal 247 stock-in |
+| Paid, 247 down at commit | order `paid`, `inventory_status=commit_pending`, webhook 200 | active hold | outbox worker retries with backoff under the same commit request ID |
+| Commit done, Adelaide never got the response | as above | committed | worker replays the same commit request ID → no second deduction |
+| Paid, hold no longer active (conflict) or 8 failed attempts | order `paid`, `inventory_status=manual_review`, staff emailed "NEEDS REVIEW" | released/expired | operator reacquires stock in 247 or refunds |
+| Paid order with no reservation recorded | order `paid`, `inventory_status=manual_review`, no outbox row | — | manual investigation |
+| Payment failed / session expired | order `failed`/`cancelled`, `release_pending` → `released` | released | release retried by the worker if 247 was down |
+| Full refund | order `refunded`, inventory stays `committed`, not notifiable | committed | a physical return is a normal 247 stock-in |
+| Partial refund | order stays `paid`/fulfilable; audit only | committed | — |
 
 The 247 auth middleware (`proxy.ts`) excludes `/api/integrations/`; those routes are protected solely by the HMAC boundary and are never redirected to `/login`. Reference (invoice/EFT) orders hold stock for the same window and then expire; the business confirms them manually.
 

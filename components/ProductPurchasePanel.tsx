@@ -66,7 +66,19 @@ export function ProductPurchasePanel({ tyre }: { tyre: Tyre }) {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-green)]" />
           </span>
         )}
-        <span>{availability.state === "unmapped" ? "Contact us for availability" : unavailable ? "Checking availability" : soldOut ? "Currently out of stock" : availability.state === "low_stock" ? "Low stock" : "In stock"}</span>
+        <span>
+          {availability.state === "unmapped"
+            ? "Contact us for availability"
+            : unavailable
+              ? "Checking availability"
+              : soldOut
+                ? "Currently out of stock"
+                : available === 1
+                  ? "Last one available"
+                  : availability.state === "low_stock"
+                    ? `Low stock — ${available} remaining`
+                    : `In stock — ${available} available`}
+        </span>
       </p>
 
       <div className="mt-5 flex items-center gap-3">

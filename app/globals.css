@@ -24,6 +24,7 @@
   --color-red: #df1015;
   --color-red-hover: #d40f14;
   --color-red-deep: #b60c11;
+  --color-amber: #8a5a12;
   --color-white: #ffffff;
 
   /* Typography */
@@ -438,6 +439,11 @@ img {
     background: var(--color-surface-muted);
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
+  }
+  .pill--amber {
+    background: #f4e6d2;
+    color: var(--color-amber);
+    border: 1px solid #e3c896;
   }
 
   .link-underline {

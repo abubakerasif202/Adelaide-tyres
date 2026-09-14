@@ -6,8 +6,9 @@ export function StockBadge({ stock, state }: { stock: number | null; state?: "in
   if (state === "out_of_stock" || stock == null || stock <= 0) {
     return <span className="pill pill--muted">Out of stock</span>;
   }
-  const label = state === "low_stock" ? "Low stock" : "In stock";
-  return <span className="pill pill--green">{label}</span>;
+  if (stock === 1) return <span className="pill pill--amber">Last one available</span>;
+  const label = state === "low_stock" ? `Low stock — ${stock} remaining` : `In stock — ${stock} available`;
+  return <span className={state === "low_stock" ? "pill pill--amber" : "pill pill--green"}>{label}</span>;
 }
 
 export function BadgePill({ label }: { label: string }) {

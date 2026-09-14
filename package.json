@@ -16,7 +16,9 @@
     "test:e2e": "playwright test",
     "release-stale-claims": "node --conditions=react-server scripts/release-stale-claims.mjs",
     "check:hero-tyre": "node scripts/check-hero-tyre.mjs",
-    "test:cross-system": "node --conditions=react-server --test tests/cross-system/*.test.mjs"
+    "test:cross-system": "node --conditions=react-server --test tests/cross-system/*.test.mjs",
+    "test:cross-system:local": "bash scripts/run-cross-system-local.sh",
+    "db:local:prepare": "node scripts/prepare-local-order-db.mjs"
   },
   "dependencies": {
     "next": "16.3.3",
