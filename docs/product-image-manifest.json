@@ -5,11 +5,11 @@
     "pattern": "RDR75",
     "size": "265/70R19.5",
     "localPath": "/images/tyres/ralson-rdr75.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RDR75 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rdr75.pdf)",
+    "rights": "Ralson Tyres 'RDR75 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RDR75 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rmr61-26570r195",
@@ -17,11 +17,11 @@
     "pattern": "RMR61",
     "size": "265/70R19.5",
     "localPath": "/images/tyres/ralson-rmr61.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RMR61 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rmr61.pdf)",
+    "rights": "Ralson Tyres 'RMR61 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RMR61 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rmr61-29580r225",
@@ -29,11 +29,11 @@
     "pattern": "RMR61",
     "size": "295/80R22.5",
     "localPath": "/images/tyres/ralson-rmr61.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RMR61 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rmr61.pdf)",
+    "rights": "Ralson Tyres 'RMR61 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RMR61 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rdr75-29580r225",
@@ -41,11 +41,11 @@
     "pattern": "RDR75",
     "size": "295/80R22.5",
     "localPath": "/images/tyres/ralson-rdr75.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RDR75 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rdr75.pdf)",
+    "rights": "Ralson Tyres 'RDR75 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RDR75 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rmr61-38565r225",
@@ -53,11 +53,11 @@
     "pattern": "RMR61",
     "size": "385/65R22.5",
     "localPath": "/images/tyres/ralson-rmr61.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RMR61 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rmr61.pdf)",
+    "rights": "Ralson Tyres 'RMR61 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RMR61 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rtr71-11r225",
@@ -89,10 +89,10 @@
     "pattern": "RDR55",
     "size": "11R22.5",
     "localPath": "/images/tyres/ralson-rdr55.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RDR55 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ai-generated-render (ChatGPT Image Sep 14, 2026, 03_11_20 PM (1).png)",
+    "rights": "AI-generated AWT-branded product card (ChatGPT, built from the Ralson RDR55 tyre-on-rim render the owner supplied earlier the same day; sidewall reads 'RALSON' / 'RDR55'). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14, replacing the raw Ralson render.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
+    "dimensions": "960x1200 WebP",
     "status": "owner-approved-ai-render"
   },
   {
@@ -125,11 +125,11 @@
     "pattern": "RDR75",
     "size": "235/75R17.5",
     "localPath": "/images/tyres/ralson-rdr75.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RDR75 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rdr75.pdf)",
+    "rights": "Ralson Tyres 'RDR75 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RDR75 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rmr61-23575r175",
@@ -137,11 +137,11 @@
     "pattern": "RMR61",
     "size": "235/75R17.5",
     "localPath": "/images/tyres/ralson-rmr61.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RMR61 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rmr61.pdf)",
+    "rights": "Ralson Tyres 'RMR61 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RMR61 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "ralson-rmr61-27570r225",
@@ -149,11 +149,11 @@
     "pattern": "RMR61",
     "size": "275/70R22.5",
     "localPath": "/images/tyres/ralson-rmr61.webp",
-    "sourceUrl": "owner-upload:ai-generated-render",
-    "rights": "AI-generated illustrative render (ChatGPT image, Ralson-branded pattern card shared by every RMR61 size). Not manufacturer photography. Owner supplied and explicitly approved for on-site display 2026-09-14.",
+    "sourceUrl": "owner-upload:ralson-spec-sheet-pdf (rmr61.pdf)",
+    "rights": "Ralson Tyres 'RMR61 Features & Benefits' spec-sheet poster, rasterised from the owner-supplied PDF (page footer reads 'CONFIDENTIAL @ 2025 RALSON TYRES LIMITED (ALL RIGHTS RESERVED)'; that banner is cropped out). Genuine manufacturer collateral shared by every RMR61 size, not a product photograph. Owner supplied and chose it as the product image 2026-09-14; rights rest on the owner's dealer relationship with Ralson.",
     "checkedAt": "2026-09-14",
-    "dimensions": "1200x1200 WebP",
-    "status": "owner-approved-ai-render"
+    "dimensions": "689x1600 WebP",
+    "status": "owner-supplied-manufacturer-spec-sheet"
   },
   {
     "sku": "greforce-hd02-11r225",
