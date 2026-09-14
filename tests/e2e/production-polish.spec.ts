@@ -131,7 +131,7 @@ test("Product structured data identifies the SKU and only exposes a verified loc
   const productSchema = schemas.map((schema) => JSON.parse(schema)).find((schema) => schema["@type"] === "Product");
   expect(productSchema).toMatchObject({
     sku: "ralson-rmr61-29580r225",
-    image: expect.stringMatching(/ralson-rmr61-295-80r22-5\.webp$/),
+    image: expect.stringMatching(/ralson-rmr61\.webp$/),
     offers: { priceCurrency: "AUD" },
   });
   // Availability is live 247 data, never baked into the static page.
