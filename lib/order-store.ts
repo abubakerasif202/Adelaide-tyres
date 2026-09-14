@@ -14,6 +14,8 @@ export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "refunde
 
 export type OrderLine = {
   id: string;
+  /** Optional for backwards compatibility with orders created before accessories were purchasable. */
+  kind?: "tyre" | "accessory";
   brand: string;
   pattern: string;
   size: string;
