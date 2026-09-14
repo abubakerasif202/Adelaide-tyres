@@ -1,18 +1,4 @@
-# Hero assets
-
-**Current hero (2026-09-14):** `greforce-g-pilot-x1-cutout.webp` — the genuine
-Greforce G-PILOT X1 295/80R22.5 supplier shot (see `docs/image-audit.md`),
-cut out onto transparency and cropped to 560 x 816. It is shown *static* in
-the dark product bay in `components/HeroArtwork.tsx`; the bay links to that
-SKU and its caption/price are catalogue-driven. Being a 3/4 shot it must never
-be rotated (see below for why).
-
-`hero-truck-tyre.webp` and `npm run check:hero-tyre` remain for the earlier
-rotating-wheel hero and are retained in case that treatment is revived.
-
----
-
-# Hero wheel asset handoff (legacy rotating hero)
+# Hero wheel asset handoff
 
 `hero-truck-tyre.webp` is the wheel the homepage hero rotates: a photoreal
 head-on commercial truck wheel on a polished alloy rim, 1000 x 1000, transparent.

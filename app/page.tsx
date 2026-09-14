@@ -1,4 +1,4 @@
-import { Hero, HERO_TYRE_SLUG } from "@/components/Hero";
+import { Hero } from "@/components/Hero";
 import Link from "next/link";
 import { Benefits } from "@/components/Benefits";
 import { ProductCard } from "@/components/ProductCard";
@@ -8,6 +8,9 @@ import { SectionHeading } from "@/components/primitives";
 import { catalogue, getFeaturedTyres, uniqueSizes } from "@/lib/catalogue";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { Reveal } from "@/components/Reveal";
+
+/** Shown large in the hero studio bay — kept out of the showcase below it. */
+const HERO_TYRE_SLUG = "ralson-rmr61-295-80r22-5";
 
 export default function HomePage() {
   // Real, business-flagged featured stock (lib/catalogue.ts `featured: true`),

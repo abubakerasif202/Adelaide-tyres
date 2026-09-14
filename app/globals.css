@@ -24,7 +24,6 @@
   --color-red: #df1015;
   --color-red-hover: #d40f14;
   --color-red-deep: #b60c11;
-  --color-amber: #8a5a12;
   --color-white: #ffffff;
 
   /* Typography */
@@ -440,11 +439,6 @@ img {
     color: var(--color-text-muted);
     border: 1px solid var(--color-border);
   }
-  .pill--amber {
-    background: #f4e6d2;
-    color: var(--color-amber);
-    border: 1px solid #e3c896;
-  }
 
   .link-underline {
     text-decoration: underline;
@@ -504,9 +498,373 @@ img {
   animation: cart-pulse 0.32s ease-out;
 }
 
+/* ---------------------------------------------------------------
+   Homepage rebuild — hero: dimensional dark bay with an ambient dot-grid
+   texture, a directional gradient wash and a studio product bay that reads
+   as one integrated environment rather than text + a rounded photo card.
+   --------------------------------------------------------------- */
+.hero__wash {
+  background:
+    radial-gradient(1200px 640px at 82% 8%, rgba(127, 209, 179, 0.14), transparent 58%),
+    radial-gradient(900px 500px at 8% 92%, rgba(4, 33, 26, 0.6), transparent 62%),
+    linear-gradient(165deg, #063b2c 0%, #052a20 58%, #04211a 100%);
+}
+.hero__texture {
+  opacity: 0.14;
+  background-image: radial-gradient(rgba(127, 209, 179, 0.55) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(180deg, black, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
+}
+.hero__glow {
+  inset: auto -14% -50% 30%;
+  height: 560px;
+  background: radial-gradient(circle, rgba(223, 16, 21, 0.16), transparent 68%);
+  pointer-events: none;
+}
+
+.hero__badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 16px 8px 13px;
+  border: 1px solid rgba(127, 209, 179, 0.3);
+  border-radius: 999px;
+  background: rgba(4, 33, 26, 0.55);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bfe8d8;
+  animation: hero-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+.hero__badge-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+}
+.hero__badge-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1.5px solid #34d399;
+  animation: radar-pulse 2.2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
 @keyframes radar-pulse {
   0% { transform: scale(0.8); opacity: 0.9; }
   100% { transform: scale(2.2); opacity: 0; }
+}
+
+.hero__copy,
+.hero__actions,
+.hero__meta,
+.hero__visual {
+  animation: hero-enter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero__copy { animation-delay: 0.28s; }
+.hero__actions { animation-delay: 0.4s; }
+.hero__meta { animation-delay: 0.48s; }
+.hero__visual {
+  animation-name: hero-visual-enter;
+  animation-delay: 0.24s;
+  animation-duration: 0.74s;
+}
+
+/*
+ * Hero typography. Declared once, here, and deliberately UNLAYERED: `.display`
+ * lives in `@layer components`, so any unlayered rule outranks it regardless
+ * of source order. That is what lets `.hero__title`'s `line-height: 0.96` win
+ * over `.display`'s `0.98`. Do not move this inside `@layer components`.
+ */
+.hero__title {
+  margin-top: 22px;
+  max-width: 780px;
+  font-size: clamp(48px, 6.8vw, 88px);
+  line-height: 0.96;
+}
+
+.hero__title-accent {
+  color: #7fd1b3;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 40%, #6ee7b7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero__copy {
+  margin-top: 22px;
+  max-width: 620px;
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s ease;
+}
+.hero__meta-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #7fd1b3;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.hero__meta-item:hover .hero__meta-icon {
+  transform: scale(1.06);
+  background: rgba(127, 209, 179, 0.16);
+  border-color: rgba(127, 209, 179, 0.38);
+}
+.hero__meta-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.hero__meta-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: #7fd1b3;
+}
+.hero__meta-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* Studio bay: the tyre and its identity live inside one gradient-bordered
+   panel, rather than a plain rounded photo with a floating stat card
+   overlapping its edge. */
+.hero__bay {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(155deg, #2c3233 0%, #0e1615 46%, #04211a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 42px 90px -34px rgba(0, 0, 0, 0.82);
+  padding: 20px 20px 0;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hero__bay:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 50px 100px -32px rgba(0, 0, 0, 0.86);
+}
+.hero__bay-tags {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hero__bay-tag {
+  display: inline-flex;
+  padding: 6px 12px;
+  border: 1px solid rgba(127, 209, 179, 0.32);
+  border-radius: 999px;
+  background: rgba(6, 59, 44, 0.68);
+  color: #d9f2e7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+.hero__bay-tag--muted {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(9, 12, 12, 0.4);
+  color: rgba(255, 255, 255, 0.72);
+}
+.hero__bay-image {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  margin-top: 18px;
+}
+/* ---------------------------------------------------------------
+   Rotating tyre stage.
+
+   Three nested elements, ONE transform each, so the entrance and the
+   continuous rotation never overwrite one another:
+
+     .hero-tyre-stage    layout + scroll parallax (see the parallax block)
+       .hero-tyre-entrance   translateY / scale, one shot
+         .hero-tyre-spinner  rotate(), infinite
+
+   The asset is a front-facing wheel centred in a square transparent
+   canvas, which is what makes rotateZ read as a real axle rather than a
+   wobble. It is NOT a 3/4 photograph — do not swap one in without
+   re-centring it, and never reach for rotateY here.
+   --------------------------------------------------------------- */
+.hero-tyre-stage {
+  position: relative;
+  display: grid;
+  /* `min-height: 0` matters: without it a grid child larger than the 4/3 box
+     stretches the stage instead of being contained by it, and the wheel then
+     runs off the bay edges on narrow viewports. */
+  min-height: 0;
+  place-items: center;
+  isolation: isolate;
+  /* Lets the wheel below size off whichever stage axis is smaller. */
+  container-type: size;
+}
+.hero-tyre-stage > * {
+  grid-area: 1 / 1;
+}
+
+/* Showroom key light: a restrained mint/charcoal pool behind the wheel.
+   Bled past the stage on every side and faded out well before its own edges —
+   a gradient that still carries alpha at the box boundary reads as a lighter
+   rectangle plated over the bay, which is exactly what it must not do. */
+.hero-tyre-glow {
+  position: absolute;
+  z-index: 0;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side circle at 50% 48%, rgba(127, 209, 179, 0.30) 0%, rgba(6, 59, 44, 0.30) 46%, transparent 78%),
+    radial-gradient(closest-side circle at 34% 26%, rgba(226, 248, 240, 0.13) 0%, transparent 62%);
+}
+
+/* Technical rings — the only decorative motion on the stage. */
+.hero-tyre-rings {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  pointer-events: none;
+}
+.hero-tyre-ring {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+.hero-tyre-ring--outer {
+  height: 104%;
+  border: 1px dashed rgba(127, 209, 179, 0.30);
+  animation: wheel-spin 28s linear infinite;
+}
+.hero-tyre-ring--inner {
+  height: 72%;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  animation: wheel-spin-reverse 20s linear infinite;
+}
+
+/* Entrance: forward out of depth, then settled. `backwards` means reduced
+   motion (which zeroes the animation) simply shows the final state. */
+.hero-tyre-entrance {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* Sized off whichever stage axis is smaller, so the wheel fills the bay on
+     wide stages without ever running past its edges on narrow ones. A plain
+     percentage height cannot do this: it stretches the stage instead of being
+     contained by it, and the tread ends up clipped at 320px. */
+  width: min(88cqw, 94cqh);
+  aspect-ratio: 1;
+  place-items: center;
+  animation: hero-tyre-arrive 980ms cubic-bezier(0.22, 1, 0.36, 1) 300ms backwards;
+  filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.62));
+}
+
+/* Idle rotation. ~14s per revolution: a showroom turntable, not a spinner. */
+.hero-tyre-spinner {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  animation: wheel-spin 14s linear 520ms infinite;
+  will-change: transform;
+}
+.hero-tyre-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Contact shadow on the bay floor. Sits outside the spinner so it stays put
+   while the wheel turns. */
+.hero-tyre-contact {
+  position: relative;
+  z-index: 0;
+  align-self: end;
+  width: 62%;
+  height: 7%;
+  margin-bottom: 2%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+@keyframes hero-tyre-arrive {
+  from { transform: translateY(40px) scale(0.88); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.hero__bay-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 16px 2px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.hero__bay-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.hero__bay-name {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+}
+.hero__bay-price {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+}
+.hero__bay-price-note {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* ---------------------------------------------------------------
@@ -711,6 +1069,18 @@ footer a {
   color: rgba(255, 255, 255, 0.62);
 }
 
+@keyframes hero-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-visual-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tyre-idle {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+}
 @keyframes wheel-spin {
   to { transform: rotate(360deg); }
 }
@@ -746,7 +1116,9 @@ footer a {
   .product-card--feature:hover .product-card__media svg {
     transform: scale(1.025);
   }
-  
+  .hero__bay:hover {
+    transform: translateY(-4px);
+  }
   .spec-bar__item:hover {
     background: var(--color-surface-muted);
   }
@@ -774,6 +1146,12 @@ footer a {
 }
 
 @media (max-width: 639px) {
+  /* NOTE: the <640px `.hero__title` / `.hero__copy` sizing does NOT live here.
+     The unlayered "exact-v2" block near the end of this file re-declares
+     `.hero__title` at 84px with identical specificity (0,1,0); a media query
+     adds no specificity, so source order decides and anything declared here
+     would lose. The mobile hero typography is declared in the <640px block
+     that follows those rules. Do not move it back up here. */
   .announcement-copy {
     width: 100%;
     overflow: hidden;
@@ -781,7 +1159,13 @@ footer a {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+  .hero__badge,
+  .hero__copy,
+  .hero__actions,
+  .hero__meta,
+  .hero__visual {
+    animation-duration: 0.42s;
+  }
 }
 
 /* Dark -> light -> dark step into the final conversion block. Without this the
@@ -906,6 +1290,24 @@ footer a {
 .header-nav-link.is-active::after { transform: scaleX(1); }
 .mobile-menu { top: var(--header-total); }
 
+.hero__grid > :first-child { grid-column: span 7 / span 7; }
+.hero__grid > .hero__visual { grid-column: span 5 / span 5; }
+.hero__wash { background: var(--color-green-dark); }
+.hero__texture { opacity: .1; background-size: 24px 24px; }
+.hero__badge { margin-bottom: 16px; padding: 4px 12px; border-radius: 999px; }
+.hero__title { margin-top: 0; max-width: none; margin-bottom: 16px; font-size: 84px; line-height: .96; }
+.hero__copy { margin-top: 0; margin-bottom: 32px; max-width: 576px; font-size: 18px; line-height: 1.6; }
+.hero__actions { margin-top: 0; }
+.hero__actions .btn:first-child { padding: 16px 32px; }
+.hero__actions .btn:last-child { padding: 16px 24px; background: var(--color-gunmetal); }
+.hero__meta { margin-top: 40px; padding-top: 24px; }
+.hero__meta-value { font-size: 22px; color: #fff; }
+.hero__meta-label { text-transform: uppercase; font-size: 11px; }
+.hero__visual { max-width: none; }
+.hero__bay { padding: 24px 24px 0; border-radius: 16px; }
+.hero__bay-image { margin-top: 0; padding-top: 24px; aspect-ratio: 4 / 3; }
+.hero__bay-footer { margin-top: 16px; padding: 16px 0 20px; }
+
 .homepage-finder { margin-top: -32px; }
 .homepage-finder__panel { padding: 24px; border-radius: 16px; }
 .homepage-finder__panel > div:first-child { margin-bottom: 24px; padding-bottom: 16px; }
@@ -930,8 +1332,23 @@ footer a {
   .homepage-stock-grid .homepage-product-card { display: grid; grid-template-columns: 38% 1fr; }
   .homepage-stock-grid .homepage-product-card .product-card__media { aspect-ratio: 1 / 1; padding: 8px; }
   .homepage-stock-grid .homepage-product-card > .homepage-product-card__body { padding: 14px; gap: 10px; }
-  
-  
+  .hero__bay { padding: 14px 14px 0; }
+  /* Declared AFTER the exact-v2 `.hero__title { font-size: 84px }` above so it
+     actually wins on source order (identical 0,1,0 specificity).
+     Floor 32px / 12vw: at 320px that is 38.4px and the headline holds three
+     lines (269/228/178) inside the 288px `.container-x` box. At the old 44px
+     floor it wrapped to four cramped lines; at 84px it overflowed entirely. */
+  .hero__title { font-size: clamp(32px, 12vw, 56px); line-height: 0.98; }
+  .hero__copy { margin-bottom: 24px; font-size: 16px; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hero__title { font-size: 48px; line-height: 1; }
+}
+
+@media (max-width: 1023px) {
+  .hero__grid > :first-child,
+  .hero__grid > .hero__visual { grid-column: auto; }
 }
 
 .homepage-benefits { padding-block: 48px; background: var(--color-surface); }
@@ -1291,7 +1708,9 @@ footer.on-dark { background:var(--color-green-dark); }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal--ready { animation: none !important; }
-  
+  .hero-tyre-spinner,
+  .hero-tyre-entrance,
+  .hero-tyre-ring { animation: none !important; }
 }
 
 /* ---------------------------------------------------------------
@@ -1526,19 +1945,32 @@ footer.on-dark { background:var(--color-green-dark); }
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+  .hero-tyre-spinner,
+  .hero-tyre-entrance,
+  .hero-tyre-ring,
+  .hero-tyre-ring--outer,
+  .hero-tyre-ring--inner,
+  .hero__badge,
+  .hero__badge-dot::after,
+  .hero__title,
+  .hero__copy,
+  .hero__actions,
+  .hero__meta,
+  .hero__visual,
   .mobile-menu,
-.cart-count {
+  .cart-count {
     animation: none !important;
   }
   .product-card:hover,
-.product-card:hover .product-card__image,
-.product-detail-media:hover .product-detail-media__image,
-.homepage-finder__chip:hover,
-.spec-bar__item:hover,
-.commercial-stat:hover,
-.btn:not(:disabled):active,
-.quantity-selector button:not(:disabled):active,
-.header-logo:hover {
+  .product-card:hover .product-card__image,
+  .product-detail-media:hover .product-detail-media__image,
+  .hero__bay:hover,
+  .homepage-finder__chip:hover,
+  .spec-bar__item:hover,
+  .commercial-stat:hover,
+  .btn:not(:disabled):active,
+  .quantity-selector button:not(:disabled):active,
+  .header-logo:hover {
     transform: none !important;
   }
 }
@@ -1810,6 +2242,10 @@ footer.on-dark { background:var(--color-green-dark); }
      `position: fixed` descendant, and `animation: none` (the global
      reduced-motion `*` reset earlier in this file) always lands on a visible
      element.
+   - `.hero__title` is the LCP element: it animates transform ONLY. It is
+     painted at full opacity on the very first frame and is never gated on JS.
+   - No font-size / spacing is re-declared here, so the <640px hero typography
+     block keeps winning on source order.
    =============================================================== */
 
 :root {
@@ -1887,23 +2323,102 @@ footer.on-dark { background:var(--color-green-dark); }
 /* ===== 1. HERO LOAD CHOREOGRAPHY ======================================== */
 
 /* Beat 0 - the environment resolves first (both layers are aria-hidden). */
+.hero__wash {
+  animation: home-wash-in 1500ms var(--motion-ease-soft) backwards;
+}
+.hero__texture {
+  animation: home-fade-in 1400ms ease-out 260ms backwards;
+}
 
 /* Beat 1 - badge. */
+.hero__badge {
+  animation: home-rise-soft 720ms var(--motion-ease) 80ms backwards;
+}
 
 /* Beat 2 - headline. The H1 itself remains at full opacity and final geometry;
    each logical phrase reveals through its own fixed line box, so the LCP text
    is server-rendered and no animation can change wrapping or layout. */
+.hero__title {
+  animation: none;
+}
+.hero__title-line {
+  display: block;
+}
+.hero__title-phrase {
+  display: inline-block;
+  transform-origin: 18% 100%;
+  animation: home-title-line-in 900ms var(--motion-ease) 130ms backwards;
+}
+.hero__title-line:nth-child(2) .hero__title-accent {
+  background-image: linear-gradient(
+    105deg,
+    #73c9aa 0%,
+    #a7f3d0 34%,
+    #eefcf6 46%,
+    #ffffff 50%,
+    #b8f5dd 55%,
+    #7fd1b3 68%,
+    #61b997 100%
+  );
+  background-size: 240% 100%;
+  background-position: -15% 50%;
+  animation:
+    home-title-line-in 960ms var(--motion-ease) 270ms backwards,
+    home-title-metallic-sweep 820ms var(--motion-ease-soft) 760ms backwards;
+}
 
 /* Beat 3 - supporting copy. */
+.hero__copy {
+  animation: home-rise 820ms var(--motion-ease) 320ms backwards;
+}
 
 /* Beat 4 - CTAs enter individually, not as one slab. */
+.hero__actions {
+  animation: none;
+}
+.hero__actions > * {
+  animation: home-rise 760ms var(--motion-ease) backwards;
+}
+.hero__actions > :nth-child(1) { animation-delay: 460ms; }
+.hero__actions > :nth-child(2) { animation-delay: 560ms; }
 
 /* Beat 5 - trust strip: the rule fades in, the items step over the top. */
+.hero__meta {
+  animation: home-fade-in 700ms ease-out 540ms backwards;
+}
+.hero__meta-item {
+  animation: home-rise-soft 700ms var(--motion-ease) backwards;
+}
+.hero__meta-item:nth-child(1) { animation-delay: 600ms; }
+.hero__meta-item:nth-child(2) { animation-delay: 690ms; }
+.hero__meta-item:nth-child(3) { animation-delay: 780ms; }
 
 /* Beat 6 - the studio bay arrives with mass: further, slower, from depth. */
+.hero__visual {
+  animation: home-visual-in 1100ms var(--motion-ease) 220ms backwards;
+}
 
 /* Beat 7 - a single key-light sweep across the bay once it has landed.
    Decorative, one-shot (never a loop), and click-transparent. */
+.hero__bay::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(214, 245, 232, 0.16) 45%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent
+  );
+  pointer-events: none;
+  animation: home-sheen 1250ms var(--motion-ease-soft) 1150ms backwards;
+}
 
 /* ===== 2. SECTION ENTRANCE VOCABULARY (Reveal variants) ================= */
 /* `.reveal` base stays opacity:1 / transform:none - declared near the top of
@@ -1986,7 +2501,26 @@ footer.on-dark { background:var(--color-green-dark); }
    tablet only - the effect is not worth the paint cost on small screens. */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
-    
+    /* Dot grid drifts down as the page scrolls up: the hero gains depth. */
+    .hero__texture {
+      animation: home-parallax-down linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 100vh;
+    }
+    /* The tyre floats against its bay frame. The bay is overflow:hidden, so
+       the image moves inside it and nothing reflows. */
+    .hero__bay-image {
+      animation: home-parallax-up linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 110vh;
+    }
+    /* The technical rings drift the other way, so the wheel and its ring
+       backdrop separate slightly in depth as the hero scrolls past. */
+    .hero-tyre-rings {
+      animation: home-parallax-down linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 110vh;
+    }
     /* The commercial band's texture layer counter-drifts as it passes. */
     .commercial-band__texture {
       animation: home-parallax-up linear both;
@@ -2027,13 +2561,27 @@ footer.on-dark { background:var(--color-green-dark); }
 
 /* ===== 5. MOBILE - lighter, but still noticeably alive ================= */
 @media (max-width: 639px) {
-  
-  
-  
-  
-  
+  .hero__badge,
+  .hero__copy,
+  .hero__meta,
+  .hero__meta-item,
+  .hero__actions > * {
+    animation-duration: 560ms;
+  }
+  .hero__title-phrase {
+    animation-name: home-title-line-in-sm;
+    animation-duration: 700ms;
+  }
+  .hero__title-line:nth-child(2) .hero__title-accent {
+    animation-name: home-title-line-in-sm, home-title-metallic-sweep;
+    animation-duration: 740ms, 680ms;
+    animation-delay: 220ms, 650ms;
+  }
+  .hero__visual { animation-duration: 700ms; }
+  .hero__wash,
+  .hero__texture { animation-duration: 900ms; }
   /* The one-shot bay sheen is a large gradient pass - skip it on phones. */
-  
+  .hero__bay::after { animation: none; opacity: 0; }
   .reveal--rise.reveal--ready,
   .reveal--card.reveal--ready,
   .reveal--lift.reveal--ready { animation-duration: 620ms; }
@@ -2059,6 +2607,20 @@ footer.on-dark { background:var(--color-green-dark); }
    for the elements whose START keyframe is invisible or offset, so there is no
    path on which any of them can be stranded. */
 @media (prefers-reduced-motion: reduce) {
+  .hero__wash,
+  .hero__texture,
+  .hero__badge,
+  .hero__title,
+  .hero__title-phrase,
+  .hero__title-accent,
+  .hero__copy,
+  .hero__actions,
+  .hero__actions > *,
+  .hero__meta,
+  .hero__meta-item,
+  .hero__visual,
+  .hero__bay-image,
+  .hero-tyre-rings,
   .commercial-band__texture,
   .reveal,
   .reveal--ready,
@@ -2075,6 +2637,16 @@ footer.on-dark { background:var(--color-green-dark); }
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+  .hero__title-phrase,
+  .hero__title-accent {
+    clip-path: none !important;
+    background-position: -15% 50% !important;
+  }
+  /* Purely decorative sheen: stays hidden rather than flashing on. */
+  .hero__bay::after {
+    animation: none !important;
+    opacity: 0 !important;
   }
   .homepage-stock-grid .homepage-product-card:hover,
   .homepage-stock-grid .homepage-product-card:hover .product-card__media-contain,
@@ -2274,9 +2846,18 @@ footer.on-dark { background:var(--color-green-dark); }
 @media (max-width: 767px) {
   /* Reduced motion intensity on phones: a slower turn, a shorter travel on the
      entrance, and static technical rings. Same choreography, less of it. */
-  
-  
-  
+  .hero-tyre-spinner { animation-duration: 20s; }
+  .hero-tyre-ring--outer,
+  .hero-tyre-ring--inner { animation: none; }
+  .hero-tyre-entrance { animation-duration: 760ms; }
+}
+@keyframes hero-tyre-arrive-compact {
+  from { transform: translateY(24px) scale(0.92); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+@media (max-width: 767px) {
+  .hero-tyre-entrance { animation-name: hero-tyre-arrive-compact; }
 }
 
 @media (max-width: 639px) {
