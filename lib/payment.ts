@@ -69,11 +69,11 @@ export type CheckoutSessionResult = {
   reference: string;
 };
 
-type InventoryCheckoutState = {
-  reservationId: string;
-  commitRequestId: string;
-  releaseRequestId: string;
+type CheckoutInventoryState = {
   reference: string;
+  reservationId?: string;
+  commitRequestId?: string;
+  releaseRequestId?: string;
 };
 
 /**
@@ -82,18 +82,18 @@ type InventoryCheckoutState = {
  * Stripe's own object store, and never the client redirect) is the source of
  * truth the webhook and the success page both read from.
  *
- * `inventory` is null for accessory-only orders. Mixed orders still reserve
- * only their tyre lines before reaching this boundary.
+ * Accessory-only orders pass only `reference`. Mixed/tyre orders also include
+ * the 247 reservation ids for their tyre lines.
  */
 export async function createCheckoutSession(
   input: OrderIntentInput,
-  inventory: InventoryCheckoutState | null,
+  inventory: CheckoutInventoryState,
 ): Promise<CheckoutSessionResult> {
   if (!isPaymentConfigured()) {
     throw new Error("Stripe is not fully configured.");
   }
   const stripe = getStripeClient();
-  const reference = inventory?.reference ?? generateReference();
+  const reference = inventory.reference;
 
   const lineItems: Array<{
     price_data: {
@@ -174,12 +174,12 @@ export async function createCheckoutSession(
     deliveryAddress: address,
     notes: input.details.notes ?? "",
     lines: input.lines,
-    inventoryReservationId: inventory?.reservationId ?? null,
+    inventoryReservationId: inventory.reservationId ?? null,
     // `committed` means there is no inventory work outstanding. For an
     // accessory-only order there is intentionally no 247 reservation to commit.
-    inventoryStatus: inventory ? "reserved" : "committed",
-    inventoryCommitRequestId: inventory?.commitRequestId ?? null,
-    inventoryReleaseRequestId: inventory?.releaseRequestId ?? null,
+    inventoryStatus: inventory.reservationId ? "reserved" : "committed",
+    inventoryCommitRequestId: inventory.commitRequestId ?? null,
+    inventoryReleaseRequestId: inventory.releaseRequestId ?? null,
   });
 
   return { url: session.url, reference };
