@@ -7,6 +7,7 @@ import {
   clearCart,
   getCartSubtotal,
   getDeliveryFee,
+  getTotalItemQuantity,
   getTotalTyreQuantity,
   qualifiesForFreeDelivery,
   removeLine,
@@ -30,6 +31,28 @@ const line = (over = {}) => ({
 test("getTotalTyreQuantity sums quantities across lines", () => {
   const cart = { lines: [line({ id: "a", quantity: 2 }), line({ id: "b", quantity: 3 })] };
   assert.equal(getTotalTyreQuantity(cart), 5);
+});
+
+test("accessories count as cart items but never as tyres for delivery", () => {
+  const cart = {
+    lines: [
+      line({ id: "a", quantity: 7 }),
+      line({
+        id: "tr545d-truck-tyre-valve",
+        slug: "tr545d-truck-tyre-valve",
+        kind: "accessory",
+        brand: "TR545D",
+        pattern: "Truck Tyre Valve",
+        size: "60° Alloy Wheel Valve",
+        price: 10,
+        quantity: 5,
+      }),
+    ],
+  };
+  assert.equal(getTotalTyreQuantity(cart), 7);
+  assert.equal(getTotalItemQuantity(cart), 12);
+  assert.equal(qualifiesForFreeDelivery(cart), false);
+  assert.equal(getDeliveryFee(cart), 50);
 });
 
 test("getCartSubtotal multiplies price by quantity per line", () => {
@@ -128,5 +151,23 @@ test("stored cart restores only current catalogue facts and aggregates duplicate
     price: 220,
     quantity: 120,
     image: "/images/tyres/greforce-gr881w-11r22-5.webp",
+  });
+});
+
+test("stored TR545D cart line restores the authoritative accessory price and type", () => {
+  const cart = restoreStoredCart({
+    lines: [{ slug: "tr545d-truck-tyre-valve", quantity: 3, price: 0.01 }],
+  });
+  assert.equal(cart.lines.length, 1);
+  assert.deepEqual(cart.lines[0], {
+    id: "tr545d-truck-tyre-valve",
+    slug: "tr545d-truck-tyre-valve",
+    kind: "accessory",
+    brand: "TR545D",
+    pattern: "Truck Tyre Valve",
+    size: "60° Alloy Wheel Valve",
+    price: 10,
+    quantity: 3,
+    image: "/images/accessories/tr545d-truck-tyre-valve.webp",
   });
 });
