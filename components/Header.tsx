@@ -9,26 +9,26 @@ import { useCart } from "@/lib/cart-context";
 import { Logo } from "./Logo";
 
 function CartLink({ onNavigate }: { onNavigate?: () => void }) {
-  const { totalTyres, hydrated } = useCart();
+  const { totalItems, hydrated } = useCart();
   // Bump only when the count actually grows, so the header reacts to an
   // add-to-cart but stays still on hydration, removals and route changes.
   const [bumped, setBumped] = useState(false);
-  const previousTotal = useRef(totalTyres);
+  const previousTotal = useRef(totalItems);
 
   useEffect(() => {
     if (!hydrated) {
-      previousTotal.current = totalTyres;
+      previousTotal.current = totalItems;
       return;
     }
-    if (totalTyres <= previousTotal.current) {
-      previousTotal.current = totalTyres;
+    if (totalItems <= previousTotal.current) {
+      previousTotal.current = totalItems;
       return;
     }
-    previousTotal.current = totalTyres;
+    previousTotal.current = totalItems;
     setBumped(true);
     const timer = setTimeout(() => setBumped(false), 460);
     return () => clearTimeout(timer);
-  }, [totalTyres, hydrated]);
+  }, [totalItems, hydrated]);
 
   return (
     <Link
@@ -36,9 +36,9 @@ function CartLink({ onNavigate }: { onNavigate?: () => void }) {
       onClick={onNavigate}
       data-bumped={bumped || undefined}
       className="header-cart btn btn--green min-h-[44px] px-4 py-2"
-      aria-label={`Cart, ${hydrated ? totalTyres : 0} tyres`}
+      aria-label={`Cart, ${hydrated ? totalItems : 0} items`}
     >
-      Cart <span key={totalTyres} className="cart-count" aria-hidden="true">{hydrated ? totalTyres : 0}</span>
+      Cart <span key={totalItems} className="cart-count" aria-hidden="true">{hydrated ? totalItems : 0}</span>
     </Link>
   );
 }
