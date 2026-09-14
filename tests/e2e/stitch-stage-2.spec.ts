@@ -13,7 +13,7 @@ test("Stage 2 homepage uses the approved Stitch hierarchy with verified content"
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: "Tyres at wholesale prices.",
+      name: "Wholesale tyres. Ready for your next order.",
     }),
   ).toBeVisible();
 
@@ -21,16 +21,16 @@ test("Stage 2 homepage uses the approved Stitch hierarchy with verified content"
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 
   await expect(
-    page.getByRole("link", { name: "View tyres" }).first(),
+    page.getByRole("link", { name: "Shop available stock" }).first(),
   ).toHaveAttribute("href", "/tyres");
 
   await expect(
-    page.getByRole("link", { name: "Get a quote" }).first(),
+    page.getByRole("link", { name: "Get a wholesale quote" }).first(),
   ).toHaveAttribute("href", "/contact?type=quote");
 
   await expect(page.locator("body")).toContainText("No minimum order");
-  await expect(page.locator("body")).toContainText(`${order.delivery.freeQualifyingTyres}+ tyres free`);
-  await expect(page.locator("body")).toContainText("Adelaide-wide");
+  await expect(page.locator("body")).toContainText(`Free ${order.delivery.freeQualifyingTyres}+`);
+  await expect(page.locator("body")).toContainText("Adelaide delivery");
 
   // Config-derived, not a literal: this fails if config and the rendered
   // copy drift apart (e.g. `order.delivery.freeQualifyingTyres` changes
@@ -76,7 +76,7 @@ test("hero headline and CTAs do not clip at a 320px viewport", async ({ page }) 
     ).toBeLessThanOrEqual(entry.clientWidth + 1);
   }
 
-  await expect(page.locator("body")).toContainText("Tyres at wholesale prices.");
+  await expect(page.locator("body")).toContainText("Ready for your next order.");
 });
 
 test("Stage 2 catalogue exposes a desktop filter rail and preserves URL filter state", async ({ page }) => {

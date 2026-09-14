@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
-import "./hero.css";
 import { CartProvider } from "@/lib/cart-context";
 import { InventoryAvailabilityProvider } from "@/lib/inventory/availability-context";
 import { Header } from "@/components/Header";
