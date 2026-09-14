@@ -15,7 +15,7 @@ import http from "node:http";
  */
 export function createInventoryProxy({ upstream, port }) {
   const target = new URL(upstream);
-  const state = { mode: "pass", delayMs: 0, dropOnce: false, offlineOnce: false };
+  const state = { mode: "pass", delayMs: 0, dropOnce: false, offlineOnce: false, dropNextMatching: null };
   const recorded = [];
 
   const server = http.createServer((req, res) => {
@@ -45,8 +45,10 @@ export function createInventoryProxy({ upstream, port }) {
             const payload = Buffer.concat(out);
             entry.status = upstreamRes.statusCode;
             entry.responseBody = payload.toString("utf8");
-            if (state.mode === "drop-response" || state.dropOnce) {
+            const dropMatched = state.dropNextMatching?.(entry) === true;
+            if (state.mode === "drop-response" || state.dropOnce || dropMatched) {
               state.dropOnce = false;
+              if (dropMatched) state.dropNextMatching = null;
               entry.dropped = true;
               // 247 has already committed its side effect; Adelaide never hears back.
               req.socket.destroy();
@@ -71,6 +73,8 @@ export function createInventoryProxy({ upstream, port }) {
     state,
     setMode(mode, options = {}) { state.mode = mode; state.delayMs = options.delayMs ?? 0; },
     dropNextResponse() { state.dropOnce = true; },
+    /** Drops only the next response whose request satisfies `predicate`; other traffic passes. */
+    dropNextResponseTo(predicate) { state.dropNextMatching = predicate; },
     refuseNextRequest() { state.offlineOnce = true; },
     start: () => new Promise((resolve) => server.listen(port, "127.0.0.1", resolve)),
     stop: () => new Promise((resolve) => server.close(() => resolve())),
