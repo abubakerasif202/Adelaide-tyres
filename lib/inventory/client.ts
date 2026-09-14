@@ -239,9 +239,50 @@ export async function releaseInventory(reservationId: string, reason: string, re
   return call('DELETE', `/api/integrations/adelaide/reservations/${reservationId}`, { reason }, requestId, validateReservation, fetcher, { log: { reservationId } });
 }
 
+type PaidOrderState = { inventoryState: string; commitRequestId: string };
+function validatePaidOrderState(payload: unknown): PaidOrderState | null {
+  if (!isRecord(payload)) return null;
+  const inventoryState = payload.inventory_state ?? payload.inventoryState;
+  const commitRequestId = payload.commit_request_id ?? payload.commitRequestId;
+  if (typeof inventoryState !== 'string' || typeof commitRequestId !== 'string' || !UUID.test(commitRequestId)) return null;
+  return { inventoryState, commitRequestId };
+}
+
+/**
+ * Stable identity of the paid-state handoff for a given durable commit
+ * identity: a retry of the same commit replays the same handoff, and 247
+ * refuses a different payload under it. Derived rather than stored so it
+ * survives any crash between the two requests. Any 8-4-4-4-12 hex layout is
+ * a valid 247 request id.
+ */
+export function paidStateRequestId(commitRequestId: string): string {
+  const hex = sha256Hex(`adelaide-paid-state:${commitRequestId.toLowerCase()}`).slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+/**
+ * Tells 247 the order is paid before anything else happens to its hold. This
+ * is what makes the hold unexpirable and unreleasable on the 247 side, and it
+ * hands 247 the commit identity so its own retry queue and this worker commit
+ * the sale under one key. Returns the identity 247 will honour, which is the
+ * local one unless 247 already holds another for this order.
+ */
+export async function registerPaidOrderState(reservationId: string, orderReference: string, commitRequestId: string, fetcher?: FetchLike): Promise<PaidOrderState> {
+  if (!UUID.test(reservationId) || !UUID.test(commitRequestId)) throw new InventoryUnavailableError();
+  return call('POST', '/api/integrations/adelaide/orders/state',
+    { reservationId, orderReference, paymentStatus: 'paid', orderStatus: 'confirmed', commitRequestId },
+    paidStateRequestId(commitRequestId), validatePaidOrderState, fetcher, { log: { orderReference, reservationId } });
+}
+
+/**
+ * Protected sale commit: paid-state handoff, then the commit itself. Both
+ * halves are idempotent under stable identities, so a caller's retry (same
+ * `requestId`) after any failure or lost response converges on one sale.
+ */
 export async function commitInventory(reservationId: string, orderReference: string, requestId: string, fetcher?: FetchLike): Promise<InventoryReservation> {
   if (!UUID.test(reservationId)) throw new InventoryUnavailableError();
-  const result = await call('POST', '/api/integrations/adelaide/sales/commit', { reservationId, orderReference }, requestId, validateReservation, fetcher, { log: { orderReference, reservationId } });
+  const paid = await registerPaidOrderState(reservationId, orderReference, requestId, fetcher);
+  const result = await call('POST', '/api/integrations/adelaide/sales/commit', { reservationId, orderReference }, paid.commitRequestId, validateReservation, fetcher, { log: { orderReference, reservationId } });
   // Defence in depth: only a committed result may mark the order committed.
   if (result.status !== 'committed') throw new InventoryConflictError('The stock hold for this order is no longer active.');
   return result;

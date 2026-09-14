@@ -37,14 +37,29 @@ export type OrderRecord = {
   lines: OrderLine[];
   notifiedAt: string | null;
   inventoryReservationId: string | null;
-  inventoryStatus: "pending" | "reserved" | "committed" | "released" | "failed";
+  inventoryStatus: "pending" | "reserved" | "failed" | "commit_pending" | "committed" | "release_pending" | "released" | "manual_review";
   inventoryCommitRequestId: string | null;
   inventoryReleaseRequestId: string | null;
+};
+
+export type InventoryWork = {
+  operationId: string;
+  orderReference: string;
+  operation: "commit" | "release";
+  reservationId: string;
+  requestId: string;
+  attemptCount: number;
 };
 
 export type NewOrderInput = Omit<OrderRecord, "status" | "notifiedAt" | "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId"> & Partial<Pick<OrderRecord, "inventoryReservationId" | "inventoryStatus" | "inventoryCommitRequestId" | "inventoryReleaseRequestId">>;
 
 export interface OrderStore {
+  /** Full refund: the order becomes `refunded` (never fulfilable/notifiable); inventory is untouched. */
+  recordRefund(paymentIntentId: string, eventId: string): Promise<void>;
+  /** Partial refund: durable audit only; the order stays paid and fulfilable. */
+  recordPartialRefund(paymentIntentId: string, eventId: string, amounts: { amount: number | null; amountRefunded: number | null }): Promise<void>;
+  claimNotification(workerId: string): Promise<OrderRecord | null>;
+  finishNotification(checkoutSessionId: string, workerId: string, delivered: boolean): Promise<void>;
   /** Inserts the order row at Checkout Session creation time, status = "pending". */
   createPendingOrder(order: NewOrderInput): Promise<void>;
 
@@ -57,6 +72,18 @@ export interface OrderStore {
    * nothing further in that case.
    */
   claimFulfilment(checkoutSessionId: string): Promise<OrderRecord | null>;
+
+  /** Atomically persists the verified payment event, paid state, and commit outbox row. */
+  confirmPaymentAndEnqueue(input: {
+    checkoutSessionId: string;
+    paymentIntentId: string | null;
+    stripeEventId: string;
+    stripeEventType: string;
+  }): Promise<OrderRecord | null>;
+
+  claimInventoryWork(workerId: string, leaseSeconds?: number): Promise<InventoryWork | null>;
+  completeInventoryWork(operationId: string, workerId: string): Promise<void>;
+  retryInventoryWork(operationId: string, workerId: string, errorCode: string, manualReview?: boolean): Promise<void>;
 
   /** Marks the order successfully notified. Call only after claimFulfilment succeeded and the notification was actually delivered. */
   markNotified(checkoutSessionId: string): Promise<void>;

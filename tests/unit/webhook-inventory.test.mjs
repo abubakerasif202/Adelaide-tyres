@@ -2,6 +2,26 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MemoryOrderStore } from "../../lib/order-store-memory.ts";
 import { processStripeEvent } from "../../lib/webhook-handlers.ts";
+import { processInventoryOutbox } from "../../lib/inventory/outbox-worker.ts";
+import { processOrderNotifications } from "../../lib/inventory/notification-worker.ts";
+import { InventoryConflictError } from "../../lib/inventory/types.ts";
+
+test('payment persistence failure rejects for Stripe redelivery', async () => {
+  const store = new MemoryOrderStore();
+  store.confirmPaymentAndEnqueue = async () => { throw new Error('database unavailable'); };
+  await assert.rejects(processStripeEvent(paid('persistence'), { store, notify: notifyOk() }), /database unavailable/);
+});
+
+test('paid confirmation after expired hold enters manual review and never notifies fulfilment', async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput('expired'));
+  const notify = notifyOk();
+  await processStripeEvent(paid('expired'), { store, notify, commitInventory: async () => { throw new InventoryConflictError('Expired hold'); } });
+  assert.equal((await store.getByCheckoutSessionId('expired')).status, 'paid');
+  assert.equal((await store.getByCheckoutSessionId('expired')).inventoryStatus, 'manual_review');
+  assert.equal(notify.calls.length,0);
+  assert.equal(await store.claimInventoryWork('later'),null);
+});
 
 // Inventory commit/release semantics of the signed Stripe webhook. 247 is the
 // source of truth; the verified webhook is the only thing allowed to commit
@@ -80,7 +100,8 @@ test("two different Stripe event ids for the same paid order commit inventory ex
 });
 
 test("payment succeeded but the inventory commit failed: order stays recoverable, retry commits once with the same request id", async () => {
-  const store = new MemoryOrderStore();
+  let now = Date.now();
+  const store = new MemoryOrderStore(() => now);
   await store.createPendingOrder(makeOrderInput("sess_11"));
   const notify = notifyOk();
   const committed = [];
@@ -93,13 +114,15 @@ test("payment succeeded but the inventory commit failed: order stays recoverable
   };
   const releaseInventory = async () => { throw new Error("must not release a paid order"); };
 
-  await assert.rejects(processStripeEvent(paid("sess_11", "evt_1"), { store, notify, commitInventory, releaseInventory }));
+  await processStripeEvent(paid("sess_11", "evt_1"), { store, notify, commitInventory, releaseInventory });
   let order = await store.getByCheckoutSessionId("sess_11");
-  assert.equal(order.status, "pending", "claim released so Stripe redelivery can retry");
-  assert.equal(order.inventoryStatus, "reserved", "inventory is never marked committed when 247 did not confirm");
+  assert.equal(order.status, "paid", "verified payment survives transport failure");
+  assert.equal(order.inventoryStatus, "commit_pending", "inventory is never marked committed when 247 did not confirm");
   assert.equal(notify.calls.length, 0, "the business is not told about a sale whose stock is unconfirmed");
 
-  await processStripeEvent(paid("sess_11", "evt_1"), { store, notify, commitInventory, releaseInventory });
+  now += 60_000;
+  await processInventoryOutbox({ store, commit: commitInventory }, 1);
+  await processOrderNotifications(store, notify);
   order = await store.getByCheckoutSessionId("sess_11");
   assert.equal(order.status, "paid");
   assert.equal(order.inventoryStatus, "committed");
@@ -109,7 +132,8 @@ test("payment succeeded but the inventory commit failed: order stays recoverable
 });
 
 test("lost commit response: 247 committed but Adelaide timed out; the webhook retry replays the same idempotent commit", async () => {
-  const store = new MemoryOrderStore();
+  let now = Date.now();
+  const store = new MemoryOrderStore(() => now);
   await store.createPendingOrder(makeOrderInput("sess_12"));
   const notify = notifyOk();
   // Emulates 247's ledger: the first call deducts, then the response is lost.
@@ -121,9 +145,10 @@ test("lost commit response: 247 committed but Adelaide timed out; the webhook re
   };
   const releaseInventory = async () => ({ status: "released" });
 
-  await assert.rejects(processStripeEvent(paid("sess_12", "evt_1"), { store, notify, commitInventory, releaseInventory }));
+  await processStripeEvent(paid("sess_12", "evt_1"), { store, notify, commitInventory, releaseInventory });
   assert.deepEqual([ledger.onHand, ledger.reserved], [8, 0]);
-  await processStripeEvent(paid("sess_12", "evt_1_retry"), { store, notify, commitInventory, releaseInventory });
+  now += 60_000;
+  await processInventoryOutbox({ store, commit: commitInventory }, 1);
   assert.deepEqual([ledger.onHand, ledger.reserved], [8, 0], "no second deduction");
   assert.equal(ledger.seen.size, 1, "one commit identity across retries");
   const order = await store.getByCheckoutSessionId("sess_12");
@@ -194,10 +219,11 @@ test("a paid order missing its reservation is never fulfilled silently", async (
   await store.createPendingOrder(makeOrderInput("sess_17", { inventoryReservationId: null, inventoryStatus: "pending", inventoryCommitRequestId: null }));
   const notify = notifyOk();
   const inventory = inventoryDeps();
-  await assert.rejects(processStripeEvent(paid("sess_17"), { store, notify, ...inventory }));
+  await processStripeEvent(paid("sess_17"), { store, notify, ...inventory });
   assert.equal(inventory.committed.length, 0);
   assert.equal(notify.calls.length, 0);
-  assert.equal((await store.getByCheckoutSessionId("sess_17")).status, "pending", "left recoverable for operator reconciliation");
+  assert.equal((await store.getByCheckoutSessionId("sess_17")).status, "paid");
+  assert.equal((await store.getByCheckoutSessionId("sess_17")).inventoryStatus, "manual_review");
 });
 
 test("concurrent duplicate deliveries commit once even when the commit is slow", async () => {

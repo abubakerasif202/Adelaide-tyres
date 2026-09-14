@@ -24,7 +24,7 @@ import { createInventoryHarness, requiredEnv } from "./support/inventory-db.mjs"
 import { getTyreBySlug } from "../../lib/catalogue.ts";
 import { inventoryMappingIdForProduct } from "../../lib/inventory/mapping.ts";
 
-const REQUIRED = ["AWT_BASE_URL", "INVENTORY_UPSTREAM_URL", "INVENTORY_PROXY_PORT", "STRIPE_STANDIN_PORT", "STRIPE_WEBHOOK_SECRET", "ADELAIDE_DATABASE_URL", "SUPABASE_TEST_URL", "SUPABASE_TEST_ANON_KEY", "SUPABASE_TEST_SERVICE_ROLE_KEY"];
+const REQUIRED = ["AWT_BASE_URL", "INVENTORY_UPSTREAM_URL", "INVENTORY_PROXY_PORT", "STRIPE_STANDIN_PORT", "STRIPE_WEBHOOK_SECRET", "ADELAIDE_DATABASE_URL", "CRON_SECRET", "SUPABASE_TEST_URL", "SUPABASE_TEST_ANON_KEY", "SUPABASE_TEST_SERVICE_ROLE_KEY"];
 const missing = requiredEnv(REQUIRED);
 const suite = missing.length ? describe.skip : describe;
 if (missing.length) process.stderr.write(`[cross-system] skipped: missing ${missing.join(", ")}\n`);
@@ -83,6 +83,16 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
   }
 
   const sessionFor = (reference) => stripeStandIn.created.find((c) => c.session.client_reference_id === reference)?.session;
+  /** The scheduled worker: what Vercel Cron does every five minutes in production. */
+  const runOutboxCron = async () => {
+    const unauthenticated = await fetch(`${BASE}/api/cron/inventory-outbox`);
+    assert.equal(unauthenticated.status, 401, "the scheduled worker route is closed without the cron secret");
+    const response = await fetch(`${BASE}/api/cron/inventory-outbox`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
+    return { status: response.status, json: await response.json().catch(() => null) };
+  };
+  /** Collapses the retry backoff so the next worker run picks the row up now. */
+  const makeOutboxDue = (reference) => sql`update inventory_outbox set next_attempt_at = now() where order_reference = ${reference}`;
+  const outboxRow = async (reference) => (await sql`select state, attempt_count, last_error_code, lease_owner from inventory_outbox where order_reference = ${reference}`)[0] ?? null;
 
   before(async () => {
     await proxy.start();
@@ -407,7 +417,7 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
     // so a persistence failure takes this identical release path.
   });
 
-  test("DF3: payment succeeded but 247 is down at commit time -> explicit recoverable state, idempotent retry commits once", async () => {
+  test("DF3: payment succeeded but 247 is down at commit time -> payment is durable, the hold is protected, the scheduled worker commits once", async () => {
     const attempt = randomUUID();
     const made = await checkout([{ slug: LOW_STATIC_SLUG, quantity: 2 }], attempt);
     assert.equal(made.status, 200);
@@ -415,43 +425,104 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
     stripeStandIn.markPaid(session.id);
 
     proxy.setMode("offline");
-    let failed;
-    try { failed = await webhook("checkout.session.completed", session, "evt_df3_first"); } finally { proxy.setMode("pass"); }
-    assert.equal(failed.status, 500, "non-2xx makes Stripe redeliver");
+    let acknowledged;
+    try { acknowledged = await webhook("checkout.session.completed", session, "evt_df3_first"); } finally { proxy.setMode("pass"); }
+    assert.equal(acknowledged.status, 200, "payment + outbox are durable before Stripe is acknowledged");
     let row = await order(made.json.reference);
-    assert.equal(row.status, "pending", "claim released, order not falsely fulfilled");
-    assert.equal(row.inventory_status, "reserved", "inventory never falsely marked committed");
+    assert.equal(row.status, "paid", "the payment is recorded even though 247 is unreachable");
+    assert.equal(row.inventory_status, "commit_pending", "inventory never falsely marked committed");
+    assert.deepEqual(await outboxRow(made.json.reference), { state: "pending", attempt_count: 1, last_error_code: "InventoryUnavailableError", lease_owner: null });
     assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 10, reserved: 2, available: 8 });
+    assert.equal(stripeStandIn.notifications.filter((n) => n.body?.subject?.includes(made.json.reference)).length, 0, "nothing is fulfilable until 247 confirms");
 
-    const retry = await webhook("checkout.session.completed", session, "evt_df3_first");
-    assert.equal(retry.status, 200);
+    // A duplicate delivery never bypasses the retry backoff.
+    const duplicate = await webhook("checkout.session.completed", session, "evt_df3_first");
+    assert.equal(duplicate.status, 200);
+    assert.equal((await outboxRow(made.json.reference)).attempt_count, 1, "no attempt while the row is backing off");
+
+    await makeOutboxDue(made.json.reference);
+    const cron = await runOutboxCron();
+    assert.equal(cron.status, 200, JSON.stringify(cron.json));
+    assert.equal(cron.json.completed, 1);
     row = await order(made.json.reference);
     assert.equal(row.status, "paid");
     assert.equal(row.inventory_status, "committed");
     assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 8, reserved: 0, available: 8 });
     assert.equal((await inventory.movements(products.lowStatic.productId)).length, 1);
+    assert.equal((await outboxRow(made.json.reference)).state, "completed");
+
+    // The paid-state handoff preceded the commit and carried the durable commit identity.
+    const handoffs = proxy.requestsTo((e) => e.path === "/api/integrations/adelaide/orders/state" && e.status === 200 && e.body.includes(made.json.reference));
+    assert.ok(handoffs.length >= 1, "247 was told the order is paid");
+    assert.equal(JSON.parse(handoffs.at(-1).body).commitRequestId, row.inventory_commit_request_id);
+    const commits = proxy.requestsTo((e) => e.path === "/api/integrations/adelaide/sales/commit" && e.status === 200 && e.body.includes(made.json.reference));
+    assert.equal(commits.length, 1);
+    assert.equal(commits[0].headers["x-awt-request-id"], row.inventory_commit_request_id);
+    const [reservation] = await inventory.reservations(made.json.reference);
+    assert.equal(reservation.status, "committed");
+    assert.equal(cron.json.notifications.delivered, 1, "staff are told once the sale is committed");
+    assert.equal(stripeStandIn.notifications.filter((n) => n.body?.subject?.includes(made.json.reference)).length, 1);
   });
 
-  test("DF4: commit succeeded in 247 but Adelaide never heard back -> webhook retry replays the same commit, no second deduction", async () => {
+  test("DF4: commit succeeded in 247 but Adelaide never heard back -> the worker replays the same identity, no second deduction", async () => {
     const made = await checkout([{ slug: LOW_STATIC_SLUG, quantity: 1 }]);
     assert.equal(made.status, 200);
     const session = sessionFor(made.json.reference);
     stripeStandIn.markPaid(session.id);
 
-    proxy.dropNextResponse();
+    proxy.dropNextResponseTo((e) => e.path === "/api/integrations/adelaide/sales/commit");
     const lost = await webhook("checkout.session.completed", session, "evt_df4");
-    assert.equal(lost.status, 500);
+    assert.equal(lost.status, 200, "the payment was durable before the commit was attempted");
     assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 7, reserved: 0, available: 7 }, "247 committed before the response was lost");
-    assert.equal((await order(made.json.reference)).inventory_status, "reserved", "Adelaide keeps the explicit recoverable state");
+    assert.equal((await order(made.json.reference)).inventory_status, "commit_pending", "Adelaide keeps the explicit recoverable state");
+    assert.equal((await outboxRow(made.json.reference)).state, "pending");
 
-    const retry = await webhook("checkout.session.completed", session, "evt_df4_retry");
-    assert.equal(retry.status, 200);
+    await makeOutboxDue(made.json.reference);
+    const cron = await runOutboxCron();
+    assert.equal(cron.status, 200, JSON.stringify(cron.json));
+    assert.equal(cron.json.completed, 1);
     assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 7, reserved: 0, available: 7 }, "no second deduction");
     const movements = await inventory.movements(products.lowStatic.productId);
     assert.equal(movements.filter((m) => m.source_id === made.json.reference).length, 1);
     const row = await order(made.json.reference);
     assert.equal(row.status, "paid");
     assert.equal(row.inventory_status, "committed");
+    const commits = proxy.requestsTo((e) => e.path === "/api/integrations/adelaide/sales/commit" && e.body.includes(made.json.reference));
+    assert.equal(commits.length, 2, "one lost, one replayed");
+    assert.equal(new Set(commits.map((e) => e.headers["x-awt-request-id"])).size, 1, "identical durable commit identity on both attempts");
+    assert.deepEqual([commits[0].dropped, commits[1].dropped], [true, undefined]);
+  });
+
+  test("DF5: a paid hold that outlives its checkout window is never expired by 247 while the commit is pending", async () => {
+    const made = await checkout([{ slug: LOW_STATIC_SLUG, quantity: 1 }]);
+    assert.equal(made.status, 200);
+    const session = sessionFor(made.json.reference);
+    stripeStandIn.markPaid(session.id);
+    // First attempt: 247 refuses the paid handoff itself (deploy / partition); the customer has paid.
+    proxy.refuseNextRequest();
+    assert.equal((await webhook("checkout.session.completed", session, "evt_df5")).status, 200);
+    let row = await order(made.json.reference);
+    assert.equal(row.inventory_status, "commit_pending");
+    const [held] = await inventory.reservations(made.json.reference);
+    assert.equal(held.status, "active", "the handoff was refused; the hold is still only a hold");
+    // Second attempt: the handoff lands, then the commit response is lost.
+    proxy.dropNextResponseTo((e) => e.path === "/api/integrations/adelaide/sales/commit");
+    await makeOutboxDue(made.json.reference);
+    let cron = await runOutboxCron();
+    assert.equal(cron.status, 200, JSON.stringify(cron.json));
+    assert.equal(cron.json.retried, 1);
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 0, available: 6 }, "247 committed on the lost attempt");
+    // Force the checkout window to lapse and run 247's expiry: a paid hold is untouchable.
+    await inventory.expireHoldsNow(made.json.reference);
+    const [afterExpiry] = await inventory.reservations(made.json.reference);
+    assert.equal(afterExpiry.status, "committed");
+    await makeOutboxDue(made.json.reference);
+    cron = await runOutboxCron();
+    assert.equal(cron.json.completed, 1);
+    row = await order(made.json.reference);
+    assert.equal(row.inventory_status, "committed");
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 0, available: 6 });
+    assert.equal((await inventory.movements(products.lowStatic.productId)).filter((m) => m.source_id === made.json.reference).length, 1);
   });
 
   test("refund never restocks automatically", async () => {
@@ -460,7 +531,7 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
     const session = sessionFor(made.json.reference);
     stripeStandIn.markPaid(session.id);
     assert.equal((await webhook("checkout.session.completed", session)).status, 200);
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 0, available: 6 });
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 0, available: 5 });
     const payload = JSON.stringify({ id: `evt_refund_${randomUUID().slice(0, 8)}`, object: "event", type: "charge.refunded", data: { object: { id: "ch_test", object: "charge", payment_intent: session.payment_intent } } });
     const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: process.env.STRIPE_WEBHOOK_SECRET });
     const response = await fetch(`${BASE}/api/webhooks/stripe`, { method: "POST", headers: { "content-type": "application/json", "stripe-signature": signature }, body: payload });
@@ -468,7 +539,7 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
     const row = await order(made.json.reference);
     assert.equal(row.status, "refunded");
     assert.equal(row.inventory_status, "committed");
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 0, available: 6 }, "physical returns are a separate 247 process");
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 0, available: 5 }, "physical returns are a separate 247 process");
   });
 
   test("webhook with a bad signature is rejected and changes nothing", async () => {
@@ -477,24 +548,24 @@ suite("Adelaide Wholesale Tyres ↔ 247 inventory: cross-system proof", () => {
     const payload = JSON.stringify({ id: "evt_forged", object: "event", type: "checkout.session.completed", data: { object: { id: session.id, payment_status: "paid", payment_intent: session.payment_intent } } });
     const forged = await fetch(`${BASE}/api/webhooks/stripe`, { method: "POST", headers: { "content-type": "application/json", "stripe-signature": "t=1,v1=deadbeef" }, body: payload });
     assert.equal(forged.status, 400);
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 1, available: 5 });
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 1, available: 4 });
     assert.equal((await order(made.json.reference)).status, "pending");
     await webhook("checkout.session.expired", session);
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 0, available: 6 });
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 0, available: 5 });
   });
 
   test("reference (invoice) orders also hold authoritative stock and persist the reservation", async () => {
     const attempt = randomUUID();
     const { status, json } = await referenceOrder([{ slug: LOW_STATIC_SLUG, quantity: 2 }], attempt);
     assert.equal(status, 200, JSON.stringify(json));
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 2, available: 4 });
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 2, available: 3 });
     const row = await order(json.reference);
     assert.equal(row.inventory_status, "reserved");
     assert.equal(row.checkout_session_id, null);
     const retry = await referenceOrder([{ slug: LOW_STATIC_SLUG, quantity: 2 }], attempt);
     assert.equal(retry.status, 200);
     assert.equal(retry.json.reference, json.reference, "a retried submission converges on the same order");
-    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 6, reserved: 2, available: 4 }, "no double hold");
+    assert.deepEqual(await inventory.balance(products.lowStatic.productId), { on_hand: 5, reserved: 2, available: 3 }, "no double hold");
   });
 
   test("final ledger invariants hold for every product touched", async () => {

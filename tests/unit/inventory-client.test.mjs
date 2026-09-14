@@ -7,6 +7,7 @@ import {
   aggregateReservationLines,
   commitInventory,
   getAvailabilityForSlugs,
+  paidStateRequestId,
   releaseInventory,
   reserveInventory,
   sha256Hex,
@@ -255,23 +256,60 @@ test("release: signs a DELETE bound to the reservation path", async () => {
   assert.equal(fetcher.calls.length, 1);
 });
 
-test("commit: signs POST with the order reference and the durable commit request id", async () => {
+/**
+ * 247 answers the paid-state handoff with the effective commit identity and
+ * the sale commit with `respond`. Mirrors register_adelaide_order_state.
+ */
+function commitFetch(respond, state = {}) {
+  return fakeFetch((url, init, n) => {
+    if (new URL(url).pathname === "/api/integrations/adelaide/orders/state") {
+      const body = JSON.parse(init.body);
+      return { body: { inventory_state: "commit_pending", commit_request_id: body.commitRequestId, ...state } };
+    }
+    return typeof respond === "function" ? respond(url, init, n) : respond;
+  });
+}
+
+test("commit: registers the paid state first, then commits under the identity 247 confirmed", async () => {
   const reservationId = randomUUID();
-  const fetcher = fakeFetch({ body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1", committed_at: "2026-09-13T00:00:00Z" } });
   const requestId = randomUUID();
+  const fetcher = commitFetch({ body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1", committed_at: "2026-09-13T00:00:00Z" } });
   const result = await commitInventory(reservationId, "AWT-1", requestId, fetcher);
-  const { headers, body } = verify(fetcher.calls[0], "POST", "/api/integrations/adelaide/sales/commit");
-  assert.equal(headers["x-awt-request-id"], requestId);
-  assert.deepEqual(body, { reservationId, orderReference: "AWT-1" });
+  assert.equal(fetcher.calls.length, 2, "paid handoff precedes the sale commit");
+  const state = verify(fetcher.calls[0], "POST", "/api/integrations/adelaide/orders/state");
+  assert.deepEqual(state.body, { reservationId, orderReference: "AWT-1", paymentStatus: "paid", orderStatus: "confirmed", commitRequestId: requestId });
+  assert.equal(state.headers["x-awt-request-id"], paidStateRequestId(requestId), "the handoff identity is derived from the durable commit identity");
+  assert.notEqual(state.headers["x-awt-request-id"], requestId);
+  const commit = verify(fetcher.calls[1], "POST", "/api/integrations/adelaide/sales/commit");
+  assert.equal(commit.headers["x-awt-request-id"], requestId);
+  assert.deepEqual(commit.body, { reservationId, orderReference: "AWT-1" });
   assert.equal(result.status, "committed");
-  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch({ status: 409, body: { error: "RESERVATION_NOT_ACTIVE" } })), InventoryConflictError);
-  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch(new TypeError("fetch failed"))), InventoryUnavailableError);
+  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), commitFetch({ status: 409, body: { error: "RESERVATION_NOT_ACTIVE" } })), InventoryConflictError);
+  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), commitFetch(new TypeError("fetch failed"))), InventoryUnavailableError);
+});
+
+test("commit: an identity 247 already holds for the order wins over the local one, and the handoff never proceeds on a bad answer", async () => {
+  const reservationId = randomUUID();
+  const existing = randomUUID();
+  const fetcher = commitFetch({ body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }, { commit_request_id: existing });
+  await commitInventory(reservationId, "AWT-1", randomUUID(), fetcher);
+  assert.equal(verify(fetcher.calls[1], "POST", "/api/integrations/adelaide/sales/commit").headers["x-awt-request-id"], existing);
+  assert.equal(paidStateRequestId(existing), paidStateRequestId(existing));
+  assert.match(paidStateRequestId(existing), /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  for (const bad of [{ body: { inventory_state: "commit_pending" } }, { status: 503, body: { error: "INTEGRATION_UNAVAILABLE" } }, new TypeError("fetch failed")]) {
+    const failing = fakeFetch(bad);
+    await assert.rejects(quiet(() => commitInventory(reservationId, "AWT-1", randomUUID(), failing)), InventoryUnavailableError);
+    assert.equal(failing.calls.length, 1, "no sale commit without a confirmed paid handoff");
+  }
+  const conflict = fakeFetch({ status: 409, body: { error: "ORDER_REFERENCE_MISMATCH" } });
+  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), conflict), InventoryConflictError);
+  assert.equal(conflict.calls.length, 1);
 });
 
 test("response parsing accepts both snake_case (247) and camelCase reservation payloads", async () => {
   const reservationId = randomUUID();
-  const snake = await commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch({ body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }));
-  const camel = await commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch({ body: { reservationId, status: "committed", orderReference: "AWT-1" } }));
+  const snake = await commitInventory(reservationId, "AWT-1", randomUUID(), commitFetch({ body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }));
+  const camel = await commitInventory(reservationId, "AWT-1", randomUUID(), commitFetch({ body: { reservationId, status: "committed", orderReference: "AWT-1" } }));
   assert.deepEqual(snake, camel);
 });
 
@@ -287,7 +325,7 @@ test("reserve: accepts the catalogue id emitted by validateOrderLines (not only 
 
 test("commit: a 200 whose status is not committed is never treated as a sale", async () => {
   const reservationId = randomUUID();
-  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), fakeFetch({ body: { reservation_id: reservationId, status: "expired", order_reference: "AWT-1" } })), InventoryConflictError);
+  await assert.rejects(commitInventory(reservationId, "AWT-1", randomUUID(), commitFetch({ body: { reservation_id: reservationId, status: "expired", order_reference: "AWT-1" } })), InventoryConflictError);
 });
 
 // ---------------------------------------------------------------------------
@@ -344,12 +382,13 @@ test("commit and release are never retried by the client; the same request id is
   const reservationId = randomUUID();
   const requestId = randomUUID();
   const seen = [];
-  const fetcher = fakeFetch((_u, init, n) => { seen.push(init.headers["x-awt-request-id"]); return n === 1 ? timeoutError() : { body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }; });
+  const fetcher = commitFetch((_u, init) => { seen.push(init.headers["x-awt-request-id"]); return seen.length === 1 ? timeoutError() : { body: { reservation_id: reservationId, status: "committed", order_reference: "AWT-1" } }; });
   await assert.rejects(quiet(() => commitInventory(reservationId, "AWT-1", requestId, fetcher)), InventoryUnavailableError);
-  assert.equal(fetcher.calls.length, 1, "no automatic retry inside the client");
+  assert.equal(fetcher.calls.length, 2, "one handoff and one sale attempt; no automatic retry inside the client");
   const result = await commitInventory(reservationId, "AWT-1", requestId, fetcher);
   assert.equal(result.status, "committed");
   assert.deepEqual(seen, [requestId, requestId], "the caller's retry carried the identical durable request id");
+  assert.equal(fetcher.calls.filter((c) => new URL(c.url).pathname.endsWith("/orders/state")).length, 2, "the handoff is replayed with the same identity on every attempt");
   const releaseFetcher = fakeFetch({ status: 503, body: { error: "INTEGRATION_UNAVAILABLE" } });
   await assert.rejects(quiet(() => releaseInventory(reservationId, "x", randomUUID(), releaseFetcher)), InventoryUnavailableError);
   assert.equal(releaseFetcher.calls.length, 1);

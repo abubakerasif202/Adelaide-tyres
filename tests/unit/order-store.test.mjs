@@ -16,12 +16,18 @@ function order(sessionId) {
     deliveryAddress: "4 Birralee Rd, Regency Park SA 5010",
     notes: "",
     lines: [],
+    inventoryStatus: 'committed',
   };
+}
+
+async function confirm(store, sessionId) {
+  await store.confirmPaymentAndEnqueue({ checkoutSessionId:sessionId,paymentIntentId:`pi_${sessionId}`,stripeEventId:`evt_${sessionId}`,stripeEventType:'checkout.session.completed' });
 }
 
 test("only one of many concurrent claimFulfilment calls succeeds", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(order("race"));
+  await confirm(store,"race");
 
   const results = await Promise.all(Array.from({ length: 20 }, () => store.claimFulfilment("race")));
   const winners = results.filter(Boolean);
@@ -34,6 +40,7 @@ test("only one of many concurrent claimFulfilment calls succeeds", async () => {
 test("claimFulfilment on an already-notified order returns null", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(order("s1"));
+  await confirm(store,"s1");
   await store.claimFulfilment("s1");
   await store.markNotified("s1");
 
@@ -44,6 +51,7 @@ test("claimFulfilment on an already-notified order returns null", async () => {
 test("releaseFulfilmentClaim is a no-op once notified (never re-opens a completed order)", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(order("s2"));
+  await confirm(store,"s2");
   await store.claimFulfilment("s2");
   await store.markNotified("s2");
 
@@ -65,6 +73,7 @@ test("createPendingOrder is idempotent for a repeated checkout session id", asyn
 test("transitionPendingTo never moves a paid order backwards", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(order("s4"));
+  await confirm(store,"s4");
   await store.claimFulfilment("s4");
   await store.markNotified("s4");
 
@@ -80,6 +89,7 @@ test("transitionPaidToRefunded only affects paid orders, looked up by PaymentInt
 
   const tooEarly = await store.transitionPaidToRefunded("pi_s5");
   assert.equal(tooEarly, false);
+  await confirm(store,"s5");
 
   await store.claimFulfilment("s5");
   await store.markNotified("s5");
@@ -92,6 +102,7 @@ test("transitionPaidToRefunded only affects paid orders, looked up by PaymentInt
 test("releaseStaleClaims is a documented no-op on the in-memory store", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(order("s6"));
+  await confirm(store,"s6");
   await store.claimFulfilment("s6");
 
   const released = await store.releaseStaleClaims(0);

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MemoryOrderStore } from "../../lib/order-store-memory.ts";
+import { processOrderNotifications } from "../../lib/inventory/notification-worker.ts";
 import { processStripeEvent } from "../../lib/webhook-handlers.ts";
 
 function makeOrderInput(sessionId, overrides = {}) {
@@ -105,7 +106,8 @@ test("out-of-order delivery: a second success event for an already-paid order is
 });
 
 test("failed notification releases the claim so a retry can succeed", async () => {
-  const store = new MemoryOrderStore();
+  let now = Date.now();
+  const store = new MemoryOrderStore(() => now);
   await store.createPendingOrder(makeOrderInput("sess_4"));
   let attempt = 0;
   const notify = makeNotify(() => {
@@ -115,13 +117,14 @@ test("failed notification releases the claim so a retry can succeed", async () =
   });
   const inventory = inventoryDeps();
 
-  await assert.rejects(processStripeEvent(checkoutCompletedEvent("sess_4", { eventId: "evt_1" }), { store, notify, ...inventory }));
+  await processStripeEvent(checkoutCompletedEvent("sess_4", { eventId: "evt_1" }), { store, notify, ...inventory });
   let order = await store.getByCheckoutSessionId("sess_4");
-  assert.equal(order.status, "pending", "claim must be released, not left stuck as paid-but-unnotified");
+  assert.equal(order.status, "paid", "notification failure never rewinds payment");
   assert.equal(order.notifiedAt, null);
 
-  // Stripe redelivers the same event (or a related one) after the 500.
-  await processStripeEvent(checkoutCompletedEvent("sess_4", { eventId: "evt_1_retry" }), { store, notify, ...inventory });
+  // The scheduled worker recovers without any additional payment webhook.
+  now += 60_000;
+  await processOrderNotifications(store, notify);
   order = await store.getByCheckoutSessionId("sess_4");
   assert.equal(order.status, "paid");
   assert.ok(order.notifiedAt);
@@ -184,11 +187,50 @@ test("a refund transitions a paid order to refunded", async () => {
   assert.equal(order.status, "refunded");
 });
 
-test("an unrecognised session id (no pending order) is a safe no-op, not a crash", async () => {
+test("a partial refund keeps the order paid and fulfilable; only a full refund transitions it", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput("sess_8p"));
+  const notify = makeNotify();
+  const inventory = inventoryDeps();
+  await processStripeEvent(checkoutCompletedEvent("sess_8p"), { store, notify, ...inventory });
+  assert.equal(notify.calls.length, 1);
+
+  // Stripe emits charge.refunded for partial refunds too; `refunded` stays false.
+  const partial = (id) => ({ id, type: "charge.refunded", data: { object: { payment_intent: "pi_sess_8p", refunded: false, amount: 45000, amount_refunded: 5000 } } });
+  await processStripeEvent(partial("evt_refund_partial"), { store, notify, ...inventory });
+  let order = await store.getByCheckoutSessionId("sess_8p");
+  assert.equal(order.status, "paid", "a partial refund (e.g. delivery fee) is not a cancelled sale");
+  assert.equal(order.inventoryStatus, "committed");
+  assert.deepEqual(store.audit.filter((a) => a.eventType === "PARTIAL_REFUND_RECORDED"), [
+    { orderReference: order.reference, eventType: "PARTIAL_REFUND_RECORDED", stripeEventId: "evt_refund_partial", details: { amount: 45000, amountRefunded: 5000 } },
+  ], "a partial refund leaves a durable audit record");
+
+  const full = { id: "evt_refund_full", type: "charge.refunded", data: { object: { payment_intent: "pi_sess_8p", refunded: true, amount: 45000, amount_refunded: 45000 } } };
+  await processStripeEvent(full, { store, notify, ...inventory });
+  order = await store.getByCheckoutSessionId("sess_8p");
+  assert.equal(order.status, "refunded");
+  assert.equal(order.inventoryStatus, "committed", "a refund never restocks automatically");
+  assert.equal(inventory.released.length, 0);
+  assert.deepEqual(store.audit.map((a) => a.eventType), ["PARTIAL_REFUND_RECORDED", "REFUND_CONFIRMED"]);
+});
+
+test("a partial refund delivered before the paid event does not poison the order as refunded", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput("sess_8q"));
+  const notify = makeNotify();
+  const inventory = inventoryDeps();
+  await processStripeEvent({ id: "evt_early_partial", type: "charge.refunded", data: { object: { payment_intent: "pi_sess_8q", refunded: false, amount: 45000, amount_refunded: 100 } } }, { store, notify, ...inventory });
+  await processStripeEvent(checkoutCompletedEvent("sess_8q"), { store, notify, ...inventory });
+  const order = await store.getByCheckoutSessionId("sess_8q");
+  assert.equal(order.status, "paid");
+  assert.equal(notify.calls.length, 1, "staff are still told about the paid order");
+});
+
+test("a paid session arriving before its order is persisted requests redelivery", async () => {
   const store = new MemoryOrderStore();
   const notify = makeNotify();
   const inventory = inventoryDeps();
-  await processStripeEvent(checkoutCompletedEvent("sess_unknown"), { store, notify, ...inventory });
+  await assert.rejects(processStripeEvent(checkoutCompletedEvent("sess_unknown"), { store, notify, ...inventory }), /ORDER_NOT_PERSISTED/);
   assert.equal(notify.calls.length, 0);
 });
 

@@ -1,9 +1,10 @@
 import type Stripe from "stripe";
 import type { OrderStore } from "./order-store.ts";
 import { sendNotification } from "./notify.ts";
-import { order as orderConfig } from "./config.ts";
 import { commitInventory, releaseInventory } from "./inventory/client.ts";
 import { errorCodeOf, logInventoryEvent } from "./inventory/log.ts";
+import { processInventoryOutbox } from "./inventory/outbox-worker.ts";
+import { processOrderNotifications } from "./inventory/notification-worker.ts";
 
 export type NotifyFn = typeof sendNotification;
 
@@ -34,8 +35,7 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
-      await store.recordEvent(event.id, event.type, session.id);
-      await handlePaymentSucceeded(session, deps);
+      await handlePaymentSucceeded(session, event.id, event.type, deps);
       return;
     }
     case "checkout.session.async_payment_failed": {
@@ -55,7 +55,20 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
       const paymentIntentId =
         typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
       await store.recordEvent(event.id, event.type, undefined);
-      if (paymentIntentId) await store.transitionPaidToRefunded(paymentIntentId);
+      if (!paymentIntentId) return;
+      // Refund rules: a FULL refund closes the order (refunded, not
+      // fulfilable/notifiable); a PARTIAL refund (delivery fee, price
+      // adjustment) leaves a paid, fulfilable order. Neither ever restocks:
+      // a physical return is a normal 247 stock-in.
+      if (isFullRefund(charge)) {
+        await store.recordRefund(paymentIntentId, event.id);
+      } else {
+        await store.recordPartialRefund(paymentIntentId, event.id, {
+          amount: Number.isFinite(charge.amount) ? charge.amount : null,
+          amountRefunded: Number.isFinite(charge.amount_refunded) ? charge.amount_refunded : null,
+        });
+        logInventoryEvent("info", "stripe.refund.partial", { stripeEventId: event.id, stripeEventType: event.type });
+      }
       return;
     }
     default:
@@ -66,55 +79,32 @@ export async function processStripeEvent(event: Stripe.Event, deps: WebhookDeps)
   }
 }
 
-async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: WebhookDeps): Promise<void> {
+/**
+ * Stripe emits `charge.refunded` for partial refunds as well; `refunded` is
+ * true only once the charge is fully refunded. Amounts are the fallback for a
+ * payload that omits the flag.
+ */
+export function isFullRefund(charge: Pick<Stripe.Charge, "refunded" | "amount" | "amount_refunded">): boolean {
+  if (typeof charge.refunded === "boolean") return charge.refunded;
+  if (Number.isFinite(charge.amount) && Number.isFinite(charge.amount_refunded)) return charge.amount_refunded >= charge.amount;
+  return true;
+}
+
+async function handlePaymentSucceeded(session: Stripe.Checkout.Session, eventId: string, eventType: string, deps: WebhookDeps): Promise<void> {
   if (session.payment_status !== "paid") return;
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+  const claimed = await deps.store.confirmPaymentAndEnqueue({
+    checkoutSessionId: session.id,
+    paymentIntentId,
+    stripeEventId: eventId,
+    stripeEventType: eventType,
+  });
+  if (!claimed) return;
 
-  const claimed = await deps.store.claimFulfilment(session.id);
-  if (!claimed) {
-    // Already notified, already claimed by a concurrent delivery, or the
-    // order doesn't exist (shouldn't happen — createPendingOrder runs at
-    // Checkout Session creation time). Either way, nothing more to do here.
-    return;
-  }
-
-  try {
-    if (!claimed.inventoryReservationId || !claimed.inventoryCommitRequestId) {
-      throw new Error("Paid order is missing its inventory reservation.");
-    }
-    await (deps.commitInventory ?? commitInventory)(claimed.inventoryReservationId, claimed.reference, claimed.inventoryCommitRequestId);
-    await deps.store.markInventoryCommitted(claimed.reference);
-    const { delivered } = await deps.notify({
-      subject: `PAID order ${claimed.reference} · ${(claimed.amountTotalCents / 100).toFixed(2)} ${claimed.currency.toUpperCase()}`,
-      replyTo: claimed.customerEmail,
-      text: [
-        `Reference: ${claimed.reference} (Stripe Checkout — PAID)`,
-        `Payment intent: ${claimed.paymentIntentId ?? "unknown"}`,
-        `Contact: ${claimed.customerName} · ${claimed.customerPhone} · ${claimed.customerEmail}`,
-        `Fulfilment: ${claimed.deliveryMethod}`,
-        claimed.deliveryMethod === "delivery" ? `Address: ${claimed.deliveryAddress}` : `Pickup: ${orderConfig.pickup.address}`,
-        "",
-        ...claimed.lines.map((l) => `  ${l.quantity} × ${l.brand} ${l.pattern} ${l.size} @ $${l.price}`),
-        "",
-        `Amount paid: $${(claimed.amountTotalCents / 100).toFixed(2)} ${claimed.currency.toUpperCase()}`,
-        claimed.notes ? `Notes: ${claimed.notes}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    });
-    if (!delivered) throw new Error("Notification transport unavailable.");
-    await deps.store.markNotified(session.id);
-  } catch (err) {
-    // Release the claim so the next redelivery of this (or an equivalent)
-    // event can retry — we must never silently drop a paid order because an
-    // email failed to send. Inventory stays "reserved" until 247 confirms.
-    logInventoryEvent("error", "inventory.commit.failed", {
-      orderReference: claimed.reference, reservationId: claimed.inventoryReservationId ?? undefined,
-      requestId: claimed.inventoryCommitRequestId ?? undefined, checkoutSessionId: session.id, errorCode: errorCodeOf(err),
-      detail: err instanceof Error ? err.message.slice(0, 120) : undefined,
-    });
-    await deps.store.releaseFulfilmentClaim(session.id);
-    throw err;
-  }
+  // Best-effort fast path. The webhook acknowledges once payment + outbox are
+  // durable; scheduled workers own eventual delivery if this process dies.
+  await processInventoryOutbox({ store: deps.store, commit: deps.commitInventory, release: deps.releaseInventory }, 1);
+  await processOrderNotifications(deps.store, deps.notify, 1);
 }
 
 async function releaseOrderReservation(checkoutSessionId: string, deps: WebhookDeps): Promise<void> {

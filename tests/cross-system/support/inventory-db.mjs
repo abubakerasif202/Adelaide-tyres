@@ -1,3 +1,4 @@
+import postgres from "postgres";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -100,6 +101,15 @@ export async function createInventoryHarness() {
     },
     reservations(orderReference) {
       return serviceSelect("adelaide_inventory_reservations", `select=id,status,external_order_reference,request_id,expires_at,committed_at,released_at&external_order_reference=eq.${encodeURIComponent(orderReference)}`);
+    },
+    /** Backdates a hold's checkout window and runs 247's expiry sweep, as the 247 cron would. */
+    async expireHoldsNow(orderReference) {
+      const [row] = await this.reservations(orderReference);
+      const pg = postgres(process.env.INVENTORY_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55332/postgres", { max: 1 });
+      try {
+        await pg`update public.adelaide_inventory_reservations set expires_at = now() - interval '1 minute' where id = ${row.id}`;
+      } finally { await pg.end(); }
+      return serviceRpc("expire_adelaide_inventory_reservations", { p_client_id: process.env.INVENTORY_CLIENT_ID ?? null });
     },
     reservationLines(reservationId) {
       return serviceSelect("adelaide_inventory_reservation_lines", `select=mapping_id,inventory_product_id,quantity&reservation_id=eq.${reservationId}`);
