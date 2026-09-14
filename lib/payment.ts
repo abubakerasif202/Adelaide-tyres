@@ -104,6 +104,9 @@ export async function createCheckoutSession(
     quantity: number;
   }> = input.lines.map((line) => {
     const isAccessory = line.kind === "accessory";
+    const metadata: Record<string, string> = isAccessory
+      ? { item_type: "accessory", accessory_id: line.id }
+      : { item_type: "tyre", tyre_id: line.id };
     return {
       price_data: {
         currency: orderConfig.currency.toLowerCase(),
@@ -112,9 +115,7 @@ export async function createCheckoutSession(
           name: isAccessory
             ? `${line.brand} ${line.pattern} — ${line.size}`
             : `${line.brand} ${line.pattern} ${line.size}`,
-          metadata: isAccessory
-            ? { item_type: "accessory", accessory_id: line.id }
-            : { item_type: "tyre", tyre_id: line.id },
+          metadata,
         },
       },
       quantity: line.quantity,
