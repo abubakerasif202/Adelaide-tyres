@@ -1,0 +1,46 @@
+name: Inventory outbox cron
+
+# Vercel's Hobby plan only allows once-a-day cron jobs, so the 5-minute
+# schedule in vercel.json cannot be deployed there. This workflow is the
+# actual production scheduler for GET /api/cron/inventory-outbox — see
+# docs/inventory-integration.md for the full explanation.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: inventory-outbox-cron
+  cancel-in-progress: false
+
+jobs:
+  drain-outbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call the inventory outbox worker
+        env:
+          CRON_SECRET: ${{ secrets.INVENTORY_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::INVENTORY_CRON_SECRET repository secret is not set."
+            exit 1
+          fi
+
+          http_status=$(curl -sS -o response.json -w "%{http_code}" \
+            --max-time 30 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://adelaidewholesaletyres.com.au/api/cron/inventory-outbox")
+
+          echo "HTTP status: ${http_status}"
+
+          if [ "${http_status}" != "200" ]; then
+            echo "::error::Outbox worker call failed with status ${http_status}"
+            cat response.json
+            exit 1
+          fi
+
+          echo "Outbox worker response:"
+          cat response.json

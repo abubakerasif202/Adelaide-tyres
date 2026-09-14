@@ -39,10 +39,33 @@ Every Adelaide request signs `METHOD`, path, Unix timestamp, UUID request ID, an
 1. Adelaide creates one UUID checkout-attempt ID and derives a stable order reference.
 2. 247 atomically locks all mapped Regency Park balances, checks `available = on_hand - reserved`, and creates a 45-minute hold (`INVENTORY_HOLD_MINUTES`). The Stripe Checkout Session is created with a 30-minute `expires_at` (`STRIPE_SESSION_TTL_MINUTES`), so a late payment can never land on an already-released hold.
 3. Adelaide persists the reservation ID and commit/release request IDs with the durable order.
-4. A verified paid Stripe webhook persists the payment and a durable `inventory_outbox` commit row in one transaction (the Stripe event id is the idempotency gate), then a leased worker commits the hold exactly once; 247 records `stock_out` movement with `source_type=adelaide_wholesale_tyres`, integration actor data, and source order reference. `GET /api/cron/inventory-outbox` (Vercel Cron, every 5 minutes, `CRON_SECRET`) drains anything the webhook's inline pass did not finish.
+4. A verified paid Stripe webhook persists the payment and a durable `inventory_outbox` commit row in one transaction (the Stripe event id is the idempotency gate), then a leased worker commits the hold exactly once; 247 records `stock_out` movement with `source_type=adelaide_wholesale_tyres`, integration actor data, and source order reference. `GET /api/cron/inventory-outbox` (`CRON_SECRET`, scheduled every 5 minutes by GitHub Actions — see below) drains anything the webhook's inline pass did not finish.
 5. Failed/expired payment queues a release for the hold the same way. Refund does not restock; physical returns must use the normal 247 return workflow. Full design and state model: `docs/payment-inventory-reconciliation.md`.
 
 Reservation and commit request IDs are idempotent. The reservation identity is the canonical hash of `orderReference` plus the sorted `(mapping, quantity)` lines — the hold expiry is a retry parameter, not identity — so a retry of the same checkout attempt after a lost response converges on the same hold. Reusing a request ID with a different payload is rejected (`IDEMPOTENCY_KEY_REUSED`). Commit identity is the durable commit request ID stored with the Adelaide order. A commit validates the order reference while holding the reservation row, before posting any movement. Expired holds are released by the protected 247 cron endpoint and opportunistically by inventory calls.
+
+## Outbox scheduler: why GitHub Actions, not Vercel Cron
+
+`GET /api/cron/inventory-outbox` is the only thing that needs scheduling — it drains
+whatever the webhook's inline fast path (`FAST_PATH_LIMIT`, `lib/webhook-handlers.ts`)
+didn't finish: retried commits/releases, notification retries, and anything queued
+while 247 or Resend was down.
+
+Vercel's **Hobby** plan only allows cron jobs that run once a day (Vercel fails
+the deployment of any more frequent expression). This project needs a 5-minute
+cadence, so `vercel.json` no longer declares a `crons` block — leaving one in
+would either fail to deploy or sit there permanently reporting
+`not deployed` from `vercel crons ls`, which is misleading. The route itself is
+unchanged and still lives at `/api/cron/inventory-outbox`.
+
+The actual production scheduler is `.github/workflows/inventory-outbox-cron.yml`:
+
+- **Schedule:** `*/5 * * * *` (also runs on `workflow_dispatch` for a manual/ad-hoc trigger).
+- **What it does:** one `curl` to `https://adelaidewholesaletyres.com.au/api/cron/inventory-outbox` with `Authorization: Bearer $INVENTORY_CRON_SECRET`, a 30s timeout, and a non-zero exit (workflow shows red) on anything but HTTP 200.
+- **Secret required:** repository secret `INVENTORY_CRON_SECRET` in GitHub → Settings → Secrets and variables → Actions. Its value must match the `CRON_SECRET` environment variable set on the Adelaide Vercel project (Production). Rotate both together — changing one without the other locks the scheduler out (fails closed: the route returns 401, it never invents a "success" response).
+- **Manually triggering it:** GitHub → Actions → "Inventory outbox cron" → Run workflow. Useful to drain the outbox immediately after an incident instead of waiting up to 5 minutes.
+- **Checking failed runs:** GitHub → Actions → "Inventory outbox cron" — a red run means either the HTTP call failed (network/timeout) or the route didn't return 200 (check the logged response body, which only ever contains the safe `{processed, completed, retried, manualReview, notifications}` counters — never a secret or customer data).
+- **If GitHub Actions is temporarily unavailable:** nothing is lost. The webhook's inline drain still processes new paid/cancelled orders as they happen; only the backstop for already-failed items pauses. The outbox is durable Postgres state (`inventory_outbox`, leased and idempotent — see `docs/payment-inventory-reconciliation.md`), so a delayed drain just means delayed retries, never a lost or duplicated commit. Once the scheduler resumes (or someone triggers it manually), it picks up exactly where it left off.
 
 ## Failure states
 
