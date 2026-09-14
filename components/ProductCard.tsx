@@ -62,16 +62,13 @@ export function ProductCard({
 
   if (variant === "feature") {
     const title = tyreTitle(tyre);
-    // Only the Ralson hero photo is a wide studio shot meant to bleed edge to
-    // edge; every other verified photo (tracked in docs/product-image-manifest.json)
-    // gets a contained treatment so it isn't cropped.
-    const isRalsonHeroPhoto = tyre.id === "ralson-rmr61-29580r225";
-
+    // Every catalogue asset (tracked in docs/product-image-manifest.json) is a
+    // contained product render, so nothing is ever cropped.
     return (
       <article
         className={`surface-card product-card product-card--feature flex h-full flex-col overflow-hidden ${lead ? "is-lead" : ""}`}
       >
-        <Link href={`/tyres/${tyre.slug}`} className={`product-card__media focus-visible:outline-offset-[-3px] ${isRalsonHeroPhoto ? "product-card__media--dark-bay" : ""}`}>
+        <Link href={`/tyres/${tyre.slug}`} className="product-card__media focus-visible:outline-offset-[-3px]">
           {tyre.image ? (
             <Image
               src={tyre.image}
@@ -83,7 +80,7 @@ export function ProductCard({
                   ? "(max-width: 639px) calc(100vw - 32px), (max-width: 1023px) 50vw, 800px"
                   : "(max-width: 639px) calc(100vw - 32px), (max-width: 1023px) 50vw, 400px"
               }
-              className={isRalsonHeroPhoto ? "product-card__media-cover" : "product-card__media-contain"}
+              className="product-card__media-contain"
             />
           ) : (
             <TyreImage src={null} alt={title} size={190} className="product-card__placeholder" />

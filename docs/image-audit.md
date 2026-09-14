@@ -37,19 +37,19 @@ The owner supplied 15 more images directly in `Downloads\` (not the `tyres\` sub
 
 | Brand | Pattern | Size | SKU | Website image path | Status | Action needed |
 | --- | --- | --- | --- | --- | --- | --- |
-| Ralson | RDR75 | 265/70R19.5 | ralson-rdr75-26570r195 | `/images/tyres/ralson-rdr75-265-70r19-5.webp` | **owner-approved AI render** | None — label reads "RDR75 265/70R19.5". |
-| Ralson | RMR61 | 265/70R19.5 | ralson-rmr61-26570r195 | `/images/tyres/ralson-rmr61-265-70r19-5.webp` | **owner-approved AI render** | None — label reads "RMR61 265/70R19.5". |
-| Ralson | RMR61 | 295/80R22.5 | ralson-rmr61-29580r225 | `/images/tyres/ralson-rmr61-295-80r22-5.webp` | **genuine supplier asset** | None — original manufacturer-sourced image (ralsontires.com). Also used as the homepage hero image. |
-| Ralson | RDR75 | 295/80R22.5 | ralson-rdr75-29580r225 | `/images/tyres/ralson-rdr75-295-80r22-5.webp` | **owner-approved AI render** | None — label reads "RDR75 295/80R22.5". |
-| Ralson | RMR61 | 385/65R22.5 | ralson-rmr61-38565r225 | `/images/tyres/ralson-rmr61-385-65r22-5.webp` | **owner-approved AI render** | None — label reads "RMR61 385/65R22.5". |
+| Ralson | RDR75 | 265/70R19.5 | ralson-rdr75-26570r195 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 265/70R19.5". |
+| Ralson | RMR61 | 265/70R19.5 | ralson-rmr61-26570r195 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 265/70R19.5". |
+| Ralson | RMR61 | 295/80R22.5 | ralson-rmr61-29580r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — pattern card reads "RALSON RMR61" (replaced the earlier ralsontires.com photo on 2026-09-14; the homepage hero uses its own `/images/hero/hero-truck-tyre.webp`). |
+| Ralson | RDR75 | 295/80R22.5 | ralson-rdr75-29580r225 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 295/80R22.5". |
+| Ralson | RMR61 | 385/65R22.5 | ralson-rmr61-38565r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 385/65R22.5". |
 | Ralson | RTR71 | 11R22.5 | ralson-rtr71-11r225 | `/images/tyres/ralson-rtr71-11r22-5.webp` | **owner-approved AI render** | None — label reads "RTR71 11R22.5". |
 | Ralson | RDR52 | 11R22.5 | ralson-rdr52-11r225 | `/images/tyres/ralson-rdr52-11r22-5.webp` | **owner-approved AI render** | None — label reads "RDR52 11R22.5". |
-| Ralson | RDR55 | 11R22.5 | ralson-rdr55-11r225 | `/images/tyres/ralson-rdr55-11r22-5.webp` | **owner-approved AI render** | None — label reads "RDR55 11R22.5". |
+| Ralson | RDR55 | 11R22.5 | ralson-rdr55-11r225 | `/images/tyres/ralson-rdr55.webp` | **owner-approved AI render** | None — label reads "RDR55 11R22.5". |
 | Ralson | RDC66 | 11R22.5 | ralson-rdc66-11r225 | `/images/tyres/ralson-rdc66-11r22-5.webp` | **owner-approved AI render** | None — label reads "RDC66 11R22.5". |
 | Ralson | RAC55 | 11R22.5 | ralson-rac55-11r225 | `/images/tyres/ralson-rac55-11r22-5.webp` | **owner-approved AI render** | None — label reads "RAC55 11R22.5" (the correct, confirmed-real size — see `docs/catalogue-verification.md` #4). |
-| Ralson | RDR75 | 235/75R17.5 | ralson-rdr75-23575r175 | `/images/tyres/ralson-rdr75-235-75r17-5.webp` | **owner-approved AI render** | None — label reads "RDR75 235/75R17.5". |
-| Ralson | RMR61 | 235/75R17.5 | ralson-rmr61-23575r175 | `/images/tyres/ralson-rmr61-235-75r17-5.webp` | **owner-approved AI render** | None — label reads "RMR61 235/75R17.5". |
-| Ralson | RMR61 | 275/70R22.5 | ralson-rmr61-27570r225 | `/images/tyres/ralson-rmr61-275-70r22-5.webp` | **owner-approved AI render** | None — label reads "RMR61 275/70R22.5". |
+| Ralson | RDR75 | 235/75R17.5 | ralson-rdr75-23575r175 | `/images/tyres/ralson-rdr75.webp` | **owner-approved AI render** | None — label reads "RDR75 235/75R17.5". |
+| Ralson | RMR61 | 235/75R17.5 | ralson-rmr61-23575r175 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 235/75R17.5". |
+| Ralson | RMR61 | 275/70R22.5 | ralson-rmr61-27570r225 | `/images/tyres/ralson-rmr61.webp` | **owner-approved AI render** | None — label reads "RMR61 275/70R22.5". |
 | Greforce | HD02 | 11R22.5 | greforce-hd02-11r225 | `/images/tyres/greforce-hd02-11r22-5.webp` | **owner-approved AI render** | None — label reads "HD02 11R22.5". |
 | Greforce | GR881W | 11R22.5 | greforce-gr881w-11r225 | `/images/tyres/greforce-gr881w-11r22-5.webp` | **owner-approved AI render** | None — label reads "GR881W 11R22.5". |
 | Greforce | GRD1919 | 11R22.5 | greforce-grd1919-11r225 | `/images/tyres/greforce-grd1919-11r22-5.webp` | **owner-approved AI render** | None — label reads "GRD1919 11R22.5". |

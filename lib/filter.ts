@@ -1,4 +1,5 @@
 import type { Tyre, TyreApplication } from "./catalogue";
+import { accessorySearchText, type Accessory } from "./accessories.ts";
 
 export type TyreFilters = {
   query: string;
@@ -96,4 +97,19 @@ export function activeFilterCount(filters: TyreFilters): number {
     (filters.application ? 1 : 0) +
     (filters.inStockOnly ? 1 : 0)
   );
+}
+
+/**
+ * Accessories sit alongside tyres in the catalogue grid. They have no size,
+ * brand or application facet and no live 247 stock, so any of those filters
+ * hides them; free-text search and the price sorts still apply.
+ */
+export function filterAccessories(items: Accessory[], filters: TyreFilters): Accessory[] {
+  if (filters.size || filters.brand || filters.application || filters.inStockOnly) return [];
+  const q = filters.query.trim().toLowerCase();
+  const result = items.filter((item) => !q || accessorySearchText(item).includes(q));
+  const sorted = [...result];
+  if (filters.sort === "price-asc") sorted.sort((a, b) => a.price - b.price);
+  if (filters.sort === "price-desc") sorted.sort((a, b) => b.price - a.price);
+  return sorted;
 }

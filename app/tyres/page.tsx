@@ -10,6 +10,7 @@ import {
   uniqueApplications,
   catalogueStats,
 } from "@/lib/catalogue";
+import { getAllAccessories } from "@/lib/accessories";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { order } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
@@ -55,6 +56,7 @@ export default function TyresPage() {
             <Suspense fallback={<p className="text-[var(--color-text-muted)]">Loading catalogue…</p>}>
               <CatalogueBrowser
                 tyres={tyres}
+                accessories={getAllAccessories()}
                 sizes={uniqueSizes()}
                 brands={uniqueBrands()}
                 applications={uniqueApplications()}

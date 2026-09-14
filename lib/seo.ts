@@ -1,7 +1,8 @@
-import { business, order, siteUrl } from "./config";
-import { formatCurrency } from "./format";
+import { business, order, siteUrl } from "./config.ts";
+import { formatCurrency } from "./format.ts";
 import type { Tyre } from "./catalogue";
-import { tyreFullName } from "./tyre";
+import { ACCESSORY_CATEGORY_LABELS, type Accessory } from "./accessories.ts";
+import { tyreFullName } from "./tyre.ts";
 
 /**
  * Structured data. Only facts we actually hold are included — no invented
@@ -94,4 +95,26 @@ export function productJsonLd(tyre: Tyre) {
   // Never put the neutral fallback in Product schema as though it were a photo.
   if (tyre.image) product.image = `${siteUrl}${tyre.image}`;
   return product;
+}
+
+export function accessoryJsonLd(accessory: Accessory) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: accessory.name,
+    sku: accessory.sku,
+    mpn: accessory.sku,
+    category: ACCESSORY_CATEGORY_LABELS[accessory.category],
+    description: accessory.description,
+    image: `${siteUrl}${accessory.image}`,
+    itemCondition: "https://schema.org/NewCondition",
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "AUD",
+      price: accessory.price.toFixed(2),
+      itemCondition: "https://schema.org/NewCondition",
+      seller: { "@id": `${siteUrl}/#organization` },
+      url: `${siteUrl}/accessories/${accessory.slug}`,
+    },
+  };
 }
