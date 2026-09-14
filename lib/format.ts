@@ -1,4 +1,4 @@
-import { order } from "./config";
+import { order } from "./config.ts";
 
 const currencyFormatter = new Intl.NumberFormat("en-AU", {
   style: "currency",

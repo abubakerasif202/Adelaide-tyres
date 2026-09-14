@@ -10,14 +10,21 @@ const HEADINGS: Record<Variant, { submit: string; success: string }> = {
   quote: { submit: "Request wholesale pricing", success: "Quote request received. We'll respond with pricing." },
 };
 
-export function EnquiryForm({ variant = "contact" }: { variant?: Variant }) {
+export function EnquiryForm({
+  variant = "contact",
+  initialProduct = "",
+}: {
+  variant?: Variant;
+  /** Pre-fills the product field, e.g. from a catalogue "Enquire" link. */
+  initialProduct?: string;
+}) {
   const [startedAt] = useState(() => Date.now());
   const [values, setValues] = useState({
     name: "",
     business: "",
     phone: "",
     email: "",
-    product: "",
+    product: initialProduct,
     quantity: "",
     message: "",
   });
