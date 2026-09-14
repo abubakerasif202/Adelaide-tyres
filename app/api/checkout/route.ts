@@ -80,9 +80,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // Only tyre lines participate in the 247 inventory reservation and the
-  // tyre-based delivery threshold. Accessories remain normal Stripe line items.
-  const tyreLines = lines.filter((line) => line.kind === "tyre");
+  // Legacy tyre lines have no `kind`; only accessories carry an explicit
+  // discriminator. Reserve/delivery-count every non-accessory line as a tyre.
+  const tyreLines = lines.filter((line) => line.kind !== "accessory");
   const totalTyres = tyreLines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
