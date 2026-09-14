@@ -36,3 +36,19 @@ test("browser-supplied prices and inventory identifiers are ignored; the server 
   assert.equal(result.lines[0].id, "greforce-gr881w-11r225", "catalogue id, never the browser id");
   assert.deepEqual(Object.keys(result.lines[0]).sort(), ["brand", "id", "pattern", "price", "quantity", "size"]);
 });
+
+test("TR545D is a server-priced purchasable accessory line", () => {
+  const result = validateOrderLines([
+    { slug: "tr545d-truck-tyre-valve", quantity: 2, price: 0.01, id: "fake" },
+  ]);
+  assert.ok(!result.error);
+  assert.deepEqual(result.lines[0], {
+    id: "tr545d-truck-tyre-valve",
+    kind: "accessory",
+    brand: "TR545D",
+    pattern: "Truck Tyre Valve",
+    size: "60° Alloy Wheel Valve",
+    quantity: 2,
+    price: 10,
+  });
+});
