@@ -156,7 +156,6 @@ export function restoreStoredCart(input: unknown): Cart {
         return [{
           id: tyre.id,
           slug: tyre.slug,
-          kind: "tyre" as const,
           brand: tyre.brand,
           pattern: tyre.pattern,
           size: tyre.size,
