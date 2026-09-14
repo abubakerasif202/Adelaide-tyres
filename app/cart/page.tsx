@@ -7,6 +7,7 @@ import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getLineSubtotal } from "@/lib/cart";
+import { getAccessoryBySlug } from "@/lib/accessories";
 import { formatCurrency, formatTotal } from "@/lib/format";
 import { tyreFullName } from "@/lib/tyre";
 import { order } from "@/lib/config";
@@ -15,6 +16,7 @@ export default function CartPage() {
   const {
     cart,
     hydrated,
+    totalItems,
     totalTyres,
     subtotal,
     qualifiesForFreeDelivery,
@@ -38,8 +40,7 @@ export default function CartPage() {
           <div className="surface-card mt-8 p-10 text-center">
             <h2 className="display text-[24px]">Your cart is empty</h2>
             <p className="mx-auto mt-2 max-w-md text-[var(--color-text-muted)]">
-              No minimum order — add any tyres from current stock to start a
-              wholesale order.
+              No minimum order — add tyres or accessories from the catalogue to start an order.
             </p>
             <Link href="/tyres" className="btn btn--green mt-6">
               Shop available stock
@@ -55,44 +56,50 @@ export default function CartPage() {
               />
 
               <ul className="mt-5 flex flex-col gap-4">
-                {cart.lines.map((line) => (
-                  <li key={line.id} className="surface-card flex flex-wrap items-center gap-4 p-4">
-                    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)]">
-                      <TyreImage src={line.image} alt={tyreFullName(line)} size={64} />
-                    </div>
-                    <div className="min-w-[140px] flex-1">
-                      <span className="text-[12px] font-bold uppercase tracking-wide text-[var(--color-red)]">
-                        {line.brand}
-                      </span>
-                      <p className="display text-[22px]">{line.size}</p>
-                      <p className="text-[13px] text-[var(--color-text-muted)]">
-                        Pattern {line.pattern} · availability confirmed at checkout
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <LineQuantitySelector
-                        slug={line.slug}
-                        value={line.quantity}
-                        onChange={(q) => setQuantity(line.id, q)}
-                        label={`Quantity for ${tyreFullName(line)}`}
-                      />
-                      <div className="text-right">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-                          {formatCurrency(line.price)} ea
-                        </p>
-                        <p className="display text-[20px]">{formatCurrency(getLineSubtotal(line))}</p>
+                {cart.lines.map((line) => {
+                  const accessory = getAccessoryBySlug(line.slug);
+                  const displayName = accessory?.name ?? tyreFullName(line);
+                  return (
+                    <li key={line.id} className="surface-card flex flex-wrap items-center gap-4 p-4">
+                      <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)]">
+                        <TyreImage src={line.image} alt={accessory?.imageAlt ?? displayName} size={64} />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => remove(line.id)}
-                        className="text-[12px] font-bold uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-red)]"
-                        aria-label={`Remove ${tyreFullName(line)} from cart`}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </li>
-                ))}
+                      <div className="min-w-[140px] flex-1">
+                        <span className="text-[12px] font-bold uppercase tracking-wide text-[var(--color-red)]">
+                          {accessory ? `SKU ${accessory.sku}` : line.brand}
+                        </span>
+                        <p className="display text-[22px]">{accessory?.name ?? line.size}</p>
+                        <p className="text-[13px] text-[var(--color-text-muted)]">
+                          {accessory
+                            ? accessory.subtitle
+                            : `Pattern ${line.pattern} · availability confirmed at checkout`}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <LineQuantitySelector
+                          slug={line.slug}
+                          value={line.quantity}
+                          onChange={(q) => setQuantity(line.id, q)}
+                          label={`Quantity for ${displayName}`}
+                        />
+                        <div className="text-right">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
+                            {formatCurrency(line.price)} ea
+                          </p>
+                          <p className="display text-[20px]">{formatCurrency(getLineSubtotal(line))}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => remove(line.id)}
+                          className="text-[12px] font-bold uppercase tracking-wide text-[var(--color-text-muted)] hover:text-[var(--color-red)]"
+                          aria-label={`Remove ${displayName} from cart`}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
 
               <div className="mt-4 flex justify-between">
@@ -109,7 +116,8 @@ export default function CartPage() {
               <div className="surface-card p-6">
                 <h2 className="display text-[24px]">Order summary</h2>
                 <dl className="mt-4 flex flex-col gap-3 text-[14px]">
-                  <Row label="Tyre subtotal" value={formatCurrency(subtotal)} />
+                  <Row label="Order subtotal" value={formatCurrency(subtotal)} />
+                  <Row label="Total items" value={String(totalItems)} />
                   <Row label="Total tyres" value={String(totalTyres)} />
                   <Row
                     label="Delivery"
@@ -127,7 +135,7 @@ export default function CartPage() {
                   Back to stock
                 </Link>
                 <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">
-                  Pricing and availability are confirmed again by the wholesale team before dispatch.
+                  Tyre availability is confirmed again at checkout. Accessories remain separate from tyre delivery thresholds.
                 </p>
               </div>
             </aside>
