@@ -6,8 +6,10 @@ import { LineQuantitySelector } from "@/components/LineQuantitySelector";
 import { TyreImage } from "@/components/TyreImage";
 import { DeliveryStatus } from "@/components/DeliveryStatus";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { StockBadge } from "@/components/primitives";
 import { getLineSubtotal } from "@/lib/cart";
 import { getAccessoryBySlug } from "@/lib/accessories";
+import { useInventoryAvailability } from "@/lib/inventory/availability-context";
 import { formatCurrency, formatTotal } from "@/lib/format";
 import { tyreFullName } from "@/lib/tyre";
 import { order } from "@/lib/config";
@@ -70,10 +72,13 @@ export default function CartPage() {
                         </span>
                         <p className="display text-[22px]">{accessory?.name ?? line.size}</p>
                         <p className="text-[13px] text-[var(--color-text-muted)]">
-                          {accessory
-                            ? accessory.subtitle
-                            : `Pattern ${line.pattern} · availability confirmed at checkout`}
+                          {accessory ? accessory.subtitle : `Pattern ${line.pattern}`}
                         </p>
+                        {!accessory && (
+                          <p className="mt-1">
+                            <CartLineStock slug={line.slug} />
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
                         <LineQuantitySelector
@@ -144,6 +149,11 @@ export default function CartPage() {
       </div>
     </div>
   );
+}
+
+function CartLineStock({ slug }: { slug: string }) {
+  const availability = useInventoryAvailability(slug);
+  return <StockBadge stock={availability.available} state={availability.state} />;
 }
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
