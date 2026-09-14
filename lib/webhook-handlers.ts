@@ -87,11 +87,24 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   }
 
   try {
-    if (!claimed.inventoryReservationId || !claimed.inventoryCommitRequestId) {
-      throw new Error("Paid order is missing its inventory reservation.");
+    // Tyre or mixed orders must commit the 247 reservation before fulfilment.
+    // Accessory-only orders intentionally have neither id and can proceed
+    // directly to notification because they are not tracked by 247 inventory.
+    const hasInventoryState = Boolean(
+      claimed.inventoryReservationId || claimed.inventoryCommitRequestId,
+    );
+    if (hasInventoryState) {
+      if (!claimed.inventoryReservationId || !claimed.inventoryCommitRequestId) {
+        throw new Error("Paid order has incomplete inventory reservation data.");
+      }
+      await (deps.commitInventory ?? commitInventory)(
+        claimed.inventoryReservationId,
+        claimed.reference,
+        claimed.inventoryCommitRequestId,
+      );
+      await deps.store.markInventoryCommitted(claimed.reference);
     }
-    await (deps.commitInventory ?? commitInventory)(claimed.inventoryReservationId, claimed.reference, claimed.inventoryCommitRequestId);
-    await deps.store.markInventoryCommitted(claimed.reference);
+
     const { delivered } = await deps.notify({
       subject: `PAID order ${claimed.reference} · ${(claimed.amountTotalCents / 100).toFixed(2)} ${claimed.currency.toUpperCase()}`,
       replyTo: claimed.customerEmail,
@@ -115,8 +128,8 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   } catch (err) {
     // Release the claim so the next redelivery of this (or an equivalent)
     // event can retry — we must never silently drop a paid order because an
-    // email failed to send. Inventory stays "reserved" until 247 confirms.
-    logInventoryEvent("error", "inventory.commit.failed", {
+    // email failed to send. Tyre inventory stays reserved until 247 confirms.
+    logInventoryEvent("error", "order.fulfilment.failed", {
       orderReference: claimed.reference, reservationId: claimed.inventoryReservationId ?? undefined,
       requestId: claimed.inventoryCommitRequestId ?? undefined, checkoutSessionId: session.id, errorCode: errorCodeOf(err),
       detail: err instanceof Error ? err.message.slice(0, 120) : undefined,
