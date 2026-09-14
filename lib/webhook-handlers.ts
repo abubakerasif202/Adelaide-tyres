@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import type { OrderStore } from "./order-store.ts";
+import { getAccessoryById } from "./accessories.ts";
 import { sendNotification } from "./notify.ts";
 import { order as orderConfig } from "./config.ts";
 import { commitInventory, releaseInventory } from "./inventory/client.ts";
@@ -89,9 +90,20 @@ async function handlePaymentSucceeded(session: Stripe.Checkout.Session, deps: We
   try {
     const reservationId = claimed.inventoryReservationId;
     const commitRequestId = claimed.inventoryCommitRequestId;
+    const hasTyreLines = claimed.lines.some((line) => !getAccessoryById(line.id));
+
+    // A tyre or mixed order must always carry its durable 247 reservation.
+    // Only an all-accessory order may legitimately have no inventory metadata.
+    if (hasTyreLines && (!reservationId || !commitRequestId)) {
+      throw new Error("Paid tyre order is missing its inventory reservation.");
+    }
+    if (!hasTyreLines && (reservationId || commitRequestId)) {
+      throw new Error("Accessory-only order has unexpected tyre inventory reservation metadata.");
+    }
     if ((reservationId && !commitRequestId) || (!reservationId && commitRequestId)) {
       throw new Error("Paid order has incomplete inventory reservation metadata.");
     }
+
     // Accessory-only orders deliberately have neither value: they do not exist
     // in the 247 tyre inventory feed. Mixed carts do have a reservation and
     // therefore commit the tyre portion before fulfilment notification.
