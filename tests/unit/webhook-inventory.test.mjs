@@ -95,7 +95,7 @@ test("payment succeeded but the inventory commit failed: order stays recoverable
 
   await assert.rejects(processStripeEvent(paid("sess_11", "evt_1"), { store, notify, commitInventory, releaseInventory }));
   let order = await store.getByCheckoutSessionId("sess_11");
-  assert.equal(order.status, "pending", "claim released so Stripe redelivery can retry");
+  assert.equal(order.status, "paid", "payment stays paid while the fulfilment claim is released for retry");
   assert.equal(order.inventoryStatus, "reserved", "inventory is never marked committed when 247 did not confirm");
   assert.equal(notify.calls.length, 0, "the business is not told about a sale whose stock is unconfirmed");
 
@@ -197,7 +197,7 @@ test("a paid order missing its reservation is never fulfilled silently", async (
   await assert.rejects(processStripeEvent(paid("sess_17"), { store, notify, ...inventory }));
   assert.equal(inventory.committed.length, 0);
   assert.equal(notify.calls.length, 0);
-  assert.equal((await store.getByCheckoutSessionId("sess_17")).status, "pending", "left recoverable for operator reconciliation");
+  assert.equal((await store.getByCheckoutSessionId("sess_17")).status, "paid", "paid state is preserved while fulfilment remains recoverable");
 });
 
 test("a paid accessory-only order is fulfilled without a 247 inventory reservation", async () => {
