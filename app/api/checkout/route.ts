@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readSubmission } from "@/lib/request-body";
-import { validateOrderLines } from "@/lib/order-lines";
+import { getTyreOrderLines, getValidatedTyreQuantity, validateOrderLines } from "@/lib/order-lines";
 import { order } from "@/lib/config";
 import { validateCheckoutDetails, hasErrors, type CheckoutDetails } from "@/lib/checkout-validation";
 import { createCheckoutSession, generateReference, isPaymentConfigured } from "@/lib/payment";
@@ -79,19 +79,29 @@ export async function POST(request: Request) {
       { status: 413 },
     );
   }
-  const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
+
+  // Accessories are valid Stripe line items but are deliberately outside the
+  // 247 tyre inventory feed and never count toward the 8+ tyre delivery rule.
+  const tyreLines = getTyreOrderLines(lines);
+  const totalTyres = getValidatedTyreQuantity(lines);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
     details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
   const deliveryFee = freeDelivery ? 0 : order.delivery.feeAud;
 
+  const reference = generateReference(checkoutAttemptId);
   let reservationId: string | null = null;
   let releaseRequestId: string | null = null;
+  let commitRequestId: string | null = null;
   try {
-    const reference = generateReference(checkoutAttemptId);
-    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
-    reservationId = reservation.reservationId;
-    releaseRequestId = randomUUID();
+    // Accessory-only orders skip 247 entirely. Mixed carts reserve only tyres.
+    if (tyreLines.length > 0) {
+      const reservation = await reserveInventory(reference, tyreLines, checkoutAttemptId);
+      reservationId = reservation.reservationId;
+      releaseRequestId = randomUUID();
+      commitRequestId = randomUUID();
+    }
+
     const session = await createCheckoutSession({
       details,
       lines,
@@ -99,10 +109,9 @@ export async function POST(request: Request) {
       subtotal,
       freeDelivery,
       deliveryFee,
-    }, { reservationId: reservation.reservationId, reference, commitRequestId: randomUUID(), releaseRequestId });
+    }, { reservationId, reference, commitRequestId, releaseRequestId });
     return NextResponse.json({ url: session.url, reference: session.reference });
   } catch (err) {
-    const reference = generateReference(checkoutAttemptId);
     if (reservationId && releaseRequestId) {
       // Stripe/order persistence failed after the hold was made: release it.
       try { await releaseInventory(reservationId, "checkout_start_failed", releaseRequestId); }
