@@ -1,87 +1,52 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
 import type { Tyre } from "@/lib/catalogue";
 
-type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price" | "image">;
+type HeroTyre = Pick<Tyre, "slug" | "brand" | "pattern" | "size" | "price">;
 
 /**
- * Front-facing commercial truck wheel on a polished alloy rim: a photoreal
- * render, dead-centred in a transparent 1000x1000 square canvas, which is what
- * lets the spinner wrapper rotate it about the true axle without wobble.
- *
- * To replace it, drop a new file at this path — no code change is needed while
- * it stays 1000x1000. Any replacement MUST be shot head-on: a three-quarter
- * product photo has an elliptical silhouette and an off-centre rim, so rotating
- * it tumbles the tyre rather than turning it. Validate first with
- * `npm run check:hero-tyre -- <file>`; the spec is in
- * public/images/hero/README.md.
+ * Greforce G-PILOT X1 295/80R22.5 — the genuine supplier product shot
+ * (docs/image-audit.md), cut out onto transparency and cropped to the tyre so
+ * the bay can light it. 560x816 is the trimmed source; the declared size is
+ * what holds CLS at zero, so update it if the asset changes.
  */
-const HERO_WHEEL = {
-  src: "/images/hero/hero-truck-tyre.webp",
-  width: 1000,
-  height: 1000,
+const HERO_TYRE_IMAGE = {
+  src: "/images/hero/greforce-g-pilot-x1-cutout.webp",
+  width: 560,
+  height: 816,
 } as const;
 
 export function HeroArtwork({ tyre }: { tyre: HeroTyre }) {
+  const name = `${tyre.brand} ${tyre.pattern} ${tyre.size}`;
+
   return (
-    <div className="hero__visual relative mx-auto w-full">
-      <Link href={`/tyres/${tyre.slug}`} className="hero__bay block focus-visible:outline-offset-4 group">
-        <div className="hero__bay-tags">
-          <span className="hero__bay-tag">Regency Park warehouse</span>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#7fd1b3] opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 hidden sm:inline-flex items-center gap-1">
-            View tyre <span aria-hidden>→</span>
-          </span>
-        </div>
+    <div className="hero__visual">
+      <Link href={`/tyres/${tyre.slug}`} className="hero__bay group" aria-label={`${name} — view wholesale price`}>
+        <span className="hero__bay-seam" aria-hidden />
+        <span className="hero__bay-light" aria-hidden />
 
-        {/*
-          Three nested wrappers, one transform each — this is deliberate.
-          `.hero-tyre-stage` owns layout and the scroll parallax, the entrance
-          wrapper owns translate/scale, and only the innermost spinner owns the
-          continuous rotation. Stacking entrance + idle spin on a single element
-          makes the second animation snap the first one's transform away.
-        */}
-        <div className="hero-tyre-stage hero__bay-image">
-          <span className="hero-tyre-glow" aria-hidden />
-          <span className="hero-tyre-rings" aria-hidden>
-            <span className="hero-tyre-ring hero-tyre-ring--outer" />
-            <span className="hero-tyre-ring hero-tyre-ring--inner" />
-          </span>
+        <span className="hero__bay-tag">Featured stock</span>
 
-          <div className="hero-tyre-entrance">
-            <div className="hero-tyre-spinner">
-              <Image
-                src={HERO_WHEEL.src}
-                alt=""
-                aria-hidden
-                width={HERO_WHEEL.width}
-                height={HERO_WHEEL.height}
-                loading="eager"
-                fetchPriority="high"
-                sizes="(max-width: 639px) 74vw, (max-width: 1023px) 70vw, 420px"
-                className="hero-tyre-image"
-              />
-            </div>
-          </div>
-
-          <span className="hero-tyre-contact" aria-hidden />
+        <div className="hero__bay-stage">
+          <Image
+            src={HERO_TYRE_IMAGE.src}
+            alt={`${name} commercial steer tyre`}
+            width={HERO_TYRE_IMAGE.width}
+            height={HERO_TYRE_IMAGE.height}
+            loading="eager"
+            fetchPriority="high"
+            sizes="(max-width: 639px) 46vw, (max-width: 1023px) 34vw, 300px"
+            className="hero__bay-tyre"
+          />
+          <span className="hero__bay-floor" aria-hidden />
         </div>
 
         <div className="hero__bay-footer">
-          <div>
-            <span className="hero__bay-eyebrow">Featured wholesale stock</span>
-            <span className="hero__bay-name">
-              {tyre.brand} {tyre.pattern} · {tyre.size}
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="hero__bay-eyebrow">Wholesale price</span>
-            <span className="hero__bay-price">
-              {formatCurrency(tyre.price)} <span className="hero__bay-price-note">ea</span>
-            </span>
-          </div>
+          <span className="hero__bay-name">{name}</span>
+          <span className="hero__bay-price">
+            {formatCurrency(tyre.price)} <span className="hero__bay-price-note">ea</span>
+          </span>
         </div>
       </Link>
     </div>
