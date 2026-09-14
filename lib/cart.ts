@@ -6,10 +6,15 @@
 // Explicit .ts extension so Node's test runner can resolve this at runtime.
 import { order } from "./config.ts";
 import { getTyreBySlug } from "./catalogue.ts";
+import { getAccessoryBySlug } from "./accessories.ts";
+
+export type ProductKind = "tyre" | "accessory";
 
 export type CartLine = {
   id: string;
   slug: string;
+  /** Optional for backwards compatibility with carts saved before accessories became purchasable. */
+  kind?: ProductKind;
   brand: string;
   pattern: string;
   size: string;
@@ -25,8 +30,16 @@ export type Cart = {
 
 export const MIN_QTY_PER_LINE = 1;
 
-/** THE authoritative helper. Total tyre quantity across the whole cart. */
+/** Total quantity of tyre lines only. Accessories never affect tyre delivery tiers. */
 export function getTotalTyreQuantity(cart: Cart): number {
+  return cart.lines.reduce(
+    (sum, line) => sum + (line.kind === "accessory" ? 0 : line.quantity),
+    0,
+  );
+}
+
+/** Total quantity of every purchasable item, used by cart badges and generic UI. */
+export function getTotalItemQuantity(cart: Cart): number {
   return cart.lines.reduce((sum, line) => sum + line.quantity, 0);
 }
 
@@ -47,9 +60,8 @@ export type DeliveryDestination = {
 
 /**
  * Free delivery qualification. No minimum order — the business rule is a flat
- * Adelaide-wide delivery fee under 8 tyres, free from 8 tyres up. Pickup is
- * always free. Centralised here so the rule can tighten later (e.g. a
- * postcode allow-list) without touching UI.
+ * Adelaide-wide delivery fee under 8 tyres, free from 8 tyres up. Accessories
+ * do not count towards that tyre threshold. Pickup is always free.
  */
 export function qualifiesForFreeDelivery(
   cart: Cart,
@@ -115,10 +127,10 @@ export function clearCart(): Cart {
 export const EMPTY_CART: Cart = { lines: [] };
 
 /**
- * Restores a browser-stored cart using catalogue data, never the stored price,
- * name or image. Browser storage is user-controlled and can be stale or
- * edited, so it is only a record of SKU quantities. The orders API performs the
- * same authority check again before any notification is sent.
+ * Restores a browser-stored cart using authoritative catalogue/accessory data,
+ * never the stored price, name or image. Browser storage is user-controlled and
+ * can be stale or edited, so it is only a record of product slugs + quantities.
+ * The orders API performs the same authority check again before checkout.
  */
 export function restoreStoredCart(input: unknown): Cart {
   if (!input || typeof input !== "object" || !Array.isArray((input as Cart).lines)) {
@@ -132,23 +144,40 @@ export function restoreStoredCart(input: unknown): Cart {
     if (typeof slug !== "string" || typeof quantity !== "number" ||
       !Number.isSafeInteger(quantity) || quantity < MIN_QTY_PER_LINE) continue;
     const tyre = getTyreBySlug(slug);
-    if (!tyre) continue;
+    const accessory = getAccessoryBySlug(slug);
+    if (!tyre && !accessory) continue;
     quantities.set(slug, (quantities.get(slug) ?? 0) + quantity);
   }
 
   return {
     lines: [...quantities.entries()].flatMap(([slug, quantity]) => {
       const tyre = getTyreBySlug(slug);
-      if (!tyre) return [];
+      if (tyre) {
+        return [{
+          id: tyre.id,
+          slug: tyre.slug,
+          kind: "tyre" as const,
+          brand: tyre.brand,
+          pattern: tyre.pattern,
+          size: tyre.size,
+          price: tyre.price,
+          quantity,
+          image: tyre.image,
+        }];
+      }
+
+      const accessory = getAccessoryBySlug(slug);
+      if (!accessory) return [];
       return [{
-        id: tyre.id,
-        slug: tyre.slug,
-        brand: tyre.brand,
-        pattern: tyre.pattern,
-        size: tyre.size,
-        price: tyre.price,
+        id: accessory.id,
+        slug: accessory.slug,
+        kind: "accessory" as const,
+        brand: accessory.sku,
+        pattern: accessory.name.replace(`${accessory.sku} `, ""),
+        size: accessory.subtitle,
+        price: accessory.price,
         quantity,
-        image: tyre.image,
+        image: accessory.image,
       }];
     }),
   };
