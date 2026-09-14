@@ -18,7 +18,7 @@ export function validateOrderLines(input: unknown) {
 
   const lines: {
     id: string;
-    kind: "tyre" | "accessory";
+    kind?: "tyre" | "accessory";
     brand: string;
     pattern: string;
     size: string;
@@ -34,9 +34,10 @@ export function validateOrderLines(input: unknown) {
       if (!inventoryMappingIdForProduct(tyre.id)) {
         return { error: `${tyre.brand} ${tyre.pattern} ${tyre.size} requires availability confirmation. Please contact us.` } as const;
       }
+      // Keep the legacy tyre line shape unchanged. Undefined kind means tyre;
+      // only non-tyre lines need an explicit discriminator.
       lines.push({
         id: tyre.id,
-        kind: "tyre",
         brand: tyre.brand,
         pattern: tyre.pattern,
         size: tyre.size,
