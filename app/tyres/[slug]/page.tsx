@@ -102,11 +102,7 @@ export default async function TyreDetailPage({ params }: Params) {
             </div>
 
             <div className="lg:col-start-1 lg:row-start-1 lg:row-end-3">
-              <div
-                className={`product-detail-media surface-card ${
-                  tyre.slug === "ralson-rmr61-295-80r22-5" ? "product-detail-media--hero" : ""
-                }`}
-              >
+              <div className="product-detail-media surface-card">
                 <TyreImage
                   src={tyre.image}
                   alt={`${tyreFullName(tyre)} commercial tyre`}

@@ -333,10 +333,6 @@ img {
     background: #ffffff;
     border-bottom: 1px solid var(--color-border);
   }
-  .product-card__media--dark-bay {
-    background: linear-gradient(160deg, #1b2321, #0a0d0d 70%);
-    border-bottom: none;
-  }
   /* The lead card spans 2 grid columns on lg+, so at 16:9 its media row would
      out-run its single row-mate and pool as dead space above the delivery
      note (mt-auto). At lg:col-span-2, the lead's width is ~2x its row-mate's,
@@ -354,23 +350,11 @@ img {
     background: radial-gradient(circle at 50% 25%, rgba(6, 59, 44, 0.05), transparent 65%);
     pointer-events: none;
   }
-  .product-card__media--dark-bay::after {
-    background: radial-gradient(circle at 30% 20%, rgba(70, 155, 122, 0.2), transparent 52%);
-    mix-blend-mode: screen;
-  }
-  .product-card__media-cover {
-    object-fit: cover;
-    filter: saturate(0.9) brightness(0.98) contrast(1.04);
-  }
   .product-card__media-contain {
     inset: 6% 0 !important;
     object-fit: contain;
     filter: saturate(0.96) contrast(1.04);
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .product-card__media--dark-bay .product-card__media-contain {
-    mix-blend-mode: normal;
-    filter: saturate(0.85) brightness(1.02) contrast(1.04) drop-shadow(0 14px 18px rgba(0, 0, 0, 0.55));
   }
   .product-card__placeholder {
     width: auto;
@@ -2015,15 +1999,6 @@ footer.on-dark { background:var(--color-green-dark); }
 }
 .product-detail-media:hover img {
   transform: scale(1.03);
-}
-.product-detail-media--hero {
-  background:
-    radial-gradient(circle at 30% 20%, rgba(70, 155, 122, 0.18), transparent 45%),
-    linear-gradient(160deg, #1b2321, #0a0d0d 72%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-.product-detail-media--hero img {
-  mix-blend-mode: normal;
 }
 
 /* ---------------------------------------------------------------
