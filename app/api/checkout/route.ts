@@ -79,7 +79,11 @@ export async function POST(request: Request) {
       { status: 413 },
     );
   }
-  const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
+
+  // Only tyre lines participate in the 247 inventory reservation and the
+  // tyre-based delivery threshold. Accessories remain normal Stripe line items.
+  const tyreLines = lines.filter((line) => line.kind === "tyre");
+  const totalTyres = tyreLines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
     details.deliveryMethod === "pickup" || totalTyres >= order.delivery.freeQualifyingTyres;
@@ -89,9 +93,25 @@ export async function POST(request: Request) {
   let releaseRequestId: string | null = null;
   try {
     const reference = generateReference(checkoutAttemptId);
-    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
-    reservationId = reservation.reservationId;
-    releaseRequestId = randomUUID();
+    let inventory: {
+      reference: string;
+      reservationId?: string;
+      commitRequestId?: string;
+      releaseRequestId?: string;
+    } = { reference };
+
+    if (tyreLines.length > 0) {
+      const reservation = await reserveInventory(reference, tyreLines, checkoutAttemptId);
+      reservationId = reservation.reservationId;
+      releaseRequestId = randomUUID();
+      inventory = {
+        reference,
+        reservationId: reservation.reservationId,
+        commitRequestId: randomUUID(),
+        releaseRequestId,
+      };
+    }
+
     const session = await createCheckoutSession({
       details,
       lines,
@@ -99,7 +119,7 @@ export async function POST(request: Request) {
       subtotal,
       freeDelivery,
       deliveryFee,
-    }, { reservationId: reservation.reservationId, reference, commitRequestId: randomUUID(), releaseRequestId });
+    }, inventory);
     return NextResponse.json({ url: session.url, reference: session.reference });
   } catch (err) {
     const reference = generateReference(checkoutAttemptId);
