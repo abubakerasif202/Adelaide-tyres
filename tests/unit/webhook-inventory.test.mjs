@@ -200,6 +200,37 @@ test("a paid order missing its reservation is never fulfilled silently", async (
   assert.equal((await store.getByCheckoutSessionId("sess_17")).status, "pending", "left recoverable for operator reconciliation");
 });
 
+test("a paid accessory-only order is fulfilled without a 247 inventory reservation", async () => {
+  const store = new MemoryOrderStore();
+  await store.createPendingOrder(makeOrderInput("sess_accessory", {
+    amountTotalCents: 1000,
+    lines: [{
+      id: "tr545d-truck-tyre-valve",
+      kind: "accessory",
+      brand: "TR545D",
+      pattern: "Truck Tyre Valve",
+      size: "60° Alloy Wheel Valve",
+      quantity: 1,
+      price: 10,
+    }],
+    inventoryReservationId: null,
+    inventoryStatus: "committed",
+    inventoryCommitRequestId: null,
+    inventoryReleaseRequestId: null,
+  }));
+  const notify = notifyOk();
+  const inventory = inventoryDeps();
+
+  await processStripeEvent(paid("sess_accessory"), { store, notify, ...inventory });
+
+  const order = await store.getByCheckoutSessionId("sess_accessory");
+  assert.equal(order.status, "paid");
+  assert.equal(order.inventoryStatus, "committed");
+  assert.equal(inventory.committed.length, 0);
+  assert.equal(inventory.released.length, 0);
+  assert.equal(notify.calls.length, 1);
+});
+
 test("concurrent duplicate deliveries commit once even when the commit is slow", async () => {
   const store = new MemoryOrderStore();
   await store.createPendingOrder(makeOrderInput("sess_19"));
