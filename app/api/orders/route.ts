@@ -65,7 +65,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validated.error }, { status: 409 });
   }
   const lines = validated.lines;
-  const totalTyres = lines.reduce((sum, line) => sum + line.quantity, 0);
+  const tyreLines = lines.filter((line) => line.kind === "tyre");
+  const totalTyres = tyreLines.reduce((sum, line) => sum + line.quantity, 0);
+  const totalItems = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const freeDelivery =
@@ -77,15 +79,20 @@ export async function POST(request: Request) {
     : null;
   if (!checkoutAttemptId) return NextResponse.json({ error: "Invalid checkout attempt." }, { status: 400 });
   if (!hasDurableOrderStore()) {
-    return NextResponse.json({ error: "We're confirming tyre availability. Please try again shortly." }, { status: 503 });
+    return NextResponse.json({ error: "We're confirming product availability. Please try again shortly." }, { status: 503 });
   }
 
   const reference = generateReference(checkoutAttemptId);
-  const releaseRequestId = randomUUID();
+  const releaseRequestId = tyreLines.length > 0 ? randomUUID() : null;
   let reservationId: string | null = null;
+  let inventoryCommitRequestId: string | null = null;
   try {
-    const reservation = await reserveInventory(reference, lines, checkoutAttemptId);
-    reservationId = reservation.reservationId;
+    if (tyreLines.length > 0) {
+      const reservation = await reserveInventory(reference, tyreLines, checkoutAttemptId);
+      reservationId = reservation.reservationId;
+      inventoryCommitRequestId = randomUUID();
+    }
+
     await (await getOrderStore()).createPendingOrder({
       reference,
       checkoutSessionId: null,
@@ -100,12 +107,12 @@ export async function POST(request: Request) {
       notes: details.notes ?? "",
       lines,
       inventoryReservationId: reservationId,
-      inventoryStatus: "reserved",
-      inventoryCommitRequestId: randomUUID(),
+      inventoryStatus: reservationId ? "reserved" : "committed",
+      inventoryCommitRequestId,
       inventoryReleaseRequestId: releaseRequestId,
     });
   } catch (error) {
-    if (reservationId) {
+    if (reservationId && releaseRequestId) {
       try { await releaseInventory(reservationId, "reference_order_persistence_failed", releaseRequestId); }
       catch (releaseError) { logInventoryEvent("error", "orders.release_after_failure.failed", { orderReference: reference, reservationId, requestId: releaseRequestId, errorCode: errorCodeOf(releaseError) }); }
     }
@@ -114,14 +121,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
     logInventoryEvent("error", error instanceof InventoryUnavailableError ? "orders.reservation.unavailable" : "orders.persistence.failed", { orderReference: reference, reservationId: reservationId ?? undefined, requestId: checkoutAttemptId, errorCode: errorCodeOf(error) });
-    return NextResponse.json({ error: "We're confirming tyre availability. Please try again shortly." }, { status: 503 });
+    return NextResponse.json({ error: "We're confirming product availability. Please try again shortly." }, { status: 503 });
   }
 
   const intent = { reference, mode: "test" as const, requiresPayment: false };
 
   try {
     const { delivered } = await sendNotification({
-      subject: `New bulk order ${intent.reference} · ${totalTyres} tyres`,
+      subject: `New bulk order ${intent.reference} · ${totalItems} item${totalItems === 1 ? "" : "s"}`,
       replyTo: details.email,
       text: [
         `Reference: ${intent.reference} (${intent.mode})`,
@@ -134,6 +141,7 @@ export async function POST(request: Request) {
         "",
         ...lines.map((l) => `  ${l.quantity} × ${l.brand} ${l.pattern} ${l.size} @ $${l.price}`),
         "",
+        `Total items: ${totalItems}`,
         `Total tyres: ${totalTyres}`,
         `Subtotal: $${subtotal} AUD`,
         `Delivery: ${
@@ -148,10 +156,10 @@ export async function POST(request: Request) {
         .filter(Boolean)
         .join("\n"),
     });
-    return NextResponse.json({ ...intent, subtotal, totalTyres, notified: delivered });
+    return NextResponse.json({ ...intent, subtotal, totalTyres, totalItems, notified: delivered });
   } catch (err) {
     console.error("Order notification failed", err);
     // The order is still valid; surface a soft warning to the client.
-    return NextResponse.json({ ...intent, subtotal, totalTyres, notified: false });
+    return NextResponse.json({ ...intent, subtotal, totalTyres, totalItems, notified: false });
   }
 }
