@@ -65,7 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validated.error }, { status: 409 });
   }
   const lines = validated.lines;
-  const tyreLines = lines.filter((line) => line.kind === "tyre");
+  // Legacy tyre lines have no `kind`; only accessories are explicitly tagged.
+  const tyreLines = lines.filter((line) => line.kind !== "accessory");
   const totalTyres = tyreLines.reduce((sum, line) => sum + line.quantity, 0);
   const totalItems = lines.reduce((sum, line) => sum + line.quantity, 0);
 
